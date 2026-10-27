@@ -11,8 +11,8 @@
 :root{--navy:#0A1F6B;--royal:#1747B8;--azure:#2F6BFF;--ink:#12203A;--mute:#6B7A93;--line:#DCE2EB;
   --ok:#0E8A7D;--venc:#C0304F;--v30:#E3A008}
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font:14px/1.45 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:#0A1F6B}
+html,body{height:100%;margin:0;padding:0;overflow:hidden}
+body{font:14px/1.45 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:#0A1F6B}
 body::before{content:"";position:fixed;inset:0;z-index:-1;
   background:radial-gradient(900px 500px at 15% 0%,rgba(80,140,255,.35),transparent 70%),
              radial-gradient(800px 500px at 100% 100%,rgba(20,60,190,.45),transparent 70%),
@@ -20,15 +20,15 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;
   background-blend-mode:normal,normal,normal,soft-light;background-size:cover}
 button{font:inherit;cursor:pointer}
 input,select{font:inherit}
-.tela{display:none;min-height:100%}
+.tela{display:none;height:100vh;width:100vw}
 .tela.on{display:flex}
 
 /* ---------- login / troca de senha / avisos ---------- */
-.auth{align-items:center;justify-content:center;padding:24px}
+.auth{align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 .acard{width:min(430px,100%);background:rgba(255,255,255,.97);border-radius:22px;padding:0 32px 30px;text-align:center;
   box-shadow:0 30px 70px -20px rgba(0,5,40,.8),inset 0 1px 0 #fff;overflow:hidden}
-.acard .top{background:linear-gradient(135deg,#071a66,#1747B8 70%,#2F6BFF);margin:0 -32px 24px;padding:26px 20px 20px}
-.acard .top img{height:92px;filter:drop-shadow(0 0 18px rgba(130,180,255,.55))}
+.acard .top{background:linear-gradient(135deg,#071a66,#1747B8 70%,#2F6BFF);margin:0 -32px 24px;padding:26px 20px 20px;display:flex;justify-content:center;align-items:center}
+.acard .top img{height:88px;max-width:80%;object-fit:contain;filter:drop-shadow(0 0 18px rgba(130,180,255,.55))}
 .acard h1{margin:0 0 6px;font-size:22px;color:var(--navy)}
 .acard p{margin:0 0 18px;color:var(--mute)}
 .acard form{text-align:left}
@@ -51,40 +51,46 @@ input,select{font:inherit}
 .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
 
-/* ---------- aplicativo e sidebar retrátil ---------- */
-#tApp{height:100%}
+/* ---------- aplicativo e layout dinâmico ---------- */
+#tApp{display:flex;width:100vw;height:100vh;overflow:hidden;position:relative}
+
 aside{
   width:272px;
-  flex:none;
+  min-width:272px;
+  height:100%;
   display:flex;
   flex-direction:column;
   color:#fff;
-  background:linear-gradient(180deg,rgba(3,10,52,.94),rgba(8,30,110,.9));
+  background:linear-gradient(180deg,rgba(3,10,52,.96),rgba(8,30,110,.93));
   border-right:1px solid rgba(255,255,255,.12);
   backdrop-filter:blur(14px);
-  transition:width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow:hidden;
+  transition:width 0.25s ease, min-width 0.25s ease;
   position:relative;
-  z-index: 20;
+  z-index: 100;
+  overflow:hidden;
 }
 
-/* Estado Recolhido da Sidebar */
 aside.collapsed {
-  width: 68px;
-}
-aside.collapsed:hover {
-  width: 272px;
-  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  width: 68px !important;
+  min-width: 68px !important;
 }
 
-.sb-top{padding:16px 14px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative}
+aside.collapsed:hover {
+  width: 272px !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  box-shadow: 10px 0 30px rgba(0,0,0,0.6);
+}
+
+.sb-top{padding:16px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-brand{display:flex;flex-direction:column;align-items:center;flex:1;overflow:hidden;transition:opacity 0.2s}
-.sb-top img{height:60px;filter:drop-shadow(0 0 18px rgba(130,180,255,.5))}
+.sb-top img{height:52px;filter:drop-shadow(0 0 14px rgba(130,180,255,.5))}
 .sb-tag{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#9DB5E8;margin-top:4px;white-space:nowrap}
 
-/* Botão Toggle de encolher/expandir o menu */
 .btn-toggle-sb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   border-radius: 8px;
@@ -95,15 +101,15 @@ aside.collapsed:hover {
   flex: none;
   transition: background 0.15s, transform 0.25s;
 }
-.btn-toggle-sb:hover { background: rgba(255, 255, 255, 0.25); }
+.btn-toggle-sb:hover { background: rgba(255, 255, 255, 0.28); }
 aside.collapsed .btn-toggle-sb { transform: rotate(180deg); }
 
 aside.collapsed:not(:hover) .sb-brand { display: none; }
-aside.collapsed:not(:hover) .sb-top { justify-content: center; padding: 16px 0 12px; }
+aside.collapsed:not(:hover) .sb-top { justify-content: center; padding: 16px 0; }
 
-.menu{padding:8px 10px;flex:1;overflow-y:auto;overflow-x:hidden}
-.sec{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8FA6DD;padding:16px 10px 6px;white-space:nowrap}
-aside.collapsed:not(:hover) .sec { opacity: 0; padding: 8px 0; }
+.menu{padding:10px 8px;flex:1;overflow-y:auto;overflow-x:hidden}
+.sec{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8FA6DD;padding:14px 10px 6px;white-space:nowrap}
+aside.collapsed:not(:hover) .sec { display: none; }
 
 .mi{
   display:flex;
@@ -140,13 +146,77 @@ aside.collapsed:not(:hover) .sb-user { justify-content: center; padding: 12px 0;
 
 .mini{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:6px 9px;font-size:12px}
 .mini:hover{background:rgba(255,255,255,.18)}
-main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+
+/* Conteúdo Principal */
+main{
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: transparent;
+}
+
+/* Barra Superior de Ações dos Painéis */
+.top-bar-iframe {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(4, 16, 70, 0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  z-index: 10;
+}
+.top-bar-iframe.on { display: flex; }
+.top-bar-title { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.top-bar-actions { display: flex; gap: 8px; }
+.btn-fs {
+  background: linear-gradient(135deg, var(--royal), var(--azure));
+  border: 0;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.btn-fs:hover { opacity: 0.9; }
+
 .top{display:none;align-items:center;gap:12px;padding:10px 14px;background:rgba(3,10,52,.92);color:#fff}
 .top button{background:none;border:0;color:#fff;font-size:24px;line-height:1}
 .view{flex:1;overflow:auto;display:none}
 .view.on{display:block}
-#frm{flex:1;width:100%;border:0;display:none}
-#frm.on{display:block}
+
+/* Container do Iframe */
+.iframe-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: none;
+}
+.iframe-container.on { display: flex; flex-direction: column; }
+
+#frm{
+  width: 100%;
+  height: 100%;
+  border: 0;
+  flex: 1;
+}
+
+/* Modo Tela Cheia Iframe Native */
+.iframe-container:fullscreen #frm, .iframe-container:-webkit-full-screen #frm {
+  width: 100vw;
+  height: 100vh;
+}
+.iframe-container:fullscreen .top-bar-iframe, .iframe-container:-webkit-full-screen .top-bar-iframe {
+  display: none !important;
+}
 
 .pg{max-width:1180px;margin:0 auto;padding:30px 28px 50px}
 .pg h1{margin:0;color:#fff;font-size:26px;text-shadow:0 2px 14px rgba(0,8,50,.5)}
@@ -167,6 +237,54 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
   padding:22px;box-shadow:0 18px 40px -20px rgba(2,10,50,.85)}
 .box h2{margin:0 0 14px;font-size:17px;color:var(--navy)}
 .box.estreito{max-width:440px}
+
+/* ---------- Modo Apresentação TV / Kiosk ---------- */
+#tvOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+}
+#tvOverlay.on { display: block; }
+#tvIframe { width: 100vw; height: 100vh; border: 0; }
+.tv-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--azure), #79B0FF);
+  width: 0%;
+  transition: width 0.2s linear;
+  z-index: 10000;
+}
+.tv-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  gap: 8px;
+  background: rgba(10, 31, 107, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 8px 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,0.2);
+  opacity: 0.2;
+  transition: opacity 0.3s;
+}
+.tv-controls:hover { opacity: 1; }
+.tv-btn {
+  background: rgba(255,255,255,0.15);
+  border: 0;
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+}
+.tv-btn:hover { background: rgba(255,255,255,0.3); }
 
 /* ---------- administração ---------- */
 .bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
@@ -210,14 +328,14 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .b.s{background:#EEF3FC;color:var(--navy)}
 .b.d{background:#FADCE3;color:#A21F40}
 .b:disabled{opacity:.5;cursor:wait}
-.toast{position:fixed;right:18px;bottom:18px;z-index:99;background:linear-gradient(135deg,#0A1F6B,#1747B8 70%,#2F6BFF);color:#fff;
+.toast{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,#0A1F6B,#1747B8 70%,#2F6BFF);color:#fff;
   padding:11px 16px;border-radius:12px;box-shadow:0 12px 30px -10px rgba(0,8,50,.8);max-width:380px;display:none}
 .toast.on{display:block}
 .toast.err{background:linear-gradient(135deg,#7A1330,#C0304F)}
 
 @media (max-width:1050px){.u{grid-template-columns:1fr 1fr}.pn,.acts{grid-column:1/-1}.acts{justify-content:flex-start}}
 @media (max-width:860px){
-  aside{position:fixed;z-index:50;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s, width .25s}
+  aside{position:fixed;z-index:500;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s}
   aside.open{transform:none}
   .top{display:flex}
   .pg{padding:22px 16px 40px}
@@ -229,7 +347,8 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 
 <!-- API não configurada -->
 <section class="tela auth" id="tSetup">
-  <div class="acard cfg"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+  <div class="acard cfg">
+    <div class="top"><img src="/logo.png" alt="PierServ"></div>
     <h1>Falta configurar o endereço</h1>
     <p>Abra o arquivo <code>public/config.js</code> e cole o endereço <code>/exec</code> do Apps Script da plataforma. O passo a passo está no <b>LEIA-ME</b>.</p>
   </div>
@@ -238,9 +357,10 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 <!-- Carregando -->
 <section class="tela auth" id="tCarga"><div class="spin"></div></section>
 
-<!-- Login -->
+<!-- Login com Logo -->
 <section class="tela auth" id="tLogin">
-  <div class="acard"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+  <div class="acard">
+    <div class="top"><img src="/logo.png" alt="PierServ"></div>
     <h1>Plataforma de BI</h1>
     <p>Entre com o seu e-mail e a sua senha.</p>
     <form id="fLogin">
@@ -253,9 +373,10 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
   </div>
 </section>
 
-<!-- Troca obrigatória de senha -->
+<!-- Troca obrigatória de senha com Logo -->
 <section class="tela auth" id="tTrocar">
-  <div class="acard"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+  <div class="acard">
+    <div class="top"><img src="/logo.png" alt="PierServ"></div>
     <h1>Crie a sua senha</h1>
     <p>Por segurança, troque a senha provisória por uma só sua antes de continuar.</p>
     <div id="trocarForm"></div>
@@ -283,9 +404,34 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
     <div class="view" id="vHome"></div>
     <div class="view" id="vSenha"></div>
     <div class="view" id="vAdmin"></div>
-    <iframe id="frm" title="Painel"></iframe>
+    <div class="view" id="vTvConfig"></div>
+    
+    <div class="iframe-container" id="iframeWrap">
+      <div class="top-bar-iframe" id="topBarIframe">
+        <div class="top-bar-title" id="topBarTitle"><span>Painel</span></div>
+        <div class="top-bar-actions">
+          <button class="btn-fs" id="btnFullScreen" type="button" title="Abrir em Tela Cheia">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            Tela Cheia
+          </button>
+        </div>
+      </div>
+      <iframe id="frm" title="Painel"></iframe>
+    </div>
   </main>
 </section>
+
+<!-- Modo TV / Apresentação -->
+<div id="tvOverlay">
+  <div class="tv-progress" id="tvProgress"></div>
+  <iframe id="tvIframe" title="Apresentação TV"></iframe>
+  <div class="tv-controls">
+    <button class="tv-btn" id="tvPrev" title="Anterior">◀</button>
+    <button class="tv-btn" id="tvPause" title="Pausar / Continuar">⏸</button>
+    <button class="tv-btn" id="tvNext" title="Próximo">▶</button>
+    <button class="tv-btn" id="tvExit" title="Sair da Apresentação">✖</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -301,6 +447,7 @@ const ICONS = {
   box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
   users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.3c2 .8 3.5 2.8 3.5 5.7"/>',
   home:'<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>',
+  tv:'<rect x="2" y="7" width="20" height="13" rx="2"/><path d="m17 2-5 5-5-5"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/>'
 };
 const ico = n => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || ICONS.chart) + '</svg>';
@@ -323,17 +470,26 @@ function initSidebarToggle() {
   const btn = $('btnCollapse');
   if (!aside || !btn) return;
   
-  // Restaura estado salvo no localStorage
   const rec = localStorage.getItem('bi_sidebar_collapsed') === 'true';
   if (rec) aside.classList.add('collapsed');
 
-  btn.onclick = () => {
+  btn.onclick = (e) => {
+    e.stopPropagation();
     aside.classList.toggle('collapsed');
     localStorage.setItem('bi_sidebar_collapsed', aside.classList.contains('collapsed'));
   };
 }
 
-/* ---------- comunicação com o servidor (Apps Script) ---------- */
+/* ---------- Modo Tela Cheia Iframe ---------- */
+function solicitarFullScreen() {
+  const wrap = $('iframeWrap');
+  if (wrap.requestFullscreen) wrap.requestFullscreen();
+  else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+  else if (wrap.msRequestFullscreen) wrap.msRequestFullscreen();
+}
+$('btnFullScreen').onclick = solicitarFullScreen;
+
+/* ---------- Comunicação com o Servidor ---------- */
 async function chamar(corpo) {
   const c = Object.assign({}, corpo);
   if (sessao) c.sessao = sessao;
@@ -353,7 +509,6 @@ async function chamar(corpo) {
   return j;
 }
 
-// Usado pelos painéis (iframe) para buscar dados: o servidor confere login e permissão
 window.BI = {
   dados: async (painel, op, fresh) => (await chamar({ acao: 'dados', painel: painel, op: op || '', fresh: !!fresh })).dados
 };
@@ -367,7 +522,7 @@ function sairLocal(msg) {
   tela('tLogin');
 }
 
-/* ---------- login ---------- */
+/* ---------- Login ---------- */
 document.addEventListener('click', e => {
   const o = e.target.closest('[data-olho]'); if (!o) return;
   const i = $(o.dataset.olho) || o.parentElement.querySelector('input');
@@ -386,11 +541,11 @@ $('fLogin').addEventListener('submit', async e => {
 $('btnSairTroca').onclick = () => sairLocal('');
 $('btnMenu').onclick = () => $('aside').classList.toggle('open');
 
-/* ---------- troca de senha (obrigatória no 1º acesso, ou pelo menu) ---------- */
+/* ---------- Troca de Senha ---------- */
 function formSenha(destino, obrigatoria) {
   destino.innerHTML = '<form autocomplete="off">'
     + '<label class="fld"><span>' + (obrigatoria ? 'Senha provisória (a que o administrador enviou)' : 'Senha atual') + '</span><div class="pw"><input name="a" type="password" autocomplete="current-password" required><button type="button" data-olho>Mostrar</button></div></label>'
-    + '<label class="fld"><span>Nova senha</span><div class="pw"><input name="n" type="password" autocomplete="new-password" required><button type="button" data-olho>Mostrar</button></div></label>'
+    + '<label class="fld"><span>Nova senha</span><div class="pw"><input name="n" type="password" autocomplete="new-password" required><button type="button" data-olho="new-password">Mostrar</button></div></label>'
     + '<label class="fld"><span>Repita a nova senha</span><input name="c" type="password" autocomplete="new-password" required></label>'
     + '<div class="dica">Mínimo de 8 caracteres, com letras e números.</div>'
     + '<button class="btn-main" type="submit">Salvar nova senha</button><div class="msg"></div></form>';
@@ -409,18 +564,18 @@ function formSenha(destino, obrigatoria) {
   });
 }
 
-/* ---------- decide a tela ---------- */
 function entrar() {
   if (!eu) { tela('tLogin'); return; }
   if (eu.trocarSenha) { formSenha($('trocarForm'), true); tela('tTrocar'); return; }
   tela('tApp'); renderApp(); initSidebarToggle();
 }
 
-/* ---------- navegação ---------- */
+/* ---------- Navegação e Rotas ---------- */
 function rota() {
   const h = location.hash || '#/';
   if (h.startsWith('#/painel/')) { const p = eu.paineis.find(x => x.id === h.slice(9)); if (p) return { t: 'painel', p: p }; }
   if (h === '#/admin' && eu.papel === 'admin') return { t: 'admin' };
+  if (h === '#/tv' && eu.papel === 'admin') return { t: 'tv' };
   if (h === '#/senha') return { t: 'senha' };
   return { t: 'home' };
 }
@@ -436,7 +591,9 @@ function renderApp() {
     ? eu.paineis.map(p => '<button class="mi' + (r.t === 'painel' && r.p.id === p.id ? ' on' : '') + '" data-go="#/painel/' + esc(p.id) + '">' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></button>').join('')
     : '<div class="vazio-menu">Nenhum painel liberado ainda.</div>';
   if (eu.papel === 'admin') {
-    m += '<div class="sec">Administração</div><button class="mi' + (r.t === 'admin' ? ' on' : '') + '" data-go="#/admin">' + ico('users') + '<span>Usuários e acessos</span></button>';
+    m += '<div class="sec">Administração</div>'
+      + '<button class="mi' + (r.t === 'tv' ? ' on' : '') + '" data-go="#/tv">' + ico('tv') + '<span>Modo TV / Apresentação</span></button>'
+      + '<button class="mi' + (r.t === 'admin' ? ' on' : '') + '" data-go="#/admin">' + ico('users') + '<span>Usuários e acessos</span></button>';
   }
   $('menu').innerHTML = m;
 
@@ -449,11 +606,24 @@ function renderApp() {
   $('vHome').classList.toggle('on', r.t === 'home');
   $('vSenha').classList.toggle('on', r.t === 'senha');
   $('vAdmin').classList.toggle('on', r.t === 'admin');
-  $('frm').classList.toggle('on', r.t === 'painel');
+  $('vTvConfig').classList.toggle('on', r.t === 'tv');
+  $('iframeWrap').classList.toggle('on', r.t === 'painel');
 
   if (r.t === 'painel') {
-    if ($('frm').dataset.id !== r.p.id) { $('frm').dataset.id = r.p.id; $('frm').src = r.p.pagina; }
-  } else if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
+    $('topBarTitle').innerHTML = ico(r.p.icone) + ' <span>' + esc(r.p.nome) + '</span>';
+    $('topBarIframe').classList.add('on');
+    if ($('frm').dataset.id !== r.p.id) {
+      $('frm').dataset.id = r.p.id;
+      // Recarrega o script limpando o cache
+      const sep = r.p.pagina.includes('?') ? '&' : '?';
+      $('frm').src = r.p.pagina + sep + '_t=' + Date.now();
+    }
+    // Opcional: abre automaticamente em tela cheia ao clicar
+    solicitarFullScreen();
+  } else {
+    $('topBarIframe').classList.remove('on');
+    if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
+  }
 
   if (r.t === 'home') renderHome();
   if (r.t === 'senha') {
@@ -461,6 +631,7 @@ function renderApp() {
     formSenha($('senhaBox'), false);
   }
   if (r.t === 'admin') montarAdmin();
+  if (r.t === 'tv') montarTvConfig();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (b && b.closest('#tApp')) location.hash = b.dataset.go;
@@ -475,7 +646,95 @@ function renderHome() {
     + '</div>';
 }
 
-/* ---------- administração (só administradores) ---------- */
+/* ---------- MODO TV / APRESENTAÇÃO ---------- */
+let tvTimer = null;
+let tvProgTimer = null;
+let tvLista = [];
+let tvIndex = 0;
+let tvTempo = 60;
+let tvPausado = false;
+
+function montarTvConfig() {
+  const pSelec = eu.paineis || [];
+  $('vTvConfig').innerHTML = '<div class="pg"><h1>Modo Apresentação TV (Loop)</h1><div class="sub">Configure a rotação automática dos dashboards para ser exibida em TVs ou monitores. Os dados atualizam em tempo real.</div>'
+    + '<div class="box" style="max-width:600px">'
+    + '<div class="fld"><span>Selecione os painéis que entrarão na apresentação:</span><div class="pn" id="tvPaineisCheck">'
+    + pSelec.map(p => '<label class="chk"><input type="checkbox" data-tvid="' + esc(p.id) + '" checked> ' + esc(p.nome) + '</label>').join('')
+    + '</div></div>'
+    + '<label class="fld"><span>Tempo de permanência em cada dashboard:</span>'
+    + '<select id="tvTempoSel">'
+    + '<option value="15">15 segundos (Rápido)</option>'
+    + '<option value="30">30 segundos</option>'
+    + '<option value="60" selected>1 minuto (Recomendado)</option>'
+    + '<option value="180">3 minutos</option>'
+    + '<option value="300">5 minutos</option>'
+    + '</select></label>'
+    + '<button class="btn-main" id="btnStartTv" style="margin-top:16px">Iniciar Apresentação em Tela Cheia</button>'
+    + '</div></div>';
+
+  $('btnStartTv').onclick = iniciarApresentacaoTv;
+}
+
+function iniciarApresentacaoTv() {
+  const marcados = [...$('tvPaineisCheck').querySelectorAll('input:checked')].map(i => i.dataset.tvid);
+  if (!marcados.length) { toast('Selecione ao menos um painel para apresentar.', true); return; }
+  
+  tvLista = eu.paineis.filter(p => marcados.includes(p.id));
+  tvTempo = parseInt($('tvTempoSel').value, 10) || 60;
+  tvIndex = 0;
+  tvPausado = false;
+
+  const ov = $('tvOverlay');
+  ov.classList.add('on');
+  if (ov.requestFullscreen) ov.requestFullscreen();
+
+  rodarTvStep();
+}
+
+function rodarTvStep() {
+  clearTimeout(tvTimer);
+  clearInterval(tvProgTimer);
+  
+  if (tvIndex >= tvLista.length) tvIndex = 0;
+  const p = tvLista[tvIndex];
+
+  const sep = p.pagina.includes('?') ? '&' : '?';
+  $('tvIframe').src = p.pagina + sep + '_t=' + Date.now();
+
+  let decorrido = 0;
+  const bar = $('tvProgress');
+  bar.style.width = '0%';
+
+  tvProgTimer = setInterval(() => {
+    if (tvPausado) return;
+    decorrido += 0.2;
+    const pct = Math.min(100, (decorrido / tvTempo) * 100);
+    bar.style.width = pct + '%';
+  }, 200);
+
+  tvTimer = setTimeout(() => {
+    tvIndex++;
+    rodarTvStep();
+  }, tvTempo * 1000);
+}
+
+$('tvPause').onclick = () => {
+  tvPausado = !tvPausado;
+  $('tvPause').textContent = tvPausado ? '▶' : '⏸';
+};
+$('tvNext').onclick = () => { tvIndex++; rodarTvStep(); };
+$('tvPrev').onclick = () => { tvIndex = (tvIndex - 1 + tvLista.length) % tvLista.length; rodarTvStep(); };
+$('tvExit').onclick = fecharTv;
+
+function fecharTv() {
+  clearTimeout(tvTimer);
+  clearInterval(tvProgTimer);
+  $('tvOverlay').classList.remove('on');
+  $('tvIframe').src = 'about:blank';
+  if (document.fullscreenElement) document.exitFullscreen();
+}
+
+/* ---------- Administração ---------- */
 const adm = { lista: [], paineis: [], filtro: 'ativo', busca: '' };
 
 function gerarSenha() {
@@ -501,7 +760,7 @@ async function montarAdmin() {
 }
 
 function montarFormNovo() {
-  $('admForm').innerHTML = '<h2>Novo usuário</h2><form autocomplete="off"><div class="fgrid">'
+  $('admForm').innerHTML = '2Novo usuário</h2><form autocomplete="off"><div class="fgrid">'
     + '<label class="fld"><span>Nome</span><input name="nome" required></label>'
     + '<label class="fld"><span>E-mail (será o login)</span><input name="email" type="email" required></label>'
     + '<label class="fld"><span>Senha provisória</span><div class="rowpw"><input name="senha" required minlength="8"><button type="button" class="btn-s" id="btnGerar">Gerar</button></div></label>'
@@ -600,7 +859,7 @@ $('vAdmin').addEventListener('click', async e => {
   } catch (err) { toast(err.message, true); btn.disabled = false; }
 });
 
-/* ---------- início e verificação periódica ---------- */
+/* ---------- Início do Sistema ---------- */
 async function iniciar() {
   if (!sessao) { tela('tLogin'); return; }
   tela('tCarga');
@@ -609,7 +868,6 @@ async function iniciar() {
 }
 iniciar();
 
-// A cada 2 minutos confere se o administrador mudou algo (bloqueio, painéis, perfil)
 setInterval(async () => {
   if (!sessao || !eu || eu.trocarSenha) return;
   try {
@@ -618,7 +876,7 @@ setInterval(async () => {
     const mudou = ass(j.usuario) !== ass(eu);
     eu = j.usuario;
     if (mudou) renderApp();
-  } catch (e) { /* se a sessão caiu, chamar() já levou ao login */ }
+  } catch (e) {}
 }, 120000);
 })();
 </script>
