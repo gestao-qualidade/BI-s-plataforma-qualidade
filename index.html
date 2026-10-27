@@ -11,8 +11,8 @@
 :root{--navy:#0A1F6B;--royal:#1747B8;--azure:#2F6BFF;--ink:#12203A;--mute:#6B7A93;--line:#DCE2EB;
   --ok:#0E8A7D;--venc:#C0304F;--v30:#E3A008}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;padding:0;overflow:hidden}
-body{font:14px/1.45 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:#0A1F6B}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:#0A1F6B}
 body::before{content:"";position:fixed;inset:0;z-index:-1;
   background:radial-gradient(900px 500px at 15% 0%,rgba(80,140,255,.35),transparent 70%),
              radial-gradient(800px 500px at 100% 100%,rgba(20,60,190,.45),transparent 70%),
@@ -20,11 +20,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;
   background-blend-mode:normal,normal,normal,soft-light;background-size:cover}
 button{font:inherit;cursor:pointer}
 input,select{font:inherit}
-.tela{display:none;height:100vh;width:100vw}
+.tela{display:none;min-height:100%}
 .tela.on{display:flex}
 
 /* ---------- login / troca de senha / avisos ---------- */
-.auth{align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+.auth{align-items:center;justify-content:center;padding:24px}
 .acard{width:min(430px,100%);background:rgba(255,255,255,.97);border-radius:22px;padding:0 32px 30px;text-align:center;
   box-shadow:0 30px 70px -20px rgba(0,5,40,.8),inset 0 1px 0 #fff;overflow:hidden}
 .acard .top{background:linear-gradient(135deg,#071a66,#1747B8 70%,#2F6BFF);margin:0 -32px 24px;padding:26px 20px 20px}
@@ -51,48 +51,40 @@ input,select{font:inherit}
 .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
 
-/* ---------- aplicativo e layout dinâmico ---------- */
-#tApp{display:flex;width:100vw;height:100vh;overflow:hidden;position:relative}
-
+/* ---------- aplicativo e sidebar retrátil ---------- */
+#tApp{height:100%}
 aside{
   width:272px;
-  min-width:272px;
-  height:100%;
+  flex:none;
   display:flex;
   flex-direction:column;
   color:#fff;
-  background:linear-gradient(180deg,rgba(3,10,52,.96),rgba(8,30,110,.93));
+  background:linear-gradient(180deg,rgba(3,10,52,.94),rgba(8,30,110,.9));
   border-right:1px solid rgba(255,255,255,.12);
   backdrop-filter:blur(14px);
-  transition:width 0.25s ease, min-width 0.25s ease;
-  position:relative;
-  z-index: 100;
+  transition:width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow:hidden;
+  position:relative;
+  z-index: 20;
 }
 
-/* Estado recolhido da Barra Lateral */
+/* Estado Recolhido da Sidebar */
 aside.collapsed {
-  width: 68px !important;
-  min-width: 68px !important;
+  width: 68px;
 }
-
-/* Expansão ao passar o rato quando recolhido */
 aside.collapsed:hover {
-  width: 272px !important;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  box-shadow: 10px 0 30px rgba(0,0,0,0.6);
+  width: 272px;
+  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
 }
 
-.sb-top{padding:16px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-top{padding:16px 14px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative}
 .sb-brand{display:flex;flex-direction:column;align-items:center;flex:1;overflow:hidden;transition:opacity 0.2s}
-.sb-top img{height:52px;filter:drop-shadow(0 0 14px rgba(130,180,255,.5))}
+.sb-top img{height:60px;filter:drop-shadow(0 0 18px rgba(130,180,255,.5))}
 .sb-tag{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#9DB5E8;margin-top:4px;white-space:nowrap}
 
+/* Botão Toggle de encolher/expandir o menu */
 .btn-toggle-sb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   border-radius: 8px;
@@ -103,15 +95,15 @@ aside.collapsed:hover {
   flex: none;
   transition: background 0.15s, transform 0.25s;
 }
-.btn-toggle-sb:hover { background: rgba(255, 255, 255, 0.28); }
+.btn-toggle-sb:hover { background: rgba(255, 255, 255, 0.25); }
 aside.collapsed .btn-toggle-sb { transform: rotate(180deg); }
 
 aside.collapsed:not(:hover) .sb-brand { display: none; }
-aside.collapsed:not(:hover) .sb-top { justify-content: center; padding: 16px 0; }
+aside.collapsed:not(:hover) .sb-top { justify-content: center; padding: 16px 0 12px; }
 
-.menu{padding:10px 8px;flex:1;overflow-y:auto;overflow-x:hidden}
-.sec{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8FA6DD;padding:14px 10px 6px;white-space:nowrap}
-aside.collapsed:not(:hover) .sec { display: none; }
+.menu{padding:8px 10px;flex:1;overflow-y:auto;overflow-x:hidden}
+.sec{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8FA6DD;padding:16px 10px 6px;white-space:nowrap}
+aside.collapsed:not(:hover) .sec { opacity: 0; padding: 8px 0; }
 
 .mi{
   display:flex;
@@ -148,31 +140,12 @@ aside.collapsed:not(:hover) .sb-user { justify-content: center; padding: 12px 0;
 
 .mini{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:6px 9px;font-size:12px}
 .mini:hover{background:rgba(255,255,255,.18)}
-
-/* Conteúdo Principal Flexível */
-main{
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  background: transparent;
-}
-
+main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .top{display:none;align-items:center;gap:12px;padding:10px 14px;background:rgba(3,10,52,.92);color:#fff}
 .top button{background:none;border:0;color:#fff;font-size:24px;line-height:1}
 .view{flex:1;overflow:auto;display:none}
 .view.on{display:block}
-
-/* Iframe do Painel ocupando 100% da área */
-#frm{
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: none;
-  flex: 1;
-}
+#frm{flex:1;width:100%;border:0;display:none}
 #frm.on{display:block}
 
 .pg{max-width:1180px;margin:0 auto;padding:30px 28px 50px}
@@ -237,14 +210,14 @@ main{
 .b.s{background:#EEF3FC;color:var(--navy)}
 .b.d{background:#FADCE3;color:#A21F40}
 .b:disabled{opacity:.5;cursor:wait}
-.toast{position:fixed;right:18px;bottom:18px;z-index:999;background:linear-gradient(135deg,#0A1F6B,#1747B8 70%,#2F6BFF);color:#fff;
+.toast{position:fixed;right:18px;bottom:18px;z-index:99;background:linear-gradient(135deg,#0A1F6B,#1747B8 70%,#2F6BFF);color:#fff;
   padding:11px 16px;border-radius:12px;box-shadow:0 12px 30px -10px rgba(0,8,50,.8);max-width:380px;display:none}
 .toast.on{display:block}
 .toast.err{background:linear-gradient(135deg,#7A1330,#C0304F)}
 
 @media (max-width:1050px){.u{grid-template-columns:1fr 1fr}.pn,.acts{grid-column:1/-1}.acts{justify-content:flex-start}}
 @media (max-width:860px){
-  aside{position:fixed;z-index:500;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s}
+  aside{position:fixed;z-index:50;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s, width .25s}
   aside.open{transform:none}
   .top{display:flex}
   .pg{padding:22px 16px 40px}
@@ -350,11 +323,11 @@ function initSidebarToggle() {
   const btn = $('btnCollapse');
   if (!aside || !btn) return;
   
+  // Restaura estado salvo no localStorage
   const rec = localStorage.getItem('bi_sidebar_collapsed') === 'true';
   if (rec) aside.classList.add('collapsed');
 
-  btn.onclick = (e) => {
-    e.stopPropagation();
+  btn.onclick = () => {
     aside.classList.toggle('collapsed');
     localStorage.setItem('bi_sidebar_collapsed', aside.classList.contains('collapsed'));
   };
@@ -380,6 +353,7 @@ async function chamar(corpo) {
   return j;
 }
 
+// Usado pelos painéis (iframe) para buscar dados: o servidor confere login e permissão
 window.BI = {
   dados: async (painel, op, fresh) => (await chamar({ acao: 'dados', painel: painel, op: op || '', fresh: !!fresh })).dados
 };
@@ -412,7 +386,7 @@ $('fLogin').addEventListener('submit', async e => {
 $('btnSairTroca').onclick = () => sairLocal('');
 $('btnMenu').onclick = () => $('aside').classList.toggle('open');
 
-/* ---------- troca de senha ---------- */
+/* ---------- troca de senha (obrigatória no 1º acesso, ou pelo menu) ---------- */
 function formSenha(destino, obrigatoria) {
   destino.innerHTML = '<form autocomplete="off">'
     + '<label class="fld"><span>' + (obrigatoria ? 'Senha provisória (a que o administrador enviou)' : 'Senha atual') + '</span><div class="pw"><input name="a" type="password" autocomplete="current-password" required><button type="button" data-olho>Mostrar</button></div></label>'
@@ -635,6 +609,7 @@ async function iniciar() {
 }
 iniciar();
 
+// A cada 2 minutos confere se o administrador mudou algo (bloqueio, painéis, perfil)
 setInterval(async () => {
   if (!sessao || !eu || eu.trocarSenha) return;
   try {
@@ -643,7 +618,7 @@ setInterval(async () => {
     const mudou = ass(j.usuario) !== ass(eu);
     eu = j.usuario;
     if (mudou) renderApp();
-  } catch (e) {}
+  } catch (e) { /* se a sessão caiu, chamar() já levou ao login */ }
 }, 120000);
 })();
 </script>
