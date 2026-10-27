@@ -202,4 +202,425 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .u select:disabled{background:#F1F4FA;color:var(--mute)}
 .pn{display:flex;flex-wrap:wrap;gap:6px}
 .chk{display:inline-flex;align-items:center;gap:6px;border:1px solid #CBD7EE;border-radius:99px;padding:4px 11px;font-size:12px;background:#fff;cursor:pointer;user-select:none}
-.chk input{accent-color:var
+.chk input{accent-color:var(--royal);margin:0}
+.chk:has(input:checked){background:#E8F0FF;border-color:var(--azure);color:var(--navy);font-weight:600}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.b{border:0;border-radius:10px;padding:7px 13px;font-weight:600;font-size:13px}
+.b.p{background:linear-gradient(135deg,var(--royal),var(--azure));color:#fff}
+.b.s{background:#EEF3FC;color:var(--navy)}
+.b.d{background:#FADCE3;color:#A21F40}
+.b:disabled{opacity:.5;cursor:wait}
+.toast{position:fixed;right:18px;bottom:18px;z-index:99;background:linear-gradient(135deg,#0A1F6B,#1747B8 70%,#2F6BFF);color:#fff;
+  padding:11px 16px;border-radius:12px;box-shadow:0 12px 30px -10px rgba(0,8,50,.8);max-width:380px;display:none}
+.toast.on{display:block}
+.toast.err{background:linear-gradient(135deg,#7A1330,#C0304F)}
+
+@media (max-width:1050px){.u{grid-template-columns:1fr 1fr}.pn,.acts{grid-column:1/-1}.acts{justify-content:flex-start}}
+@media (max-width:860px){
+  aside{position:fixed;z-index:50;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s, width .25s}
+  aside.open{transform:none}
+  .top{display:flex}
+  .pg{padding:22px 16px 40px}
+}
+</style>
+<script src="/config.js"></script>
+</head>
+<body>
+
+<!-- API não configurada -->
+<section class="tela auth" id="tSetup">
+  <div class="acard cfg"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+    <h1>Falta configurar o endereço</h1>
+    <p>Abra o arquivo <code>public/config.js</code> e cole o endereço <code>/exec</code> do Apps Script da plataforma. O passo a passo está no <b>LEIA-ME</b>.</p>
+  </div>
+</section>
+
+<!-- Carregando -->
+<section class="tela auth" id="tCarga"><div class="spin"></div></section>
+
+<!-- Login -->
+<section class="tela auth" id="tLogin">
+  <div class="acard"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+    <h1>Plataforma de BI</h1>
+    <p>Entre com o seu e-mail e a sua senha.</p>
+    <form id="fLogin">
+      <label class="fld"><span>E-mail</span><input id="lEmail" type="email" autocomplete="username" required></label>
+      <label class="fld"><span>Senha</span><div class="pw"><input id="lSenha" type="password" autocomplete="current-password" required><button type="button" data-olho="lSenha">Mostrar</button></div></label>
+      <button class="btn-main" id="btnEntrar" type="submit">Entrar</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+    <p style="margin:6px 0 0;font-size:12px">Não tem acesso ou esqueceu a senha? Fale com o administrador.</p>
+  </div>
+</section>
+
+<!-- Troca obrigatória de senha -->
+<section class="tela auth" id="tTrocar">
+  <div class="acard"><div class="top"><img src="/logo.png" alt="PierServ"></div>
+    <h1>Crie a sua senha</h1>
+    <p>Por segurança, troque a senha provisória por uma só sua antes de continuar.</p>
+    <div id="trocarForm"></div>
+    <button class="lnk" id="btnSairTroca">Sair</button>
+  </div>
+</section>
+
+<!-- Aplicativo -->
+<section class="tela" id="tApp">
+  <aside id="aside">
+    <div class="sb-top">
+      <div class="sb-brand">
+        <img src="/logo.png" alt="PierServ">
+        <div class="sb-tag">Plataforma de BI</div>
+      </div>
+      <button class="btn-toggle-sb" id="btnCollapse" title="Recolher/Expandir menu" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+    <nav class="menu" id="menu"></nav>
+    <div class="sb-user" id="sbUser"></div>
+  </aside>
+  <main>
+    <div class="top"><button id="btnMenu" aria-label="Abrir menu">☰</button><b>Plataforma de BI</b></div>
+    <div class="view" id="vHome"></div>
+    <div class="view" id="vSenha"></div>
+    <div class="view" id="vAdmin"></div>
+    <iframe id="frm" title="Painel"></iframe>
+  </main>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ICONS = {
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-4"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  truck:'<path d="M3 6h11v10H3zM14 9h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>',
+  box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.3c2 .8 3.5 2.8 3.5 5.7"/>',
+  home:'<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/>'
+};
+const ico = n => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || ICONS.chart) + '</svg>';
+
+function toast(msg, erro) {
+  const t = $('toast'); t.textContent = msg; t.className = 'toast on' + (erro ? ' err' : '');
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.className = 'toast', erro ? 7000 : 3500);
+}
+function tela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.toggle('on', t.id === id)); }
+
+const API = (window.PLATAFORMA && window.PLATAFORMA.API_URL) || '';
+if (!API) { tela('tSetup'); return; }
+
+let sessao = localStorage.getItem('bi_sessao') || '';
+let eu = null;
+
+/* ---------- Controle do Menu Retrátil ---------- */
+function initSidebarToggle() {
+  const aside = $('aside');
+  const btn = $('btnCollapse');
+  if (!aside || !btn) return;
+  
+  // Restaura estado salvo no localStorage
+  const rec = localStorage.getItem('bi_sidebar_collapsed') === 'true';
+  if (rec) aside.classList.add('collapsed');
+
+  btn.onclick = () => {
+    aside.classList.toggle('collapsed');
+    localStorage.setItem('bi_sidebar_collapsed', aside.classList.contains('collapsed'));
+  };
+}
+
+/* ---------- comunicação com o servidor (Apps Script) ---------- */
+async function chamar(corpo) {
+  const c = Object.assign({}, corpo);
+  if (sessao) c.sessao = sessao;
+  let r;
+  try {
+    r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(c) });
+  } catch (e) { throw new Error('Sem conexão com o servidor. Verifique a internet e tente de novo.'); }
+  let j;
+  try { j = await r.json(); }
+  catch (e) { throw new Error('O servidor respondeu algo inesperado. Confira o endereço no config.js e se a implantação está com acesso "Qualquer pessoa".'); }
+  if (!j.ok) {
+    const e = new Error(j.erro || 'Erro'); e.codigo = j.codigo;
+    if (j.codigo === 'sessao' && sessao) sairLocal(j.erro);
+    else if (j.codigo === 'trocar' && eu) { eu.trocarSenha = true; entrar(); }
+    throw e;
+  }
+  return j;
+}
+
+// Usado pelos painéis (iframe) para buscar dados: o servidor confere login e permissão
+window.BI = {
+  dados: async (painel, op, fresh) => (await chamar({ acao: 'dados', painel: painel, op: op || '', fresh: !!fresh })).dados
+};
+
+function guardarSessao(s) { sessao = s; localStorage.setItem('bi_sessao', s); }
+function sairLocal(msg) {
+  sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
+  $('frm').src = 'about:blank'; $('frm').dataset.id = '';
+  $('lSenha').value = '';
+  $('loginMsg').className = 'msg'; $('loginMsg').textContent = msg || '';
+  tela('tLogin');
+}
+
+/* ---------- login ---------- */
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-olho]'); if (!o) return;
+  const i = $(o.dataset.olho) || o.parentElement.querySelector('input');
+  i.type = i.type === 'password' ? 'text' : 'password'; o.textContent = i.type === 'password' ? 'Mostrar' : 'Ocultar';
+});
+$('fLogin').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = $('btnEntrar'), m = $('loginMsg'); m.className = 'msg'; m.textContent = '';
+  b.disabled = true; b.textContent = 'Entrando…';
+  try {
+    const j = await chamar({ acao: 'login', email: $('lEmail').value, senha: $('lSenha').value });
+    guardarSessao(j.sessao); eu = j.usuario; $('lSenha').value = ''; entrar();
+  } catch (err) { m.textContent = err.message; }
+  b.disabled = false; b.textContent = 'Entrar';
+});
+$('btnSairTroca').onclick = () => sairLocal('');
+$('btnMenu').onclick = () => $('aside').classList.toggle('open');
+
+/* ---------- troca de senha (obrigatória no 1º acesso, ou pelo menu) ---------- */
+function formSenha(destino, obrigatoria) {
+  destino.innerHTML = '<form autocomplete="off">'
+    + '<label class="fld"><span>' + (obrigatoria ? 'Senha provisória (a que o administrador enviou)' : 'Senha atual') + '</span><div class="pw"><input name="a" type="password" autocomplete="current-password" required><button type="button" data-olho>Mostrar</button></div></label>'
+    + '<label class="fld"><span>Nova senha</span><div class="pw"><input name="n" type="password" autocomplete="new-password" required><button type="button" data-olho>Mostrar</button></div></label>'
+    + '<label class="fld"><span>Repita a nova senha</span><input name="c" type="password" autocomplete="new-password" required></label>'
+    + '<div class="dica">Mínimo de 8 caracteres, com letras e números.</div>'
+    + '<button class="btn-main" type="submit">Salvar nova senha</button><div class="msg"></div></form>';
+  const f = destino.querySelector('form'), msg = f.querySelector('.msg'), btn = f.querySelector('button[type=submit]');
+  f.addEventListener('submit', async e => {
+    e.preventDefault(); msg.className = 'msg'; msg.textContent = '';
+    if (f.n.value !== f.c.value) { msg.textContent = 'As duas senhas novas não são iguais.'; return; }
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      const j = await chamar({ acao: 'trocarSenha', senhaAtual: f.a.value, novaSenha: f.n.value });
+      guardarSessao(j.sessao); eu = j.usuario; f.reset();
+      toast('Senha alterada com sucesso.');
+      if (obrigatoria) entrar(); else { location.hash = '#/'; }
+    } catch (err) { msg.textContent = err.message; }
+    btn.disabled = false; btn.textContent = 'Salvar nova senha';
+  });
+}
+
+/* ---------- decide a tela ---------- */
+function entrar() {
+  if (!eu) { tela('tLogin'); return; }
+  if (eu.trocarSenha) { formSenha($('trocarForm'), true); tela('tTrocar'); return; }
+  tela('tApp'); renderApp(); initSidebarToggle();
+}
+
+/* ---------- navegação ---------- */
+function rota() {
+  const h = location.hash || '#/';
+  if (h.startsWith('#/painel/')) { const p = eu.paineis.find(x => x.id === h.slice(9)); if (p) return { t: 'painel', p: p }; }
+  if (h === '#/admin' && eu.papel === 'admin') return { t: 'admin' };
+  if (h === '#/senha') return { t: 'senha' };
+  return { t: 'home' };
+}
+window.addEventListener('hashchange', () => { if (eu && !eu.trocarSenha) renderApp(); });
+
+function renderApp() {
+  const r = rota();
+  $('aside').classList.remove('open');
+
+  let m = '<button class="mi' + (r.t === 'home' ? ' on' : '') + '" data-go="#/">' + ico('home') + '<span>Início</span></button>';
+  m += '<div class="sec">Painéis</div>';
+  m += eu.paineis.length
+    ? eu.paineis.map(p => '<button class="mi' + (r.t === 'painel' && r.p.id === p.id ? ' on' : '') + '" data-go="#/painel/' + esc(p.id) + '">' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></button>').join('')
+    : '<div class="vazio-menu">Nenhum painel liberado ainda.</div>';
+  if (eu.papel === 'admin') {
+    m += '<div class="sec">Administração</div><button class="mi' + (r.t === 'admin' ? ' on' : '') + '" data-go="#/admin">' + ico('users') + '<span>Usuários e acessos</span></button>';
+  }
+  $('menu').innerHTML = m;
+
+  const ini = (eu.nome || eu.email || '?').trim().charAt(0).toUpperCase();
+  $('sbUser').innerHTML = '<div class="av">' + esc(ini) + '</div>'
+    + '<div class="n"><b>' + esc(eu.nome || eu.email) + '</b><small>' + (eu.papel === 'admin' ? 'Administrador' : 'Usuário') + '</small></div>'
+    + '<button class="mini" data-go="#/senha" title="Alterar minha senha">Senha</button><button class="mini" id="btnSair">Sair</button>';
+  $('btnSair').onclick = () => sairLocal('');
+
+  $('vHome').classList.toggle('on', r.t === 'home');
+  $('vSenha').classList.toggle('on', r.t === 'senha');
+  $('vAdmin').classList.toggle('on', r.t === 'admin');
+  $('frm').classList.toggle('on', r.t === 'painel');
+
+  if (r.t === 'painel') {
+    if ($('frm').dataset.id !== r.p.id) { $('frm').dataset.id = r.p.id; $('frm').src = r.p.pagina; }
+  } else if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
+
+  if (r.t === 'home') renderHome();
+  if (r.t === 'senha') {
+    $('vSenha').innerHTML = '<div class="pg"><h1>Alterar minha senha</h1><div class="sub">Escolha uma senha que só você saiba.</div><div class="box estreito" id="senhaBox"></div></div>';
+    formSenha($('senhaBox'), false);
+  }
+  if (r.t === 'admin') montarAdmin();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-go]'); if (b && b.closest('#tApp')) location.hash = b.dataset.go;
+});
+
+function renderHome() {
+  const nome = (eu.nome || '').split(' ')[0];
+  $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
+    + (eu.paineis.length
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="ib">' + ico(p.icone) + '</div><h3>' + esc(p.nome) + '</h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
+    + '</div>';
+}
+
+/* ---------- administração (só administradores) ---------- */
+const adm = { lista: [], paineis: [], filtro: 'ativo', busca: '' };
+
+function gerarSenha() {
+  const L = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', D = '23456789', T = L + D;
+  const a = new Uint32Array(12); (window.crypto || window.msCrypto).getRandomValues(a);
+  let s = L[a[0] % L.length] + D[a[1] % D.length];
+  for (let i = 2; i < 10; i++) s += T[a[i] % T.length];
+  return s;
+}
+
+async function montarAdmin() {
+  $('vAdmin').innerHTML = '<div class="pg"><h1>Usuários e acessos</h1><div class="sub">Cadastre pessoas, escolha os painéis de cada uma e bloqueie quando precisar. Só administradores veem esta tela.</div>'
+    + '<div class="bar"><button class="novo" id="admNovo">＋ Novo usuário</button><input class="busca" id="admBusca" placeholder="Buscar por nome ou e-mail"></div>'
+    + '<div class="cred" id="admCred"></div>'
+    + '<div class="box frm-novo" id="admForm"></div>'
+    + '<div class="bar"><div class="tabs" id="admTabs"></div></div><div id="admLista"><div class="vazio">Carregando…</div></div></div>';
+  $('admBusca').value = adm.busca;
+  try {
+    const j = await chamar({ acao: 'admin', op: 'listar' });
+    adm.lista = j.usuarios; adm.paineis = j.paineis;
+    montarFormNovo(); renderLista();
+  } catch (e) { $('admLista').innerHTML = '<div class="vazio">' + esc(e.message) + '</div>'; }
+}
+
+function montarFormNovo() {
+  $('admForm').innerHTML = '<h2>Novo usuário</h2><form autocomplete="off"><div class="fgrid">'
+    + '<label class="fld"><span>Nome</span><input name="nome" required></label>'
+    + '<label class="fld"><span>E-mail (será o login)</span><input name="email" type="email" required></label>'
+    + '<label class="fld"><span>Senha provisória</span><div class="rowpw"><input name="senha" required minlength="8"><button type="button" class="btn-s" id="btnGerar">Gerar</button></div></label>'
+    + '<label class="fld"><span>Perfil</span><select name="papel"><option value="usuario">Usuário</option><option value="admin">Administrador (vê tudo e gerencia acessos)</option></select></label>'
+    + '</div><div class="fld"><span>Painéis liberados</span><div class="pn" id="novoPaineis">'
+    + adm.paineis.map(p => '<label class="chk"><input type="checkbox" data-p="' + esc(p.id) + '">' + esc(p.nome) + '</label>').join('') + '</div></div>'
+    + '<div class="acts" style="justify-content:flex-start"><button class="b p" type="submit">Criar usuário</button><button class="b s" type="button" id="btnCancelaNovo">Cancelar</button></div>'
+    + '<div class="msg" id="novoMsg" style="text-align:left"></div></form>';
+  const f = $('admForm').querySelector('form');
+  f.senha.value = gerarSenha();
+  $('btnGerar').onclick = () => { f.senha.value = gerarSenha(); };
+  $('btnCancelaNovo').onclick = () => $('admForm').classList.remove('on');
+  f.papel.onchange = () => { const adm_ = f.papel.value === 'admin'; $('novoPaineis').querySelectorAll('input').forEach(i => { i.disabled = adm_; if (adm_) i.checked = true; }); };
+  f.onsubmit = async e => {
+    e.preventDefault(); const msg = $('novoMsg'); msg.textContent = '';
+    const btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+    try {
+      const corpo = { acao: 'admin', op: 'criar', nome: f.nome.value, email: f.email.value, senha: f.senha.value, papel: f.papel.value,
+        paineis: [...$('novoPaineis').querySelectorAll('input:checked')].map(i => i.dataset.p) };
+      const j = await chamar(corpo);
+      adm.lista.push(j.usuario); adm.filtro = 'todos';
+      mostrarCred(j.usuario, f.senha.value, 'Usuário criado');
+      montarFormNovo(); $('admForm').classList.remove('on'); renderLista();
+    } catch (err) { msg.textContent = err.message; }
+    btn.disabled = false;
+  };
+}
+$('vAdmin').addEventListener('click', e => { if (e.target.id === 'admNovo') { $('admForm').classList.toggle('on'); const i = $('admForm').querySelector('input[name=nome]'); if (i) i.focus(); } });
+
+function mostrarCred(u, senha, titulo) {
+  const texto = 'Acesso à Plataforma de BI\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
+  const c = $('admCred'); c.classList.add('on');
+  c.innerHTML = '<h3>✅ ' + esc(titulo) + ' — envie estes dados para ' + esc(u.nome) + '</h3><pre id="credTxt">' + esc(texto) + '</pre>'
+    + '<button class="b p" id="btnCopiar">Copiar</button> <button class="b s" id="btnFecharCred">Fechar</button><br><small>Esta senha aparece só agora. Depois dela, o sistema não consegue mostrá-la de novo (use "Senha" para gerar outra).</small>';
+  $('btnCopiar').onclick = async () => {
+    try { await navigator.clipboard.writeText(texto); toast('Copiado.'); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($('credTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Selecionei o texto: aperte Ctrl+C.'); }
+  };
+  $('btnFecharCred').onclick = () => { c.classList.remove('on'); c.innerHTML = ''; };
+  c.scrollIntoView({ block: 'nearest' });
+}
+
+function contagens() {
+  const c = { ativo: 0, bloqueado: 0, todos: adm.lista.length };
+  adm.lista.forEach(u => { c[u.status] = (c[u.status] || 0) + 1; });
+  return c;
+}
+function renderLista() {
+  const c = contagens();
+  const tabs = [['ativo', 'Ativos'], ['bloqueado', 'Bloqueados'], ['todos', 'Todos']];
+  $('admTabs').innerHTML = tabs.map(t => '<button class="tab' + (adm.filtro === t[0] ? ' on' : '') + '" data-f="' + t[0] + '">' + t[1] + '<b>' + (c[t[0]] || 0) + '</b></button>').join('');
+  const q = adm.busca.trim().toLowerCase();
+  const lista = adm.lista.filter(u => (adm.filtro === 'todos' || u.status === adm.filtro) && (!q || (u.nome || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)))
+    .sort((a, b) => (a.nome || a.email).localeCompare(b.nome || b.email));
+  $('admLista').innerHTML = lista.length ? lista.map(linhaUsuario).join('') : '<div class="vazio">Nenhum usuário nesta lista.</div>';
+}
+function linhaUsuario(u) {
+  const eVoce = u.id === eu.id;
+  const ini = (u.nome || u.email || '?').trim().charAt(0).toUpperCase();
+  const acesso = u.ultimoAcesso ? new Date(u.ultimoAcesso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nunca entrou';
+  const marc = new Set(u.paineis || []);
+  const chips = adm.paineis.map(p => '<label class="chk"><input type="checkbox" data-p="' + esc(p.id) + '"' + (marc.has(p.id) || u.papel === 'admin' ? ' checked' : '') + (u.papel === 'admin' ? ' disabled' : '') + '>' + esc(p.nome) + '</label>').join('');
+  let acts = '<button class="b p" data-act="salvar">Salvar</button>';
+  if (!eVoce) acts += (u.status === 'ativo' ? '<button class="b d" data-act="bloquear">Bloquear</button>' : '<button class="b p" data-act="desbloquear">Desbloquear</button>')
+    + '<button class="b s" data-act="senha">Senha</button><button class="b d" data-act="excluir">Excluir</button>';
+  return '<div class="u" data-id="' + esc(u.id) + '">'
+    + '<div class="ui"><div class="av">' + esc(ini) + '</div><div class="t"><b>' + esc(u.nome || u.email) + (eVoce ? ' (você)' : '') + '</b><small>' + esc(u.email) + '</small><small>Último acesso: ' + esc(acesso) + '</small></div></div>'
+    + '<div><span class="pill st-' + esc(u.status) + '">' + (u.status === 'ativo' ? 'Ativo' : 'Bloqueado') + '</span>' + (u.trocarSenha ? '<span class="tag">senha provisória</span>' : '') + '</div>'
+    + '<div><select data-papel' + (eVoce ? ' disabled' : '') + '><option value="usuario"' + (u.papel === 'usuario' ? ' selected' : '') + '>Usuário</option><option value="admin"' + (u.papel === 'admin' ? ' selected' : '') + '>Administrador</option></select></div>'
+    + '<div class="pn">' + chips + '</div><div class="acts">' + acts + '</div></div>';
+}
+$('vAdmin').addEventListener('input', e => { if (e.target.id === 'admBusca') { adm.busca = e.target.value; renderLista(); } });
+$('vAdmin').addEventListener('change', e => {
+  if (!e.target.matches('[data-papel]')) return;
+  const sel = e.target.value === 'admin';
+  e.target.closest('.u').querySelectorAll('input[data-p]').forEach(i => { i.disabled = sel; if (sel) i.checked = true; });
+});
+$('vAdmin').addEventListener('click', async e => {
+  const f = e.target.closest('[data-f]');
+  if (f) { adm.filtro = f.dataset.f; renderLista(); return; }
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const row = btn.closest('.u'), id = row.dataset.id, u = adm.lista.find(x => x.id === id), act = btn.dataset.act;
+  let corpo = { acao: 'admin', id: id }, aviso = '';
+  if (act === 'salvar') Object.assign(corpo, { op: 'atualizar', papel: row.querySelector('[data-papel]').value, paineis: [...row.querySelectorAll('input[data-p]:checked')].map(i => i.dataset.p) }), aviso = 'Permissões salvas.';
+  else if (act === 'bloquear') { if (!confirm('Bloquear ' + u.nome + '? Ela(e) perde o acesso na hora.')) return; Object.assign(corpo, { op: 'atualizar', status: 'bloqueado' }); aviso = 'Usuário bloqueado.'; }
+  else if (act === 'desbloquear') { Object.assign(corpo, { op: 'atualizar', status: 'ativo' }); aviso = 'Usuário desbloqueado.'; }
+  else if (act === 'senha') { if (!confirm('Gerar uma nova senha provisória para ' + u.nome + '? A senha atual deixa de valer.')) return; corpo.op = 'senha'; corpo.senha = gerarSenha(); }
+  else if (act === 'excluir') { if (!confirm('Excluir ' + u.nome + ' definitivamente?')) return; corpo.op = 'excluir'; aviso = 'Usuário excluído.'; }
+  btn.disabled = true;
+  try {
+    const j = await chamar(corpo);
+    if (act === 'excluir') adm.lista = adm.lista.filter(x => x.id !== id);
+    else { const i = adm.lista.findIndex(x => x.id === id); if (i >= 0) adm.lista[i] = j.usuario; }
+    if (act === 'senha') mostrarCred(j.usuario, corpo.senha, 'Nova senha gerada'); else toast(aviso);
+    renderLista();
+  } catch (err) { toast(err.message, true); btn.disabled = false; }
+});
+
+/* ---------- início e verificação periódica ---------- */
+async function iniciar() {
+  if (!sessao) { tela('tLogin'); return; }
+  tela('tCarga');
+  try { const j = await chamar({ acao: 'eu' }); eu = j.usuario; entrar(); }
+  catch (e) { if (!eu) { tela('tLogin'); if (e.codigo !== 'sessao') { $('loginMsg').textContent = e.message; } } }
+}
+iniciar();
+
+// A cada 2 minutos confere se o administrador mudou algo (bloqueio, painéis, perfil)
+setInterval(async () => {
+  if (!sessao || !eu || eu.trocarSenha) return;
+  try {
+    const j = await chamar({ acao: 'eu' });
+    const ass = x => JSON.stringify([x.papel, x.paineis.map(p => p.id)]);
+    const mudou = ass(j.usuario) !== ass(eu);
+    eu = j.usuario;
+    if (mudou) renderApp();
+  } catch (e) { /* se a sessão caiu, chamar() já levou ao login */ }
+}, 120000);
+})();
+</script>
+</body>
+</html>
