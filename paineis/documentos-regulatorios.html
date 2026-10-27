@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Modelo de painel</title>
+<style>
+  body{margin:0;padding:28px;font:14px/1.5 system-ui,sans-serif;background:#0A2A9A;color:#fff}
+  .card{background:#fff;color:#12203A;border-radius:16px;padding:22px;max-width:900px}
+  pre{white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<h1>Modelo de painel</h1>
+<div class="card"><pre id="saida">Carregando…</pre></div>
+<script>
+  // Copie este arquivo para um painel novo. O "ID_DO_PAINEL" é o mesmo "id" do paineis.json.
+  const PAINEL_ID = 'docs-regulatorios';
+
+  async function api(op, fresh){
+    const bi = window.parent && window.parent !== window && window.parent.BI;
+    if(!bi) throw new Error('Abra este painel pela plataforma de BI');
+    return bi.dados(PAINEL_ID, op || '', !!fresh);   // o servidor confere login e permissão
+  }
+
+  api().then(d => document.getElementById('saida').textContent = JSON.stringify(d, null, 2).slice(0, 2000))
+       .catch(e => document.getElementById('saida').textContent = 'Erro: ' + e.message);
+</script>
+</body>
+</html>
