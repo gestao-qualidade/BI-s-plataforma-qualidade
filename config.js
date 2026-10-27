@@ -1,0 +1,1 @@
+  window.PLATAFORMA = { API_URL: 'https://script.google.com/macros/s/AKfycbyHkpBNrjb9ZbU9WPTMHRAAgD9i19otODk8DM7aN9FefwrUPqtNQLxy-v3mkoJ8JAg/exec' };
