@@ -12,7 +12,7 @@ body{margin:0;color:var(--ink);font:14px/1.45 'IBM Plex Sans','Segoe UI',Arial,s
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 520px at 88% -8%,rgba(96,155,255,.5),transparent 62%),radial-gradient(900px 600px at -5% 105%,rgba(40,100,240,.38),transparent 60%),linear-gradient(165deg,#051046 0%,#0E3096 52%,#071A62 100%)}
 button{font:inherit;color:inherit;cursor:pointer}a{color:var(--royal)}:focus-visible{outline:2px solid var(--azure);outline-offset:2px}
 header{color:#fff;background:radial-gradient(760px 300px at 10% -10%,rgba(120,175,255,.34),transparent 70%),linear-gradient(180deg,rgba(2,8,40,.62),rgba(2,8,40,0))}
-.hd{max-width:1480px;margin:0 auto;padding:22px 28px 8px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.hd{max-width:98%;margin:0 auto;padding:22px 28px 8px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 h1{margin:0;font-size:27px;font-weight:600;line-height:1.15;background:linear-gradient(180deg,#fff 30%,#BFD4FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{font-size:13px;color:#B9CCF5;margin-top:4px}
 .hr{display:flex;gap:14px;align-items:center;font-size:12px;color:#C9D7F5;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 8px 7px 16px;backdrop-filter:blur(10px)}
@@ -21,15 +21,15 @@ h1{margin:0;font-size:27px;font-weight:600;line-height:1.15;background:linear-gr
 .btn.sec{background:#fff;color:var(--ink2);border:1px solid #CBD7EE;box-shadow:none}.btn[disabled]{opacity:.65;cursor:wait}
 .btn.busy{position:relative;padding-left:36px}.btn.busy::before{content:"";position:absolute;left:14px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;border:2px solid rgba(23,71,184,.25);border-top-color:var(--royal);animation:g .8s linear infinite}@keyframes g{to{transform:rotate(360deg)}}
 .farol{display:flex;height:6px;background:rgba(255,255,255,.18);box-shadow:0 0 22px rgba(70,140,255,.55)}.farol i{display:block;height:100%}
-nav{max-width:1480px;margin:0 auto;padding:6px 28px 14px;display:flex;gap:8px;flex-wrap:wrap}
+nav{max-width:98%;margin:0 auto;padding:6px 28px 14px;display:flex;gap:8px;flex-wrap:wrap}
 nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#DCE7FC;padding:8px 18px;font-size:13px;font-weight:500;border-radius:99px}
 nav button[aria-selected=true]{background:linear-gradient(180deg,#fff,#DDE8FF);color:var(--navy);font-weight:600}
 .fb{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);box-shadow:0 10px 28px -14px rgba(2,10,50,.65)}
-.fbi{max-width:1480px;margin:0 auto;padding:10px 28px;display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end}
+.fbi{max-width:98%;margin:0 auto;padding:10px 28px;display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end}
 .fbi label{font-size:11px;color:var(--mute);display:flex;flex-direction:column;gap:2px}.fbi label.ck{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding-bottom:6px}
 #fsel{display:contents}
 select,input{font:inherit;font-size:13px;border:1px solid #CBD7EE;border-radius:99px;padding:6px 12px;background:#fff;color:var(--ink);max-width:200px}input[type=search]{min-width:200px}
-main{max-width:1480px;margin:0 auto;padding:18px 28px 40px}
+main{max-width:98%;margin:0 auto;padding:18px 28px 40px}
 .card,.kpi,.band{border-radius:14px;border:1px solid rgba(255,255,255,.7);box-shadow:0 18px 40px -20px rgba(2,10,50,.85)}
 .card,.band{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff,#F1F6FF);padding:16px}
 .card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--azure),#79B0FF 55%,transparent)}
@@ -66,12 +66,12 @@ dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);box-shadow:0 
 @media(max-width:640px){.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.hd,.fbi,main,nav{padding-left:14px;padding-right:14px}h1{font-size:20px}.db{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
-<header><div class="hd"><div><h1>Painel de GMUD · Gestão de Mudanças</h1><div class="sub">PierServ · Qualidade · planos de ação do Qualiex</div></div>
+<header><div class="hd"><div><h1>Painel de GMUD e Oportunidades de Melhoria</h1><div class="sub">PierServ · Qualidade · planos de ação do Qualiex</div></div>
 <div class="hr"><span id="src"></span><button class="btn" id="btnRefresh" data-a="refresh">Atualizar do Qualiex</button></div></div>
 <nav role="tablist"><button role="tab" data-a="tab" data-v="geral">Visão geral</button><button role="tab" data-a="tab" data-v="gestao">Responsáveis e áreas</button><button role="tab" data-a="tab" data-v="detalhe">Detalhamento</button></nav>
 <div class="farol" id="farol" aria-hidden="true"></div></header>
 <div class="fb" id="fb"><div class="fbi">
-<label class="ck"><input type="checkbox" id="fG" checked>Somente GMUD</label><span id="fsel"></span>
+<span id="fsel"></span>
 <label>Término de<input type="date" data-f="de"></label><label>até<input type="date" data-f="ate"></label>
 <label>Buscar<input type="search" data-f="q" placeholder="código, plano, responsável…"></label>
 <button class="btn sec" data-a="clear" style="margin-left:auto">Limpar filtros</button></div></div>
@@ -80,7 +80,7 @@ dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);box-shadow:0 
 <script>
 /* ===== CONFIGURAÇÃO ===== */
 const CONFIG={
-  FILTRO_GMUD:/gmud|gest[aã]o de mudan/i, /* como identificar um plano de GMUD (testa tipo, categoria, título da ocorrência, nome e "pertence à") */
+  FILTRO_GMUD:/gmud|gest[aã]o de mudan|oportunidade de melhoria|melhoria/i, /* como identificar um plano de GMUD (testa tipo, categoria, título da ocorrência, nome e "pertence à") */
   API_URL:"https://script.google.com/macros/s/AKfycbwhzxHe0KUllkw0suKMql9mBWA-cyDW9OcSJpJ_Ui8TmvS1MJQtnJsXtTVjzG5wMX3C/exec",API_TOKEN:"" /* só se hospedar fora do Apps Script; dentro dele, deixe vazio */
 };
 const DIA=864e5,HOJE=(()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()})();
@@ -132,7 +132,7 @@ function atualizar(){if(S.busy)return;if(!S.mode)return toast('Sem conexão com 
 function montarFiltros(){const b=base();$('fsel').innerHTML=FS.map(([k,l])=>'<label>'+l+'<select data-f="'+k+'"><option value="">Todos</option>'+[...new Set(b.map(r=>r[k]))].sort((x,y)=>String(x).localeCompare(String(y),'pt-BR')).map(v=>'<option value="'+esc(v)+'"'+(S.f[k]===v?' selected':'')+'>'+esc(v)+'</option>').join('')+'</select></label>').join('')
  +'<label>Situação<select data-f="s"><option value="">Todas</option>'+ORD.map(s=>'<option value="'+s+'"'+(S.f.s===s?' selected':'')+'>'+SIT[s][0]+'</option>').join('')+'</select></label>'}
 $('fb').addEventListener('input',e=>{const k=e.target.dataset.f;if(!k)return;if(k==='q'){clearTimeout(S.tq);S.tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220);return}S.f[k]=e.target.value||undefined;S.page=0;render()});
-$('fG').addEventListener('change',e=>{S.soG=e.target.checked;montarFiltros();S.page=0;render()});
+
 /* ===== componentes ===== */
 function leg(R){return '<div class="leg">'+ORD.filter(k=>R.c[k]).map(k=>'<span><i style="background:var('+SIT[k][1]+')"></i>'+SIT[k][0]+'</span>').join('')+'</div>'}
 function barras(it,k,top){const mx=Math.max(1,...it.map(x=>x.n));return '<div>'+it.slice(0,top).map(x=>'<button class="bl" data-a="f" data-k="'+k+'" data-v="'+enc(x.nome)+'"><span class="bn" title="'+esc(x.nome)+'">'+esc(x.nome)+'</span><span class="bt">'+ORD.map(s=>x.c[s]?'<i title="'+SIT[s][0]+': '+x.c[s]+'" style="width:'+x.c[s]/mx*100+'%;background:var('+SIT[s][1]+')"></i>':'').join('')+'</span><b class="bv">'+x.n+'</b></button>').join('')+'</div>'+(it.length>top?'<div class="mut" style="margin-top:6px">+ '+(it.length-top)+' não exibidos; use os filtros</div>':'')}
@@ -154,9 +154,7 @@ function resumoTxt(R,rows){if(!R.n)return 'Nenhum plano com os filtros atuais.';
  const g=agrupar(rows.filter(r=>r.s==='atrasado'),'resp').sort(porN)[0];if(g)t+=' Maior concentração de atrasos: <b>'+esc(g.nome)+'</b> ('+g.n+').';return t}
 /* ===== telas ===== */
 function vGeral(rows,R){const c=R.c;
- let h='<div class="card resumo"><div class="ct"><h2>Resumo para a gestão</h2><span>gerado a partir dos filtros atuais</span></div><p>'+resumoTxt(R,rows)+'</p></div>';
- h+='<div class="grid g6">'+kpi('','','Total de planos',nf(R.n),'clique para ver todos')+kpi('ab',null,'Em aberto',nf(R.ab),'progresso médio '+R.pm+'%')+kpi('atrasado','atrasado','Atrasados',nf(c.atrasado),pc(c.atrasado,R.ab)+' dos abertos')+kpi('v7','v7','Vencem em 7 dias',nf(c.v7),'atenção imediata')+kpi('conc','conc','Concluídos',nf(R.conc),nf(c.concatr)+' com atraso')+kpi('conc',null,'Concluídos no prazo',R.pz==null?'—':R.pz+'%',nf(c.conc)+' de '+nf(R.conc))+'</div>';
- h+='<div class="band"><div><div class="n">'+brl(R.est)+'</div><div class="t">Custo estimado</div></div><div><div class="n">'+brl(R.rep)+'</div><div class="t">Custo reportado</div></div><div><div class="n">'+nf(c.susp)+'</div><div class="t">Suspensos</div></div><div><div class="n">'+nf(c.canc)+'</div><div class="t">Cancelados</div></div></div>';
+ let h='<div class="grid g6">'+kpi('','','Total de planos',nf(R.n),'clique para ver todos')+kpi('ab',null,'Em aberto',nf(R.ab),'progresso médio '+R.pm+'%')+kpi('atrasado','atrasado','Atrasados',nf(c.atrasado),pc(c.atrasado,R.ab)+' dos abertos')+kpi('v7','v7','Vencem em 7 dias',nf(c.v7),'atenção imediata')+kpi('conc','conc','Concluídos',nf(R.conc),nf(c.concatr)+' com atraso')+kpi('conc',null,'Concluídos no prazo',R.pz==null?'—':R.pz+'%',nf(c.conc)+' de '+nf(R.conc))+'</div>';
  h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Planos por mês de término</h2><span>clique em um mês para detalhar</span></div>'+linha(rows)+leg(R)+'</div><div class="card"><div class="ct"><h2>Situação dos planos</h2></div>'+donut(R)+'</div></div>';
  h+='<div class="grid g11"><div class="card"><div class="ct"><h2>Tempo de atraso</h2><span>apenas planos atrasados</span></div>'+aging(rows)+'</div><div class="card"><div class="ct"><h2>Por tipo do plano</h2></div>'+barras(agrupar(rows,'tipo').sort(porN),'tipo',8)+leg(R)+'</div></div>';
  const top=rows.filter(r=>r.s==='atrasado').sort((a,b)=>a.dias-b.dias).slice(0,10);
