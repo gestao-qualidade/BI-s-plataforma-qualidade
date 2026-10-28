@@ -221,7 +221,7 @@ main{
 .pg{max-width:1180px;margin:0 auto;padding:30px 28px 50px}
 .pg h1{margin:0;color:#fff;font-size:26px;text-shadow:0 2px 14px rgba(0,8,50,.5)}
 .pg .sub{color:#B9CCF5;margin:4px 0 22px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px}
 .pc{text-align:left;border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:20px;color:var(--ink);position:relative;overflow:hidden;
   background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(241,246,255,.96));box-shadow:0 18px 40px -20px rgba(2,10,50,.85);
   transition:transform .18s,box-shadow .18s}
@@ -230,7 +230,13 @@ main{
 .pc .ib{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;margin-bottom:12px;
   background:linear-gradient(135deg,var(--navy),var(--azure));box-shadow:0 10px 20px -10px rgba(23,71,184,.9)}
 .pc .ib svg{width:24px;height:24px}
-.pc h3{margin:0 0 4px;color:var(--navy);font-size:16px}
+.pc h3{margin:0 0 4px;color:var(--navy);font-size:16px;display:flex;align-items:center;gap:8px}
+.pc h3 svg{width:18px;height:18px;flex:none;color:var(--azure)}
+.pc{padding:14px 14px 16px}
+.pc .th{position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:12px;margin-bottom:12px;background:linear-gradient(110deg,#0A2A9A 30%,#1747B8 50%,#0A2A9A 70%);background-size:200% 100%;animation:thsh 1.6s linear infinite;box-shadow:inset 0 0 0 1px rgba(10,42,154,.25)}
+.pc .th iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;pointer-events:none;background:#0A2A9A}
+@keyframes thsh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.pc .th{animation:none}}
 .pc p{margin:0;color:var(--mute);font-size:13px}
 .vazio{background:rgba(255,255,255,.96);border-radius:18px;padding:28px;text-align:center;color:var(--mute)}
 .box{background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(241,246,255,.96));border:1px solid rgba(255,255,255,.7);border-radius:18px;
@@ -247,7 +253,9 @@ main{
   background: #000;
 }
 #tvOverlay.on { display: block; }
-#tvIframe { width: 100vw; height: 100vh; border: 0; }
+#tvFrames { position: absolute; inset: 0; }
+#tvFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0A2A9A; visibility: hidden; }
+#tvFrames iframe.on { visibility: visible; z-index: 1; }
 .tv-progress {
   position: absolute;
   top: 0;
@@ -424,7 +432,7 @@ main{
 <!-- Modo TV / Apresentação -->
 <div id="tvOverlay">
   <div class="tv-progress" id="tvProgress"></div>
-  <iframe id="tvIframe" title="Apresentação TV"></iframe>
+  <div id="tvFrames"></div>
   <div class="tv-controls">
     <button class="tv-btn" id="tvPrev" title="Anterior">◀</button>
     <button class="tv-btn" id="tvPause" title="Pausar / Continuar">⏸</button>
@@ -638,9 +646,19 @@ function renderHome() {
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + (eu.paineis.length
-      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="ib">' + ico(p.icone) + '</div><h3>' + esc(p.nome) + '</h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
     + '</div>';
+  ajustarMiniaturas();
+}
+
+function ajustarMiniaturas() {
+  const ro = window.ResizeObserver ? new ResizeObserver(es => es.forEach(e => escalar(e.target))) : null;
+  document.querySelectorAll('#vHome .th').forEach(t => { escalar(t); if (ro) ro.observe(t); });
+}
+function escalar(t) {
+  const f = t.querySelector('iframe'); if (!f || !t.clientWidth) return;
+  f.style.transform = 'scale(' + (t.clientWidth / 1440) + ')';
 }
 
 /* ---------- MODO TV / APRESENTAÇÃO ---------- */
@@ -685,7 +703,51 @@ function iniciarApresentacaoTv() {
   ov.classList.add('on');
   if (ov.requestFullscreen) ov.requestFullscreen();
 
+  tvMontaFrames();
   rodarTvStep();
+}
+
+/* Os painéis são carregados UMA vez e ficam na memória; a rotação só alterna qual aparece.
+   Em segundo plano, cada painel é recarregado a cada TV_ATUALIZA_MIN minutos (0 = nunca). */
+const TV_ATUALIZA_MIN = 10;
+let tvAtualizaTimer = null;
+
+function tvCriaFrame(p) {
+  const f = document.createElement('iframe');
+  f.title = p.nome;
+  f.dataset.id = p.id;
+  f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+  return f;
+}
+
+function tvMontaFrames() {
+  const box = $('tvFrames');
+  box.innerHTML = '';
+  tvLista.forEach(p => box.appendChild(tvCriaFrame(p)));
+  clearInterval(tvAtualizaTimer);
+  if (TV_ATUALIZA_MIN > 0) tvAtualizaTimer = setInterval(tvAtualizaFundo, TV_ATUALIZA_MIN * 60000);
+}
+
+function tvMostra(p) {
+  const box = $('tvFrames');
+  box.querySelectorAll('iframe.on').forEach(f => f.classList.remove('on'));
+  const f = box.querySelector('iframe[data-id="' + p.id + '"]');
+  if (f) f.classList.add('on');
+}
+
+function tvAtualizaFundo() {
+  tvLista.forEach((p, i) => setTimeout(() => {
+    const box = $('tvFrames');
+    const velho = box.querySelector('iframe[data-id="' + p.id + '"]');
+    if (!velho) return;
+    const novo = tvCriaFrame(p);
+    novo.addEventListener('load', () => setTimeout(() => {
+      if (!novo.isConnected || !velho.isConnected) { novo.remove(); return; }
+      if (velho.classList.contains('on')) novo.classList.add('on');
+      velho.remove();
+    }, 6000));
+    box.appendChild(novo);
+  }, i * 20000));
 }
 
 function rodarTvStep() {
@@ -695,8 +757,7 @@ function rodarTvStep() {
   if (tvIndex >= tvLista.length) tvIndex = 0;
   const p = tvLista[tvIndex];
 
-  const sep = p.pagina.includes('?') ? '&' : '?';
-  $('tvIframe').src = p.pagina + sep + '_t=' + Date.now();
+  tvMostra(p);
 
   let decorrido = 0;
   const bar = $('tvProgress');
@@ -727,7 +788,8 @@ function fecharTv() {
   clearTimeout(tvTimer);
   clearInterval(tvProgTimer);
   $('tvOverlay').classList.remove('on');
-  $('tvIframe').src = 'about:blank';
+  clearInterval(tvAtualizaTimer);
+  $('tvFrames').innerHTML = '';
   if (document.fullscreenElement) document.exitFullscreen();
 }
 
