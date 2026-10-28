@@ -685,6 +685,16 @@ function montarTvConfig() {
     + '<option value="300">5 minutos</option>'
     + '</select></label>'
     + '<div class="fld"><label class="chk"><input type="checkbox" id="tvRolar" checked> Rolar a página devagar (para ver o que fica abaixo na TV)</label></div>'
+    + '<label class="fld"><span>Velocidade da rolagem (sobe e desce):</span>'
+    + '<select id="tvVel">'
+    + '<option value="auto" selected>Automática (ajusta ao tempo de cada painel)</option>'
+    + '<option value="20">Muito lenta</option>'
+    + '<option value="40">Lenta</option>'
+    + '<option value="70">Normal</option>'
+    + '<option value="120">Rápida</option>'
+    + '<option value="200">Muito rápida</option>'
+    + '</select></label>'
+    + '<div class="sub" style="margin:-4px 0 10px;font-size:12px">Nas velocidades fixas, se o painel for grande e o tempo de permanência for curto, ele passa para o próximo antes de terminar de subir.</div>'
     + '<button class="btn-main" id="btnStartTv" style="margin-top:16px">Iniciar Apresentação em Tela Cheia</button>'
     + '</div></div>';
 
@@ -700,6 +710,7 @@ function iniciarApresentacaoTv() {
   tvIndex = 0;
   tvPausado = false;
   tvRolar = $('tvRolar') ? $('tvRolar').checked : true;
+  tvVel = $('tvVel') ? $('tvVel').value : 'auto';
 
   const ov = $('tvOverlay');
   ov.classList.add('on');
@@ -755,6 +766,7 @@ function tvAtualizaFundo() {
 /* Rolagem automática: desce devagar, para no fim, sobe, e dura o tempo do painel (tvTempo).
    Só rola se a página for maior que a tela. Respeita o botão de pausa. */
 let tvRolar = true;
+let tvVel = 'auto';   // 'auto' ou pixels por segundo
 let tvRaf = null;
 let tvRolaT = 0;
 let tvRolaUlt = 0;
@@ -777,13 +789,22 @@ function tvRolaAplica() {
     if (d.documentElement.style.scrollBehavior !== 'auto') d.documentElement.style.scrollBehavior = 'auto';
     const max = el.scrollHeight - el.clientHeight;
     if (max <= 4) return;
-    const x = Math.min(1, tvRolaT / tvTempo);
     let p;
-    if (x < 0.08) p = 0;                       // espera o painel carregar
-    else if (x < 0.50) p = (x - 0.08) / 0.42;  // desce
-    else if (x < 0.58) p = 1;                  // fica no fim
-    else if (x < 0.92) p = 1 - (x - 0.58) / 0.34; // sobe
-    else p = 0;
+    if (tvVel === 'auto') {
+      const x = Math.min(1, tvRolaT / tvTempo);
+      if (x < 0.08) p = 0;                       // espera o painel carregar
+      else if (x < 0.50) p = (x - 0.08) / 0.42;  // desce
+      else if (x < 0.58) p = 1;                  // fica no fim
+      else if (x < 0.92) p = 1 - (x - 0.58) / 0.34; // sobe
+      else p = 0;
+    } else {
+      const T = max / (parseFloat(tvVel) || 40), t = tvRolaT;   // T = segundos para descer
+      if (t < 3) p = 0;
+      else if (t < 3 + T) p = (t - 3) / T;
+      else if (t < 7 + T) p = 1;
+      else if (t < 7 + 2 * T) p = 1 - (t - 7 - T) / T;
+      else p = 0;
+    }
     el.scrollTop = p * max;
   } catch (e) { /* painel de outro domínio: não rola */ }
 }
