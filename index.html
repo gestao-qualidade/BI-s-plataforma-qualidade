@@ -614,12 +614,9 @@ function renderApp() {
     $('topBarIframe').classList.add('on');
     if ($('frm').dataset.id !== r.p.id) {
       $('frm').dataset.id = r.p.id;
-      // Recarrega o script limpando o cache
       const sep = r.p.pagina.includes('?') ? '&' : '?';
       $('frm').src = r.p.pagina + sep + '_t=' + Date.now();
     }
-    // Opcional: abre automaticamente em tela cheia ao clicar
-    solicitarFullScreen();
   } else {
     $('topBarIframe').classList.remove('on');
     if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
@@ -760,7 +757,7 @@ async function montarAdmin() {
 }
 
 function montarFormNovo() {
-  $('admForm').innerHTML = '2Novo usuário</h2><form autocomplete="off"><div class="fgrid">'
+  $('admForm').innerHTML = '<h2>Novo usuário</h2><form autocomplete="off"><div class="fgrid">'
     + '<label class="fld"><span>Nome</span><input name="nome" required></label>'
     + '<label class="fld"><span>E-mail (será o login)</span><input name="email" type="email" required></label>'
     + '<label class="fld"><span>Senha provisória</span><div class="rowpw"><input name="senha" required minlength="8"><button type="button" class="btn-s" id="btnGerar">Gerar</button></div></label>'
