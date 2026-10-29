@@ -424,7 +424,7 @@ main{
           </button>
         </div>
       </div>
-      <iframe id="frm" title="Painel"></iframe>
+      <div id="panelFrames" aria-live="off"></div>
     </div>
   </main>
 </section>
@@ -524,7 +524,7 @@ window.BI = {
 function guardarSessao(s) { sessao = s; localStorage.setItem('bi_sessao', s); }
 function sairLocal(msg) {
   sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
-  $('frm').src = 'about:blank'; $('frm').dataset.id = '';
+  limparPaineisEmCache();
   $('lSenha').value = '';
   $('loginMsg').className = 'msg'; $('loginMsg').textContent = msg || '';
   tela('tLogin');
@@ -589,6 +589,73 @@ function rota() {
 }
 window.addEventListener('hashchange', () => { if (eu && !eu.trocarSenha) renderApp(); });
 
+/* ---------- Cache de painéis: carrega no login e mantém os iframes vivos ---------- */
+const PAINEIS_ATUALIZA_MIN = 10;
+let paineisCacheTimer = null;
+let paineisCacheUsuario = '';
+
+function limparPaineisEmCache() {
+  clearInterval(paineisCacheTimer);
+  paineisCacheTimer = null;
+  paineisCacheUsuario = '';
+  const box = $('panelFrames');
+  if (box) box.innerHTML = '';
+}
+
+function urlPainel(p) {
+  const sep = p.pagina.includes('?') ? '&' : '?';
+  return p.pagina + sep + '_t=' + Date.now();
+}
+
+function prepararCachePaineis() {
+  if (!eu || !Array.isArray(eu.paineis)) return;
+  const chaveUsuario = String(eu.email || eu.id || '');
+  const box = $('panelFrames');
+  if (paineisCacheUsuario !== chaveUsuario) {
+    limparPaineisEmCache();
+    paineisCacheUsuario = chaveUsuario;
+  }
+  eu.paineis.forEach(p => {
+    let f = [...box.querySelectorAll('iframe.panel-frame')].find(x => String(x.dataset.id) === String(p.id));
+    if (!f) {
+      f = document.createElement('iframe');
+      f.className = 'panel-frame';
+      f.dataset.id = p.id;
+      f.title = p.nome || 'Painel';
+      f.loading = 'eager';
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      f.src = urlPainel(p);
+      box.appendChild(f);
+    } else {
+      f.title = p.nome || 'Painel';
+    }
+  });
+  if (!paineisCacheTimer) {
+    paineisCacheTimer = setInterval(atualizarCachePaineis, PAINEIS_ATUALIZA_MIN * 60000);
+  }
+}
+
+function mostrarPainelEmCache(id) {
+  const box = $('panelFrames');
+  box.querySelectorAll('.panel-frame').forEach(f => {
+    f.classList.toggle('active', String(f.dataset.id) === String(id));
+  });
+}
+
+function ocultarPaineisEmCache() {
+  const box = $('panelFrames');
+  if (box) box.querySelectorAll('.panel-frame').forEach(f => f.classList.remove('active'));
+}
+
+function atualizarCachePaineis() {
+  const box = $('panelFrames');
+  if (!box || !eu) return;
+  eu.paineis.forEach(p => {
+    const f = [...box.querySelectorAll('iframe.panel-frame')].find(x => String(x.dataset.id) === String(p.id));
+    if (f) f.src = urlPainel(p);
+  });
+}
+
 function renderApp() {
   const r = rota();
   $('aside').classList.remove('open');
@@ -616,18 +683,16 @@ function renderApp() {
   $('vAdmin').classList.toggle('on', r.t === 'admin');
   $('vTvConfig').classList.toggle('on', r.t === 'tv');
   $('iframeWrap').classList.toggle('on', r.t === 'painel');
+  prepararCachePaineis();
 
   if (r.t === 'painel') {
     $('topBarTitle').innerHTML = ico(r.p.icone) + ' <span>' + esc(r.p.nome) + '</span>';
     $('topBarIframe').classList.add('on');
-    if ($('frm').dataset.id !== r.p.id) {
-      $('frm').dataset.id = r.p.id;
-      const sep = r.p.pagina.includes('?') ? '&' : '?';
-      $('frm').src = r.p.pagina + sep + '_t=' + Date.now();
-    }
+    prepararCachePaineis();
+    mostrarPainelEmCache(r.p.id);
   } else {
     $('topBarIframe').classList.remove('on');
-    if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
+    ocultarPaineisEmCache();
   }
 
   if (r.t === 'home') renderHome();
@@ -646,7 +711,7 @@ function renderHome() {
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + (eu.paineis.length
-      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th" aria-hidden="true" style="animation:none;background:radial-gradient(circle at 25% 20%,rgba(121,176,255,.7),transparent 45%),linear-gradient(135deg,#0A1F6B,#1747B8 60%,#2F6BFF);display:grid;place-items:center"><div style="color:#fff;opacity:.9;transform:scale(1.8)">' + ico(p.icone) + '</div></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
     + '</div>';
   ajustarMiniaturas();
