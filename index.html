@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Plataforma de BIs Qualidade · PierServ</title>
+<title>Plataforma de BIs da Qualidade · PierServ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -368,7 +368,7 @@ main{
 <section class="tela auth" id="tLogin">
   <div class="acard">
     <div class="top"><img src="/logo.png" alt="PierServ"></div>
-    <h1>Plataforma de BI</h1>
+    <h1>Plataforma de BIs da Qualidade</h1>
     <p>Entre com o seu e-mail e a sua senha.</p>
     <form id="fLogin">
       <label class="fld"><span>E-mail</span><input id="lEmail" type="email" autocomplete="username" required></label>
@@ -397,7 +397,7 @@ main{
     <div class="sb-top">
       <div class="sb-brand">
         <img src="/logo.png" alt="PierServ">
-        <div class="sb-tag">Plataforma de BI</div>
+        <div class="sb-tag">Plataforma de BIs da Qualidade</div>
       </div>
       <button class="btn-toggle-sb" id="btnCollapse" title="Recolher/Expandir menu" type="button">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -407,7 +407,7 @@ main{
     <div class="sb-user" id="sbUser"></div>
   </aside>
   <main>
-    <div class="top"><button id="btnMenu" aria-label="Abrir menu">☰</button><b>Plataforma de BI</b></div>
+    <div class="top"><button id="btnMenu" aria-label="Abrir menu">☰</button><b>Plataforma de BIs da Qualidade </b></div>
     <div class="view" id="vHome"></div>
     <div class="view" id="vSenha"></div>
     <div class="view" id="vAdmin"></div>
@@ -962,7 +962,7 @@ function montarFormNovo() {
 $('vAdmin').addEventListener('click', e => { if (e.target.id === 'admNovo') { $('admForm').classList.toggle('on'); const i = $('admForm').querySelector('input[name=nome]'); if (i) i.focus(); } });
 
 function mostrarCred(u, senha, titulo) {
-  const texto = 'Acesso à Plataforma de BIs de Qualidade\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
+  const texto = 'Acesso à Plataforma de BIs da Qualidade\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
   const c = $('admCred'); c.classList.add('on');
   c.innerHTML = '<h3>✅ ' + esc(titulo) + ' — envie estes dados para ' + esc(u.nome) + '</h3><pre id="credTxt">' + esc(texto) + '</pre>'
     + '<button class="b p" id="btnCopiar">Copiar</button> <button class="b s" id="btnFecharCred">Fechar</button><br><small>Esta senha aparece só agora. Depois dela, o sistema não consegue mostrá-la de novo (use "Senha" para gerar outra).</small>';
