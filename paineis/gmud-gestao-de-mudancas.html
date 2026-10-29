@@ -81,7 +81,7 @@ dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);box-shadow:0 
 <script>
 /* ===== CONFIGURAÇÃO ===== */
 const CONFIG={
-  FILTRO_GMUD:/gmud|gest[aã]o de mudan|oportunidade de melhoria|melhoria/i, /* como identificar um plano de GMUD (testa tipo, categoria, título da ocorrência, nome e "pertence à") */
+  TIPOS_OCORRENCIA:['gmud','oportunidade de melhoria'], /* considera SOMENTE o campo "Tipo da ocorrência": GMUD e Oportunidade de Melhoria */
   API_URL:"https://script.google.com/macros/s/AKfycbwhzxHe0KUllkw0suKMql9mBWA-cyDW9OcSJpJ_Ui8TmvS1MJQtnJsXtTVjzG5wMX3C/exec",API_TOKEN:"" /* só se hospedar fora do Apps Script; dentro dele, deixe vazio */
 };
 const DIA=864e5,HOJE=(()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()})();
@@ -106,10 +106,10 @@ function sit(r){const s=norm(r.st);if(s.startsWith('cancel'))return'canc';if(s.s
 function P(o){const r={cod:o.code||'',nome:o.name||'',pai:o.parent_name||'',resp:o.task_responsible_name||'—',ver:o.checker_name||'',local:o.place_name||o.place_of_occurrence||'—',olocal:o.place_of_occurrence||o.place_name||'',tipo:o.type_id||'—',ini:pd(o.start_date),fim:pd(o.end_date),real:pd(o.real_end_date),
  prog:Math.min(100,parseFloat(String(o.percent_progress).replace(',','.'))||0),est:nm(o.estimated_cost),rep:nm(o.total_reported_cost),st:ST1[o.id_status]||o.id_status||'',ocod:o.occurrence_code||'',otit:o.occurrence_title||'',ost:ST2[o.occurrence_id_status]||o.occurrence_id_status||'',
  link:o.occurrence_link||'',otipo:o.type_name_of_occurrence||'—',cat:o.category_name||'—',desc:o.description||'',just:o.justification||'',rdesc:o.last_report_progress_description||'',rdata:pd(o.last_report_progress_date),oresp:o.occurrence_responsible_name||'—'};
- r.s=sit(r);r.dias=r.fim==null?null:Math.round((r.fim-HOJE)/DIA);r.g=CONFIG.FILTRO_GMUD.test([r.otipo,r.cat,r.otit,r.nome,r.pai].join(' '));
+ r.s=sit(r);r.dias=r.fim==null?null:Math.round((r.fim-HOJE)/DIA);r.g=CONFIG.TIPOS_OCORRENCIA.indexOf(norm(r.otipo).trim())>=0;
  r.busca=norm([r.cod,r.nome,r.resp,r.local,r.ocod,r.otit,r.oresp,r.pai].join(' '));return r}
 function setData(d){S.all=(d.rows||[]).map(P);S.gmN=S.all.filter(r=>r.g).length;S.info=d.atualizadoEm||'';S.erro='';fonte();montarFiltros();render()}
-const base=()=>S.soG&&S.gmN?S.all.filter(r=>r.g):S.all;
+const base=()=>S.all.filter(r=>r.g);
 function filtrar(rows,o){o=o||{};const f=S.f,q=norm(f.q),de=pd(f.de),ate=pd(f.ate);return rows.filter(r=>{
  for(const [k] of FS)if(f[k]&&r[k]!==f[k])return false;
  if(!o.semS&&f.s&&r.s!==f.s)return false;if(f.mes&&(!r.fim||mk(r.fim)!==f.mes))return false;
@@ -205,7 +205,7 @@ function render(){const r0=base(),pr=filtrar(r0),isO=S.tab==='geral'||S.tab==='d
  $('farol').innerHTML=FR.n?ord.map(k=>FR.c[k]?'<i title="'+pal[k][0]+'" style="width:'+FR.c[k]/FR.n*100+'%;background:var('+pal[k][1]+')"></i>':'').join(''):'';
  let h=S.erro?'<div class="err"><b>Não foi possível carregar:</b> '+esc(S.erro)+'</div>':'';
  if(!S.all.length){$('main').innerHTML=h+(S.erro?'':'<div class="empty">Nenhum dado na aba. Clique em “Atualizar do Qualiex”.</div>');return}
- if(S.soG&&!S.gmN)h+='<div class="err">Nenhum plano foi identificado como GMUD; exibindo todos. Ajuste <b>FILTRO_GMUD</b> em CONFIG para o termo usado no Qualiex.</div>';
+ if(!S.gmN)h+='<div class="err">Nenhum registro com Tipo da ocorrência “GMUD” ou “Oportunidade de Melhoria” foi encontrado.</div>';
  ['mes','omes'].forEach(k=>{if(S.f[k])h+='<div class="chip">Prazo em '+lab(S.f[k])+(k==='omes'?' (GMUDs)':' (planos)')+'<button data-a="rm" data-v="'+k+'" aria-label="Remover">×</button></div> '});
  $('main').innerHTML=h+(S.tab==='geral'?vGeral(r0):S.tab==='planos'?vPlanos(pr):S.tab==='gestao'?vGestao(pr,resumo(pr)):S.tab==='dgmud'?vDetOc(r0):vDetPlanos(pr,r0))}
 /* ===== exportação ===== */
