@@ -962,7 +962,7 @@ function montarFormNovo() {
 $('vAdmin').addEventListener('click', e => { if (e.target.id === 'admNovo') { $('admForm').classList.toggle('on'); const i = $('admForm').querySelector('input[name=nome]'); if (i) i.focus(); } });
 
 function mostrarCred(u, senha, titulo) {
-  const texto = 'Acesso à Plataforma de BI\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
+  const texto = 'Acesso à Plataforma de BI's de Qualidade\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
   const c = $('admCred'); c.classList.add('on');
   c.innerHTML = '<h3>✅ ' + esc(titulo) + ' — envie estes dados para ' + esc(u.nome) + '</h3><pre id="credTxt">' + esc(texto) + '</pre>'
     + '<button class="b p" id="btnCopiar">Copiar</button> <button class="b s" id="btnFecharCred">Fechar</button><br><small>Esta senha aparece só agora. Depois dela, o sistema não consegue mostrá-la de novo (use "Senha" para gerar outra).</small>';
