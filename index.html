@@ -641,7 +641,15 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (b && b.closest('#tApp')) location.hash = b.dataset.go;
 });
 
+let homeCardsSignature = null;
 function renderHome() {
+  // Preserva os cards e seus iframes ao voltar para Início; só recria se a lista de painéis permitidos mudar.
+  const assinatura = JSON.stringify((eu.paineis || []).map(p => String(p.id)));
+  if (homeCardsSignature === assinatura && $('vHome').querySelector('.grid')) {
+    iniciarAtualizacaoDashboards();
+    return;
+  }
+  homeCardsSignature = assinatura;
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + (eu.paineis.length
