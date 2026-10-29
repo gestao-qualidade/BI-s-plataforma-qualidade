@@ -201,16 +201,15 @@ main{
   display: none;
 }
 .iframe-container.on { display: flex; flex-direction: column; }
+/* Mantém os painéis carregando em segundo plano antes de serem selecionados. */
+.iframe-container.preload{display:flex;position:fixed;left:-10000px;top:0;width:1280px;height:720px;visibility:hidden;pointer-events:none;}
 
-#frm{
-  width: 100%;
-  height: 100%;
-  border: 0;
-  flex: 1;
-}
+#dashboardFrames{position:relative;flex:1;min-height:0;width:100%;height:100%;}
+#dashboardFrames iframe{position:absolute;inset:0;width:100%;height:100%;border:0;visibility:hidden;background:#0A2A9A;}
+#dashboardFrames iframe.on{visibility:visible;z-index:1;}
 
 /* Modo Tela Cheia Iframe Native */
-.iframe-container:fullscreen #frm, .iframe-container:-webkit-full-screen #frm {
+.iframe-container:fullscreen #dashboardFrames, .iframe-container:-webkit-full-screen #dashboardFrames {
   width: 100vw;
   height: 100vh;
 }
@@ -424,7 +423,7 @@ main{
           </button>
         </div>
       </div>
-      <div id="panelFrames" aria-live="off"></div>
+      <div id="dashboardFrames"></div>
     </div>
   </main>
 </section>
@@ -524,7 +523,7 @@ window.BI = {
 function guardarSessao(s) { sessao = s; localStorage.setItem('bi_sessao', s); }
 function sairLocal(msg) {
   sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
-  limparPaineisEmCache();
+  $('dashboardFrames').innerHTML = ''; clearInterval(dashboardRefreshTimer); dashboardRefreshTimer = null;
   $('lSenha').value = '';
   $('loginMsg').className = 'msg'; $('loginMsg').textContent = msg || '';
   tela('tLogin');
@@ -589,73 +588,6 @@ function rota() {
 }
 window.addEventListener('hashchange', () => { if (eu && !eu.trocarSenha) renderApp(); });
 
-/* ---------- Cache de painéis: carrega no login e mantém os iframes vivos ---------- */
-const PAINEIS_ATUALIZA_MIN = 10;
-let paineisCacheTimer = null;
-let paineisCacheUsuario = '';
-
-function limparPaineisEmCache() {
-  clearInterval(paineisCacheTimer);
-  paineisCacheTimer = null;
-  paineisCacheUsuario = '';
-  const box = $('panelFrames');
-  if (box) box.innerHTML = '';
-}
-
-function urlPainel(p) {
-  const sep = p.pagina.includes('?') ? '&' : '?';
-  return p.pagina + sep + '_t=' + Date.now();
-}
-
-function prepararCachePaineis() {
-  if (!eu || !Array.isArray(eu.paineis)) return;
-  const chaveUsuario = String(eu.email || eu.id || '');
-  const box = $('panelFrames');
-  if (paineisCacheUsuario !== chaveUsuario) {
-    limparPaineisEmCache();
-    paineisCacheUsuario = chaveUsuario;
-  }
-  eu.paineis.forEach(p => {
-    let f = [...box.querySelectorAll('iframe.panel-frame')].find(x => String(x.dataset.id) === String(p.id));
-    if (!f) {
-      f = document.createElement('iframe');
-      f.className = 'panel-frame';
-      f.dataset.id = p.id;
-      f.title = p.nome || 'Painel';
-      f.loading = 'eager';
-      f.referrerPolicy = 'strict-origin-when-cross-origin';
-      f.src = urlPainel(p);
-      box.appendChild(f);
-    } else {
-      f.title = p.nome || 'Painel';
-    }
-  });
-  if (!paineisCacheTimer) {
-    paineisCacheTimer = setInterval(atualizarCachePaineis, PAINEIS_ATUALIZA_MIN * 60000);
-  }
-}
-
-function mostrarPainelEmCache(id) {
-  const box = $('panelFrames');
-  box.querySelectorAll('.panel-frame').forEach(f => {
-    f.classList.toggle('active', String(f.dataset.id) === String(id));
-  });
-}
-
-function ocultarPaineisEmCache() {
-  const box = $('panelFrames');
-  if (box) box.querySelectorAll('.panel-frame').forEach(f => f.classList.remove('active'));
-}
-
-function atualizarCachePaineis() {
-  const box = $('panelFrames');
-  if (!box || !eu) return;
-  eu.paineis.forEach(p => {
-    const f = [...box.querySelectorAll('iframe.panel-frame')].find(x => String(x.dataset.id) === String(p.id));
-    if (f) f.src = urlPainel(p);
-  });
-}
-
 function renderApp() {
   const r = rota();
   $('aside').classList.remove('open');
@@ -683,16 +615,18 @@ function renderApp() {
   $('vAdmin').classList.toggle('on', r.t === 'admin');
   $('vTvConfig').classList.toggle('on', r.t === 'tv');
   $('iframeWrap').classList.toggle('on', r.t === 'painel');
-  prepararCachePaineis();
+  $('iframeWrap').classList.toggle('preload', r.t !== 'painel');
 
+  // Mantém um iframe por painel, carregado uma única vez ao entrar no app.
+  // A navegação lateral apenas alterna a visibilidade, sem recarregar o painel.
+  prepararFramesDashboards();
   if (r.t === 'painel') {
     $('topBarTitle').innerHTML = ico(r.p.icone) + ' <span>' + esc(r.p.nome) + '</span>';
     $('topBarIframe').classList.add('on');
-    prepararCachePaineis();
-    mostrarPainelEmCache(r.p.id);
+    $('dashboardFrames').querySelectorAll('iframe').forEach(f => f.classList.toggle('on', f.dataset.id === r.p.id));
   } else {
     $('topBarIframe').classList.remove('on');
-    ocultarPaineisEmCache();
+    $('dashboardFrames').querySelectorAll('iframe').forEach(f => f.classList.remove('on'));
   }
 
   if (r.t === 'home') renderHome();
@@ -711,10 +645,48 @@ function renderHome() {
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + (eu.paineis.length
-      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th" aria-hidden="true" style="animation:none;background:radial-gradient(circle at 25% 20%,rgba(121,176,255,.7),transparent 45%),linear-gradient(135deg,#0A1F6B,#1747B8 60%,#2F6BFF);display:grid;place-items:center"><div style="color:#fff;opacity:.9;transform:scale(1.8)">' + ico(p.icone) + '</div></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="eager" tabindex="-1" aria-hidden="true" scrolling="no" data-id="' + esc(p.id) + '" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
     + '</div>';
   ajustarMiniaturas();
+  iniciarAtualizacaoDashboards();
+}
+
+const DASHBOARD_REFRESH_MS = 10 * 60 * 1000;
+let dashboardRefreshTimer = null;
+
+function prepararFramesDashboards() {
+  const box = $('dashboardFrames');
+  const permitidos = new Set((eu && eu.paineis || []).map(p => String(p.id)));
+  box.querySelectorAll('iframe').forEach(f => { if (!permitidos.has(f.dataset.id)) f.remove(); });
+  (eu && eu.paineis || []).forEach(p => {
+    if (box.querySelector('iframe[data-id="' + CSS.escape(String(p.id)) + '"]')) return;
+    const f = document.createElement('iframe');
+    f.title = p.nome;
+    f.dataset.id = p.id;
+    f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    box.appendChild(f);
+  });
+  iniciarAtualizacaoDashboards();
+}
+
+function iniciarAtualizacaoDashboards() {
+  if (dashboardRefreshTimer) return;
+  dashboardRefreshTimer = setInterval(atualizarDashboardsEPreviews, DASHBOARD_REFRESH_MS);
+}
+
+function atualizarDashboardsEPreviews() {
+  if (!eu || eu.trocarSenha) return;
+  // Atualiza os dashboards em segundo plano, preservando qual deles está visível.
+  $('dashboardFrames').querySelectorAll('iframe').forEach(f => {
+    const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
+    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+  });
+  // Atualiza também as miniaturas/cards da página inicial a cada 10 minutos.
+  document.querySelectorAll('#vHome .th iframe[data-id]').forEach(f => {
+    const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
+    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now();
+  });
 }
 
 function ajustarMiniaturas() {
