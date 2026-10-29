@@ -272,6 +272,7 @@ tbody tr:hover td{background:#E8F0FF}
     </label>
     <label>Etapa <select id="fEtapa"><option value="">Todas</option></select></label>
     <label>Segmento <select id="fSeg"><option value="">Todos</option></select></label>
+    <label>Responsável <select id="fResp"><option value="">Todos</option><option value="Bases">Bases</option><option value="APDV">APDV</option><option value="Transporte">Transporte</option><option value="Compras indiretas">Compras indiretas</option></select></label>
     <details class="ms" id="fStatus"><summary id="fStatusSum">Status: Todos</summary><div class="msp" id="fStatusPanel"></div></details>
     <input type="search" id="fQ" placeholder="Buscar fornecedor, código ou documento" aria-label="Buscar">
     <div class="chips" id="chips"></div>
@@ -304,7 +305,7 @@ const MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','
 const S = {
   hoje: inicioDia(new Date()), mode:'snapshot', info:'', tab:'geral',
   forn:[], pend:[], galp:[],
-  f:{obrig:'sim', etapa:'', seg:'', doc:'', q:'', status:new Set(), bucket:''},
+  f:{obrig:'sim', etapa:'', seg:'', resp:'', doc:'', q:'', status:new Set(), bucket:''},
   sort:{k:'sev', dir:1}, page:0, erro:''
 };
 
@@ -350,6 +351,13 @@ function toast(msg,ms){const t=document.getElementById('toast');t.textContent=ms
 function idx(t){const m={};(t.cols||[]).forEach((c,i)=>m[c]=i);return m}
 function normLink(l){l=l||'';return l&&!/^https?:/.test(l)? LINK_BASE+l+'/s' : l}
 
+function responsavelSegmento(segmento){
+  const s=norm(segmento).replace(/\s+/g,' ');
+  if(s==='bases - materiais diversos') return 'Bases';
+  if(s==='apdv (positivacao/negativacao) - com translado'||s==='apdv (positivacao/negativacao) - sem translado') return 'APDV';
+  if(s==='transportadoras de materiais diversos'||s==='transportadoras de produtos de interesse a saude') return 'Transporte';
+  return 'Compras indiretas';
+}
 function normPend(t){
   const i=idx(t), nomes={};
   return (t.rows||[]).map(r=>{
@@ -357,6 +365,7 @@ function normPend(t){
     const arq=g('Arquivo'), venc=parseData(g('Data de vencimento'));
     const o={
       seg:g('Título do segmento (avaliação)')||'(sem segmento)',
+      resp: responsavelSegmento(g('Título do segmento (avaliação)')||''),
       doc:g('Documento específico do segmento')||'(sem nome)',
       obr:['sim','yes','1','true'].includes(norm(g('Obrigatório?'))),
       cod:g('Código do fornecedor')||'', forn:g('Nome do fornecedor')||'',
@@ -462,6 +471,7 @@ function filtrar(rows,o){
     if(f.obrig==='nao'&&r.obr) return false;
     if(f.etapa&&r.etapa!==f.etapa) return false;
     if(f.seg&&r.seg!==f.seg) return false;
+    if(f.resp&&r.resp!==f.resp) return false;
     if(f.doc&&r.dkey!==f.doc) return false;
     if(q&&r.busca.indexOf(q)<0) return false;
     if(!o.semStatus&&f.status.size&&!f.status.has(r.st)) return false;
@@ -474,6 +484,7 @@ function montarFiltros(){
   const sg=[...new Set(S.pend.map(r=>r.seg))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const fill=(id,arr,cur)=>{const el=document.getElementById(id);const first=el.options[0].outerHTML;el.innerHTML=first+arr.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');el.value=cur||''};
   fill('fEtapa',et,S.f.etapa); fill('fSeg',sg,S.f.seg);
+  document.getElementById('fResp').value=S.f.resp||'';
   document.getElementById('fObr').value=S.f.obrig;
 }
 const FST=[['pendente','Sem arquivo','--pend'],['vencido','Vencido','--venc'],['v30','Até 30 dias','--v30'],['v90','De 31 a 90 dias','--v90'],['ok','Mais de 90 dias','--ok'],['semdata','Sem data de vencimento','--sem']];
@@ -708,7 +719,7 @@ document.addEventListener('click',e=>{
   const a=el.dataset.a, v=el.dataset.v!=null? decodeURIComponent(el.dataset.v):'', f=S.f;
   if(a==='tab'){S.tab=v;S.page=0;render();window.scrollTo(0,0)}
   else if(a==='refresh') atualizar();
-  else if(a==='clear'){f.obrig='sim';f.etapa='';f.seg='';f.doc='';f.q='';f.status=new Set();f.bucket='';S.page=0;document.getElementById('fQ').value='';montarFiltros();render()}
+  else if(a==='clear'){f.obrig='sim';f.etapa='';f.seg='';f.resp='';f.doc='';f.q='';f.status=new Set();f.bucket='';S.page=0;document.getElementById('fQ').value='';montarFiltros();render()}
   else if(a==='bucket'){f.bucket=v;irDetalhe()}
   else if(a==='st'){f.status=new Set([v]);f.bucket='';irDetalhe()}
   else if(a.slice(0,3)==='st:'){f.status=new Set([a.slice(3)]);f.bucket='';irDetalhe()}
@@ -733,6 +744,7 @@ document.addEventListener('click',e=>{const d=document.getElementById('fStatus')
 document.getElementById('fObr').addEventListener('change',e=>{S.f.obrig=e.target.value;S.page=0;render()});
 document.getElementById('fEtapa').addEventListener('change',e=>{S.f.etapa=e.target.value;S.page=0;render()});
 document.getElementById('fSeg').addEventListener('change',e=>{S.f.seg=e.target.value;S.page=0;render()});
+document.getElementById('fResp').addEventListener('change',e=>{S.f.resp=e.target.value;S.page=0;render()});
 let tq;document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(tq);tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220)});
 
 let ultimaCarga=Date.now();
