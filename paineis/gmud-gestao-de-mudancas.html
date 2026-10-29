@@ -5,7 +5,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#12203A;--ink2:#3B4A66;--mute:#6B7A93;--line:#DCE2EB;--navy:#0A1F6B;--royal:#1747B8;--azure:#2F6BFF;
---atrasado:#C0304F;--v7:#E3A008;--noprazo:#2F6BFF;--conc:#0E8A7D;--concatr:#8FAE2F;--susp:#A9B4C6;--canc:#5A6684;
+--atrasado:#C0304F;--v7:#E3A008;--noprazo:#2F6BFF;--conc:#0E8A7D;--concatr:#8FAE2F;--susp:#A9B4C6;--canc:#5A6684;--pronta:#7A6BD6;
 --num:'IBM Plex Sans Condensed','IBM Plex Sans','Segoe UI',Arial,sans-serif}
 *{box-sizing:border-box}html{background:#0A1F6B}
 body{margin:0;color:var(--ink);font:14px/1.45 'IBM Plex Sans','Segoe UI',Arial,sans-serif;background:transparent}
@@ -37,7 +37,7 @@ main{max-width:98%;margin:0 auto;padding:18px 28px 40px}
 .grid{display:grid;gap:14px;margin-bottom:14px}.g6{grid-template-columns:repeat(6,minmax(0,1fr))}.g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}.g11{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .resumo p{margin:0;font-size:15px;line-height:1.6;max-width:1100px}.resumo{margin-bottom:14px}.rd{color:var(--atrasado)}
 .kpi{--c:var(--azure);display:block;width:100%;text-align:left;padding:12px 14px;border-left:5px solid var(--c);background:linear-gradient(135deg,#fff 50%,color-mix(in srgb,var(--c) 14%,#fff))}
-button.kpi:hover{transform:translateY(-2px)}.kpi.atrasado{--c:var(--atrasado)}.kpi.v7{--c:var(--v7)}.kpi.conc{--c:var(--conc)}.kpi.ab{--c:var(--navy)}
+button.kpi:hover{transform:translateY(-2px)}.kpi.atrasado{--c:var(--atrasado)}.kpi.v7{--c:var(--v7)}.kpi.conc{--c:var(--conc)}.kpi.ab{--c:var(--navy)}.kpi.pronta{--c:var(--pronta)}
 .kv{font-family:var(--num);font-size:36px;font-weight:700;line-height:1.05;color:var(--c);font-variant-numeric:tabular-nums}.kl{font-size:13px;font-weight:500;margin-top:4px}.ks{font-size:12px;color:var(--mute)}
 .band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px;border-left:6px solid var(--royal)}.band .n{font-family:var(--num);font-size:24px;font-weight:700;color:var(--navy)}.band .t{font-size:12px;color:var(--mute)}
 .bl{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) auto;gap:10px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;padding:5px 6px}button.bl:hover{background:#E8F0FF}
@@ -65,10 +65,11 @@ dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);box-shadow:0 
 @media(max-width:1100px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}.g21,.g11{grid-template-columns:minmax(0,1fr)}.band{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.hd,.fbi,main,nav{padding-left:14px;padding-right:14px}h1{font-size:20px}.db{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.db .w table{font-size:12px}.sub2{display:block;font-size:11px;color:var(--mute);overflow:hidden;text-overflow:ellipsis}.hd,.fbi,main,nav{max-width:98%}
 </style></head><body>
 <header><div class="hd"><div><h1>Painel de GMUD e Oportunidades de Melhoria</h1><div class="sub">PierServ · Qualidade · planos de ação do Qualiex</div></div>
 <div class="hr"><span id="src"></span><button class="btn" id="btnRefresh" data-a="refresh">Atualizar do Qualiex</button></div></div>
-<nav role="tablist"><button role="tab" data-a="tab" data-v="geral">Visão geral</button><button role="tab" data-a="tab" data-v="gestao">Responsáveis e áreas</button><button role="tab" data-a="tab" data-v="detalhe">Detalhamento</button></nav>
+<nav role="tablist"><button role="tab" data-a="tab" data-v="geral">GMUDs (ocorrências)</button><button role="tab" data-a="tab" data-v="planos">Planos de ação das GMUDs</button><button role="tab" data-a="tab" data-v="gestao">Responsáveis e áreas</button><button role="tab" data-a="tab" data-v="dgmud">Detalhe das GMUDs</button><button role="tab" data-a="tab" data-v="dplano">Detalhe dos planos</button></nav>
 <div class="farol" id="farol" aria-hidden="true"></div></header>
 <div class="fb" id="fb"><div class="fbi">
 <span id="fsel"></span>
@@ -85,35 +86,46 @@ const CONFIG={
 };
 const DIA=864e5,HOJE=(()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()})();
 const SIT={atrasado:['Atrasado','--atrasado'],v7:['Vence em até 7 dias','--v7'],noprazo:['No prazo','--noprazo'],conc:['Concluído no prazo','--conc'],concatr:['Concluído com atraso','--concatr'],susp:['Suspenso','--susp'],canc:['Cancelado','--canc']};
-const ORD=Object.keys(SIT),ST1={1:'Aguardando início',2:'Em execução',3:'Verificando eficácia',4:'Concluído',5:'Suspenso',6:'Cancelado'},ST2={0:'Aberta',8:'Concluída',1:'Cancelada',9:'Reprovada',17:'Associada'};
-const FS=[['otipo','Tipo da ocorrência'],['cat','Categoria'],['local','Local'],['resp','Responsável'],['tipo','Tipo do plano']];
-const S={all:[],gmN:0,tab:'geral',f:{},sort:{k:'s',dir:1},page:0,info:'',mode:'',busy:false,soG:true,erro:'',view:[]};
+const OS={atrasada:['Com plano atrasado','--atrasado'],v7:['Plano vence em até 7 dias','--v7'],andamento:['Em andamento no prazo','--noprazo'],pronta:['Pronta para encerrar','--pronta'],conc:['Concluída','--conc'],outras:['Cancelada / reprovada / associada','--canc']};
+const ORD=Object.keys(SIT),OORD=Object.keys(OS),ST1={1:'Aguardando início',2:'Em execução',3:'Verificando eficácia',4:'Concluído',5:'Suspenso',6:'Cancelado'},ST2={0:'Aberta',8:'Concluída',1:'Cancelada',9:'Reprovada',17:'Associada'};
+const FS=[['otipo','Tipo da ocorrência'],['cat','Categoria'],['ost','Status da ocorrência'],['oresp','Resp. da ocorrência'],['local','Local'],['resp','Resp. do plano'],['tipo','Tipo do plano']];
+const S={all:[],gmN:0,tab:'geral',f:{},sp:{k:'s',dir:1},so:{k:'os',dir:1},page:0,info:'',mode:'',busy:false,soG:true,erro:'',vp:[],vo:[]};
 const $=id=>document.getElementById(id),enc=encodeURIComponent;
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=n=>Number(n).toLocaleString('pt-BR'),brl=n=>'R$ '+Number(n).toLocaleString('pt-BR',{maximumFractionDigits:0});
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),pc=(a,b)=>b?Math.round(a/b*100)+'%':'0%';
 const fmtD=t=>t?new Date(t).toLocaleDateString('pt-BR'):'—',mk=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 const lab=k=>['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][+k.slice(5)-1]+'/'+k.slice(2,4);
+const lk=(u,t)=>u?'<a href="'+esc(u)+'" target="_blank" rel="noopener" title="Abrir no Qualiex">'+esc(t)+'</a>':esc(t);
+const pk=r=>r.cod+'|'+r.ocod+'|'+r.nome;
 function pd(v){if(v==null||v==='')return null;let m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],m[2]-1,+m[3]).getTime();m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]).getTime():null}
 const nm=v=>typeof v==='number'?v:(parseFloat(String(v||'').replace(/[R$\s.]/g,'').replace(',','.'))||0);
 function sit(r){const s=norm(r.st);if(s.startsWith('cancel'))return'canc';if(s.startsWith('suspens'))return'susp';
  if(s.startsWith('conclu'))return(r.real&&r.fim&&r.real>r.fim)?'concatr':'conc';
  if(r.fim==null)return'noprazo';const d=Math.round((r.fim-HOJE)/DIA);return d<0?'atrasado':d<=7?'v7':'noprazo'}
-function P(o){const r={cod:o.code||'',nome:o.name||'',pai:o.parent_name||'',resp:o.task_responsible_name||'—',ver:o.checker_name||'',local:o.place_name||o.place_of_occurrence||'—',tipo:o.type_id||'—',ini:pd(o.start_date),fim:pd(o.end_date),real:pd(o.real_end_date),
+function P(o){const r={cod:o.code||'',nome:o.name||'',pai:o.parent_name||'',resp:o.task_responsible_name||'—',ver:o.checker_name||'',local:o.place_name||o.place_of_occurrence||'—',olocal:o.place_of_occurrence||o.place_name||'',tipo:o.type_id||'—',ini:pd(o.start_date),fim:pd(o.end_date),real:pd(o.real_end_date),
  prog:Math.min(100,parseFloat(String(o.percent_progress).replace(',','.'))||0),est:nm(o.estimated_cost),rep:nm(o.total_reported_cost),st:ST1[o.id_status]||o.id_status||'',ocod:o.occurrence_code||'',otit:o.occurrence_title||'',ost:ST2[o.occurrence_id_status]||o.occurrence_id_status||'',
- link:o.occurrence_link||'',otipo:o.type_name_of_occurrence||'—',cat:o.category_name||'—',desc:o.description||'',just:o.justification||'',rdesc:o.last_report_progress_description||'',rdata:pd(o.last_report_progress_date),oresp:o.occurrence_responsible_name||'',cli:o.customer_name||''};
+ link:o.occurrence_link||'',otipo:o.type_name_of_occurrence||'—',cat:o.category_name||'—',desc:o.description||'',just:o.justification||'',rdesc:o.last_report_progress_description||'',rdata:pd(o.last_report_progress_date),oresp:o.occurrence_responsible_name||'—'};
  r.s=sit(r);r.dias=r.fim==null?null:Math.round((r.fim-HOJE)/DIA);r.g=CONFIG.FILTRO_GMUD.test([r.otipo,r.cat,r.otit,r.nome,r.pai].join(' '));
- r.busca=norm([r.cod,r.nome,r.resp,r.local,r.ocod,r.otit,r.pai].join(' '));return r}
+ r.busca=norm([r.cod,r.nome,r.resp,r.local,r.ocod,r.otit,r.oresp,r.pai].join(' '));return r}
 function setData(d){S.all=(d.rows||[]).map(P);S.gmN=S.all.filter(r=>r.g).length;S.info=d.atualizadoEm||'';S.erro='';fonte();montarFiltros();render()}
 const base=()=>S.soG&&S.gmN?S.all.filter(r=>r.g):S.all;
 function filtrar(rows,o){o=o||{};const f=S.f,q=norm(f.q),de=pd(f.de),ate=pd(f.ate);return rows.filter(r=>{
  for(const [k] of FS)if(f[k]&&r[k]!==f[k])return false;
  if(!o.semS&&f.s&&r.s!==f.s)return false;if(f.mes&&(!r.fim||mk(r.fim)!==f.mes))return false;
  if(de&&(!r.fim||r.fim<de))return false;if(ate&&(!r.fim||r.fim>ate))return false;if(q&&r.busca.indexOf(q)<0)return false;return true})}
-function resumo(rows){const c={};ORD.forEach(k=>c[k]=0);let est=0,rep=0,ps=0,mx=null;rows.forEach(r=>{c[r.s]++;est+=r.est;rep+=r.rep;if(r.s==='atrasado'||r.s==='v7'||r.s==='noprazo')ps+=r.prog;if(r.s==='atrasado'&&(!mx||r.dias<mx.dias))mx=r});
- const ab=c.atrasado+c.v7+c.noprazo,conc=c.conc+c.concatr;return{n:rows.length,c,ab,conc,pz:conc?Math.round(c.conc/conc*100):null,est,rep,pm:ab?Math.round(ps/ab):0,mx}}
-function agrupar(rows,k){const m={};rows.forEach(r=>{const x=m[r[k]]||(m[r[k]]={nome:r[k],c:{},n:0,rows:[]});x.c[r.s]=(x.c[r.s]||0)+1;x.n++;x.rows.push(r)});return Object.values(m)}
-const porAtraso=(a,b)=>(b.c.atrasado||0)-(a.c.atrasado||0)||b.n-a.n,porN=(a,b)=>b.n-a.n;
+function resumo(rows){const c={};ORD.forEach(k=>c[k]=0);let est=0,rep=0,ps=0;rows.forEach(r=>{c[r.s]++;est+=r.est;rep+=r.rep;if(r.s==='atrasado'||r.s==='v7'||r.s==='noprazo')ps+=r.prog});
+ const ab=c.atrasado+c.v7+c.noprazo,conc=c.conc+c.concatr;return{n:rows.length,c,ab,conc,pz:conc?Math.round(c.conc/conc*100):null,est,rep,pm:ab?Math.round(ps/ab):0}}
+function osit(o){const s=norm(o.st);if(s.startsWith('conclu'))return'conc';if(s&&!s.startsWith('abert'))return'outras';const c=o.R.c;
+ if(c.atrasado)return'atrasada';if(c.v7)return'v7';if(c.noprazo)return'andamento';return o.cn?'pronta':'andamento'}
+function ocorrencias(rows){const m={};rows.forEach(r=>{const k=r.ocod||('sem '+r.cod);const o=m[k]||(m[k]={cod:r.ocod||'—',tit:r.otit,st:r.ost,resp:r.oresp,tipo:r.otipo,cat:r.cat,local:r.olocal,link:r.link,pl:[]});o.pl.push(r)});
+ return Object.values(m).map(o=>{const R=resumo(o.pl);o.R=R;o.n=o.pl.length;o.at=R.c.atrasado;o.cn=R.conc;
+  const a=o.pl.filter(r=>r.s!=='susp'&&r.s!=='canc');o.pm=a.length?Math.round(a.reduce((x,r)=>x+r.prog,0)/a.length):0;
+  const f=o.pl.map(r=>r.fim).filter(Boolean);o.fim=f.length?Math.max(...f):null;
+  const ds=o.pl.filter(r=>r.s==='atrasado'||r.s==='v7'||(r.s==='noprazo'&&r.dias!=null)).map(r=>r.dias);o.d=ds.length?Math.min(...ds):null;o.os=osit(o);return o})}
+function cnt(it,sf,ord){const c={};ord.forEach(k=>c[k]=0);it.forEach(x=>c[x[sf]]++);return{c,n:it.length}}
+function agrupar(rows,k,sf){sf=sf||'s';const m={};rows.forEach(r=>{const x=m[r[k]]||(m[r[k]]={nome:r[k],c:{},n:0,rows:[]});x.c[r[sf]]=(x.c[r[sf]]||0)+1;x.n++;x.rows.push(r)});return Object.values(m)}
+const por=k=>(a,b)=>(b.c[k]||0)-(a.c[k]||0)||b.n-a.n,porN=(a,b)=>b.n-a.n;
 /* ===== carga / atualização ===== */
 const api=a=>CONFIG.API_URL+(CONFIG.API_URL.includes('?')?'&':'?')+'formato=json&token='+enc(CONFIG.API_TOKEN)+(a?'&acao='+a:'')+'&_='+Date.now();
 function fonte(){$('src').innerHTML=S.mode?'<span><i class="dot"></i>Qualiex · '+(S.info?'atualizado em '+esc(S.info):'sem dados')+'</span>':'<span><i class="dot off"></i>Sem conexão</span>'}
@@ -129,74 +141,99 @@ function atualizar(){if(S.busy)return;if(!S.mode)return toast('Sem conexão com 
  const bad=e=>{busy(false);toast('Falha ao atualizar: '+(e&&e.message||e),9000)};
  if(S.mode==='apps')google.script.run.withSuccessHandler(ok).withFailureHandler(bad).atualizarDoQualiex();else fetch(api('atualizar')).then(r=>r.json()).then(ok).catch(bad)}
 /* ===== filtros ===== */
-function montarFiltros(){const b=base();$('fsel').innerHTML=FS.map(([k,l])=>'<label>'+l+'<select data-f="'+k+'"><option value="">Todos</option>'+[...new Set(b.map(r=>r[k]))].sort((x,y)=>String(x).localeCompare(String(y),'pt-BR')).map(v=>'<option value="'+esc(v)+'"'+(S.f[k]===v?' selected':'')+'>'+esc(v)+'</option>').join('')+'</select></label>').join('')
- +'<label>Situação<select data-f="s"><option value="">Todas</option>'+ORD.map(s=>'<option value="'+s+'"'+(S.f.s===s?' selected':'')+'>'+SIT[s][0]+'</option>').join('')+'</select></label>'}
+function montarFiltros(){const b=base(),sel=(k,l,o)=>'<label>'+l+'<select data-f="'+k+'"><option value="">Todos</option>'+o.map(([v,t])=>'<option value="'+esc(v)+'"'+(S.f[k]===v?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>';
+ $('fsel').innerHTML=sel('os','Situação da GMUD',OORD.map(k=>[k,OS[k][0]]))+sel('s','Situação do plano',ORD.map(k=>[k,SIT[k][0]]))
+ +FS.map(([k,l])=>sel(k,l,[...new Set(b.map(r=>r[k]))].sort((x,y)=>String(x).localeCompare(String(y),'pt-BR')).map(v=>[v,v]))).join('')}
 $('fb').addEventListener('input',e=>{const k=e.target.dataset.f;if(!k)return;if(k==='q'){clearTimeout(S.tq);S.tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220);return}S.f[k]=e.target.value||undefined;S.page=0;render()});
-
 /* ===== componentes ===== */
-function leg(R){return '<div class="leg">'+ORD.filter(k=>R.c[k]).map(k=>'<span><i style="background:var('+SIT[k][1]+')"></i>'+SIT[k][0]+'</span>').join('')+'</div>'}
-function barras(it,k,top){const mx=Math.max(1,...it.map(x=>x.n));return '<div>'+it.slice(0,top).map(x=>'<button class="bl" data-a="f" data-k="'+k+'" data-v="'+enc(x.nome)+'"><span class="bn" title="'+esc(x.nome)+'">'+esc(x.nome)+'</span><span class="bt">'+ORD.map(s=>x.c[s]?'<i title="'+SIT[s][0]+': '+x.c[s]+'" style="width:'+x.c[s]/mx*100+'%;background:var('+SIT[s][1]+')"></i>':'').join('')+'</span><b class="bv">'+x.n+'</b></button>').join('')+'</div>'+(it.length>top?'<div class="mut" style="margin-top:6px">+ '+(it.length-top)+' não exibidos; use os filtros</div>':'')}
-function kpi(cls,act,l,v,s){const i='<div class="kv">'+v+'</div><div class="kl">'+l+'</div><div class="ks">'+s+'</div>';return act==null?'<div class="kpi '+cls+'">'+i+'</div>':'<button class="kpi '+cls+'" data-a="s" data-v="'+act+'">'+i+'</button>'}
-function donut(R){const r=54,C=2*Math.PI*r;let off=0,sg='';ORD.forEach(k=>{const n=R.c[k];if(!n)return;const L=n/R.n*C;sg+='<circle r="'+r+'" cx="70" cy="70" fill="none" stroke="var('+SIT[k][1]+')" stroke-width="18" stroke-dasharray="'+L+' '+(C-L)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 70 70)"/>';off+=L});
- return '<div class="dn"><svg viewBox="0 0 140 140" width="150" height="150" role="img" aria-label="Distribuição por situação"><circle r="54" cx="70" cy="70" fill="none" stroke="#E6ECF7" stroke-width="18"/>'+sg+'<text x="70" y="70" text-anchor="middle" font-family="IBM Plex Sans Condensed,Arial" font-weight="700" font-size="28" fill="#0A1F6B">'+nf(R.n)+'</text><text x="70" y="88" text-anchor="middle" font-size="11" fill="#6B7A93">planos</text></svg><div class="dl">'
- +ORD.map(k=>'<button data-a="s" data-v="'+k+'"><i style="background:var('+SIT[k][1]+')"></i><span>'+SIT[k][0]+'</span><b>'+nf(R.c[k])+' <small style="font-weight:400;color:var(--mute)">'+pc(R.c[k],R.n)+'</small></b></button>').join('')+'</div></div>'}
-function linha(rows){const ms=[],t=new Date();for(let i=-8;i<=3;i++){const d=new Date(t.getFullYear(),t.getMonth()+i,1);ms.push(mk(d.getTime()))}
- const m={};ms.forEach(k=>m[k]={});rows.forEach(r=>{if(r.fim&&m[mk(r.fim)])m[mk(r.fim)][r.s]=(m[mk(r.fim)][r.s]||0)+1});
- const tot=k=>Object.values(m[k]).reduce((a,b)=>a+b,0),mx=Math.max(1,...ms.map(tot));
- return '<div class="tl">'+ms.map(k=>{const n=tot(k);return '<button class="col'+(k===mk(HOJE)?' now':'')+'" data-a="mes" data-v="'+k+'" title="'+n+' planos com término em '+lab(k)+'"><div class="bar"><div class="stk" style="height:'+n/mx*100+'%"><b>'+(n||'')+'</b><div class="in">'+[...ORD].reverse().map(s=>m[k][s]?'<i style="flex:'+m[k][s]+';background:var('+SIT[s][1]+')"></i>':'').join('')+'</div></div></div><em>'+lab(k)+'</em></button>'}).join('')+'</div>'}
+function leg(R,pal,ord){pal=pal||SIT;ord=ord||ORD;return '<div class="leg">'+ord.filter(k=>R.c[k]).map(k=>'<span><i style="background:var('+pal[k][1]+')"></i>'+pal[k][0]+'</span>').join('')+'</div>'}
+function barras(it,k,top,pal,ord,tab){pal=pal||SIT;ord=ord||ORD;const mx=Math.max(1,...it.map(x=>x.n));return '<div>'+it.slice(0,top).map(x=>'<button class="bl" data-a="f" data-t="'+(tab||'dplano')+'" data-k="'+k+'" data-v="'+enc(x.nome)+'"><span class="bn" title="'+esc(x.nome)+'">'+esc(x.nome)+'</span><span class="bt">'+ord.map(s=>x.c[s]?'<i title="'+pal[s][0]+': '+x.c[s]+'" style="width:'+x.c[s]/mx*100+'%;background:var('+pal[s][1]+')"></i>':'').join('')+'</span><b class="bv">'+x.n+'</b></button>').join('')+'</div>'+(it.length>top?'<div class="mut" style="margin-top:6px">+ '+(it.length-top)+' não exibidos; use os filtros</div>':'')}
+function kpi(cls,act,l,v,s,a){const i='<div class="kv">'+v+'</div><div class="kl">'+l+'</div><div class="ks">'+s+'</div>';return act==null?'<div class="kpi '+cls+'">'+i+'</div>':'<button class="kpi '+cls+'" data-a="'+(a||'s')+'" data-v="'+act+'">'+i+'</button>'}
+function donut(R,pal,ord,a,unit){const r=54,C=2*Math.PI*r;let off=0,sg='';ord.forEach(k=>{const n=R.c[k];if(!n)return;const L=n/R.n*C;sg+='<circle r="'+r+'" cx="70" cy="70" fill="none" stroke="var('+pal[k][1]+')" stroke-width="18" stroke-dasharray="'+L+' '+(C-L)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 70 70)"/>';off+=L});
+ return '<div class="dn"><svg viewBox="0 0 140 140" width="150" height="150" role="img" aria-label="Distribuição por situação"><circle r="54" cx="70" cy="70" fill="none" stroke="#E6ECF7" stroke-width="18"/>'+sg+'<text x="70" y="70" text-anchor="middle" font-family="IBM Plex Sans Condensed,Arial" font-weight="700" font-size="28" fill="#0A1F6B">'+nf(R.n)+'</text><text x="70" y="88" text-anchor="middle" font-size="11" fill="#6B7A93">'+unit+'</text></svg><div class="dl">'
+ +ord.map(k=>'<button data-a="'+a+'" data-v="'+k+'"><i style="background:var('+pal[k][1]+')"></i><span>'+pal[k][0]+'</span><b>'+nf(R.c[k])+' <small style="font-weight:400;color:var(--mute)">'+pc(R.c[k],R.n)+'</small></b></button>').join('')+'</div></div>'}
+function linha(it,sf,pal,ord,a,un){const ms=[],t=new Date();for(let i=-8;i<=3;i++){const d=new Date(t.getFullYear(),t.getMonth()+i,1);ms.push(mk(d.getTime()))}
+ const m={};ms.forEach(k=>m[k]={});it.forEach(r=>{if(r.fim&&m[mk(r.fim)])m[mk(r.fim)][r[sf]]=(m[mk(r.fim)][r[sf]]||0)+1});
+ const tot=k=>Object.values(m[k]).reduce((x,y)=>x+y,0),mx=Math.max(1,...ms.map(tot));
+ return '<div class="tl">'+ms.map(k=>{const n=tot(k);return '<button class="col'+(k===mk(HOJE)?' now':'')+'" data-a="'+a+'" data-v="'+k+'" title="'+n+' '+un+' em '+lab(k)+'"><div class="bar"><div class="stk" style="height:'+n/mx*100+'%"><b>'+(n||'')+'</b><div class="in">'+[...ord].reverse().map(s=>m[k][s]?'<i style="flex:'+m[k][s]+';background:var('+pal[s][1]+')"></i>':'').join('')+'</div></div></div><em>'+lab(k)+'</em></button>'}).join('')+'</div>'}
 function aging(rows){const at=rows.filter(r=>r.s==='atrasado'),b=[['1 a 7 dias',1,7],['8 a 30 dias',8,30],['31 a 90 dias',31,90],['Mais de 90 dias',91,1e9]].map(([l,a,z])=>[l,at.filter(r=>-r.dias>=a&&-r.dias<=z).length]),mx=Math.max(1,...b.map(x=>x[1]));
  return b.map(([l,n])=>'<button class="bl" data-a="s" data-v="atrasado"><span class="bn">'+l+'</span><span class="bt"><i style="width:'+n/mx*100+'%;background:var(--atrasado)"></i></span><b class="bv">'+n+'</b></button>').join('')}
-const prazo=r=>r.s==='conc'||r.s==='concatr'?(r.real?'concl. '+fmtD(r.real):'—'):(r.s==='susp'||r.s==='canc'||r.dias==null)?'—':r.dias<0?'há '+(-r.dias)+' d':r.dias===0?'hoje':'em '+r.dias+' d';
-const pill=s=>'<span class="pill p-'+s+'">'+SIT[s][0]+'</span>';
-function resumoTxt(R,rows){if(!R.n)return 'Nenhum plano com os filtros atuais.';let t='<b>'+nf(R.n)+'</b> planos de ação no recorte; <b>'+nf(R.ab)+'</b> em aberto, dos quais <b class="rd">'+nf(R.c.atrasado)+'</b> atrasados ('+pc(R.c.atrasado,R.ab)+' dos abertos) e <b>'+nf(R.c.v7)+'</b> vencem nos próximos 7 dias.';
- if(R.pz!=null)t+=' Dos '+nf(R.conc)+' concluídos, <b>'+R.pz+'%</b> saíram dentro do prazo.';
- if(R.mx)t+=' O maior atraso é de <b>'+(-R.mx.dias)+' dias</b> ('+esc(R.mx.cod)+', '+esc(R.mx.resp)+').';
- const g=agrupar(rows.filter(r=>r.s==='atrasado'),'resp').sort(porN)[0];if(g)t+=' Maior concentração de atrasos: <b>'+esc(g.nome)+'</b> ('+g.n+').';return t}
+const dprazo=d=>d==null?'—':d<0?'há '+(-d)+' d':d===0?'hoje':'em '+d+' d';
+const prazo=r=>r.s==='conc'||r.s==='concatr'?(r.real?'concl. '+fmtD(r.real):'—'):(r.s==='susp'||r.s==='canc')?'—':dprazo(r.dias);
+const prazoO=o=>o.os==='conc'||o.os==='outras'?'—':dprazo(o.d);
+const pill=s=>'<span class="pill p-'+s+'">'+SIT[s][0]+'</span>',opill=s=>'<span class="pill p-'+s+'">'+OS[s][0]+'</span>';
+const pbar=p=>'<span class="pg2"><i style="width:'+p+'%"></i></span>'+Math.round(p)+'%';
+const OPOR=por('atrasada'),PPOR=por('atrasado');
 /* ===== telas ===== */
-function vGeral(rows,R){const c=R.c;
+function vGeral(r0){const rows=filtrar(r0,{semS:true}),O=ocorrencias(rows),R=cnt(O,'os',OORD),c=R.c,ab=c.atrasada+c.v7+c.andamento+c.pronta,pl=resumo(rows);
+ let h='<div class="grid g6">'+kpi('','','Total de GMUDs',nf(R.n),nf(pl.n)+' planos de ação no total','os')+kpi('ab',null,'Em aberto',nf(ab),'ocorrências abertas')+kpi('atrasado','atrasada','Com plano atrasado',nf(c.atrasada),pc(c.atrasada,ab)+' das abertas','os')+kpi('v7','v7','Plano vence em 7 dias',nf(c.v7),'atenção imediata','os')+kpi('pronta','pronta','Prontas para encerrar',nf(c.pronta),'planos concluídos, GMUD aberta','os')+kpi('conc','conc','Concluídas',nf(c.conc),pc(c.conc,R.n)+' do total','os')+'</div>';
+ h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Prazo final das GMUDs por mês</h2><span>data do último plano de cada GMUD; clique para detalhar</span></div>'+linha(O,'os',OS,OORD,'omes','GMUDs')+leg(R,OS,OORD)+'</div><div class="card"><div class="ct"><h2>Situação das GMUDs</h2></div>'+donut(R,OS,OORD,'os','GMUDs')+'</div></div>';
+ h+='<div class="grid g11"><div class="card"><div class="ct"><h2>GMUDs por responsável da ocorrência</h2></div>'+barras(agrupar(O,'resp','os').sort(OPOR),'oresp',12,OS,OORD,'dgmud')+'</div><div class="card"><div class="ct"><h2>GMUDs por categoria</h2></div>'+barras(agrupar(O,'cat','os').sort(OPOR),'cat',12,OS,OORD,'dgmud')+'</div></div>';
+ const top=O.filter(o=>o.at).sort((a,b)=>b.at-a.at||a.d-b.d).slice(0,10);
+ return h+'<div class="card"><div class="ct"><h2>GMUDs que exigem atenção</h2><span>mais planos atrasados; clique para ver os planos de ação</span></div>'+(top.length?'<div class="tw"><table><thead><tr><th>Cód. ocorrência</th><th>GMUD</th><th>Responsável</th><th class="num">Planos</th><th class="num">Atrasados</th><th class="num">Maior atraso</th><th></th></tr></thead><tbody>'+top.map(o=>'<tr class="clk" data-a="oc" data-v="'+enc(o.cod)+'"><td class="nw">'+lk(o.link,o.cod)+'</td><td><div class="trunc" title="'+esc(o.tit)+'">'+esc(o.tit)+'</div></td><td>'+esc(o.resp)+'</td><td class="num">'+o.n+'</td><td class="num rd"><b>'+o.at+'</b></td><td class="num nw rd">'+(-o.d)+' dias</td><td class="nw">'+lk(o.link,'Qualiex')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhuma GMUD com plano atrasado.</div>')+'</div>'}
+function vPlanos(rows){const R=resumo(rows),c=R.c;
  let h='<div class="grid g6">'+kpi('','','Total de planos',nf(R.n),'clique para ver todos')+kpi('ab',null,'Em aberto',nf(R.ab),'progresso médio '+R.pm+'%')+kpi('atrasado','atrasado','Atrasados',nf(c.atrasado),pc(c.atrasado,R.ab)+' dos abertos')+kpi('v7','v7','Vencem em 7 dias',nf(c.v7),'atenção imediata')+kpi('conc','conc','Concluídos',nf(R.conc),nf(c.concatr)+' com atraso')+kpi('conc',null,'Concluídos no prazo',R.pz==null?'—':R.pz+'%',nf(c.conc)+' de '+nf(R.conc))+'</div>';
- h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Planos por mês de término</h2><span>clique em um mês para detalhar</span></div>'+linha(rows)+leg(R)+'</div><div class="card"><div class="ct"><h2>Situação dos planos</h2></div>'+donut(R)+'</div></div>';
+ h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Planos por mês de término</h2><span>clique em um mês para detalhar</span></div>'+linha(rows,'s',SIT,ORD,'mes','planos')+leg(R)+'</div><div class="card"><div class="ct"><h2>Situação dos planos</h2></div>'+donut(R,SIT,ORD,'s','planos')+'</div></div>';
  h+='<div class="grid g11"><div class="card"><div class="ct"><h2>Tempo de atraso</h2><span>apenas planos atrasados</span></div>'+aging(rows)+'</div><div class="card"><div class="ct"><h2>Por tipo do plano</h2></div>'+barras(agrupar(rows,'tipo').sort(porN),'tipo',8)+leg(R)+'</div></div>';
  const top=rows.filter(r=>r.s==='atrasado').sort((a,b)=>a.dias-b.dias).slice(0,10);
- return h+'<div class="card"><div class="ct"><h2>10 maiores atrasos</h2><span>clique na linha para ver o plano</span></div>'+(top.length?'<div class="tw"><table><thead><tr><th>Código</th><th>Plano</th><th>Responsável</th><th>Local</th><th>Término</th><th class="num">Atraso</th></tr></thead><tbody>'+top.map(r=>'<tr class="clk" data-a="row" data-v="'+enc(r.cod+'|'+r.ocod+'|'+r.nome)+'"><td class="nw">'+esc(r.cod)+'</td><td><div class="trunc">'+esc(r.nome)+'</div></td><td>'+esc(r.resp)+'</td><td>'+esc(r.local)+'</td><td class="nw">'+fmtD(r.fim)+'</td><td class="num nw rd">'+(-r.dias)+' dias</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhum plano atrasado. 🎉</div>')+'</div>'}
-function vGestao(rows,R){const g=agrupar(rows,'resp').sort(porAtraso);
- let h='<div class="card" style="margin-bottom:14px"><div class="ct"><h2>Ranking de responsáveis</h2><span>ordenado por atrasos; clique no nome para filtrar</span></div><div class="tw"><table><thead><tr><th>Responsável</th><th class="num">Total</th><th class="num">Em aberto</th><th class="num">Atrasados</th><th class="num">Concluídos</th><th class="num">No prazo</th><th class="num">Progresso (abertos)</th><th>Distribuição</th></tr></thead><tbody>'
+ return h+'<div class="card"><div class="ct"><h2>10 maiores atrasos</h2><span>clique na linha para ver o plano</span></div>'+(top.length?'<div class="tw"><table><thead><tr><th>Cód. plano</th><th>Plano de ação</th><th>Cód. ocorrência</th><th>Responsável</th><th>Término</th><th class="num">Atraso</th></tr></thead><tbody>'+top.map(r=>'<tr class="clk" data-a="row" data-v="'+enc(pk(r))+'"><td class="nw">'+esc(r.cod)+'</td><td><div class="trunc">'+esc(r.nome)+'</div></td><td class="nw">'+lk(r.link,r.ocod)+'</td><td>'+esc(r.resp)+'</td><td class="nw">'+fmtD(r.fim)+'</td><td class="num nw rd">'+(-r.dias)+' dias</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhum plano atrasado.</div>')+'</div>'}
+function vGestao(rows,R){const g=agrupar(rows,'resp').sort(PPOR);
+ let h='<div class="card" style="margin-bottom:14px"><div class="ct"><h2>Ranking de responsáveis pelos planos</h2><span>ordenado por atrasos; clique no nome para filtrar</span></div><div class="tw"><table><thead><tr><th>Responsável</th><th class="num">Total</th><th class="num">Em aberto</th><th class="num">Atrasados</th><th class="num">Concluídos</th><th class="num">No prazo</th><th class="num">Progresso (abertos)</th><th>Distribuição</th></tr></thead><tbody>'
  +g.map(x=>{const q=resumo(x.rows),mx=Math.max(...g.map(y=>y.n));return '<tr><td><button class="bl" style="display:block;padding:0;width:auto" data-a="f" data-k="resp" data-v="'+enc(x.nome)+'">'+esc(x.nome)+'</button></td><td class="num">'+q.n+'</td><td class="num">'+q.ab+'</td><td class="num '+(q.c.atrasado?'rd':'')+'"><b>'+q.c.atrasado+'</b></td><td class="num">'+q.conc+'</td><td class="num">'+(q.pz==null?'—':q.pz+'%')+'</td><td class="num">'+q.pm+'%</td><td style="min-width:160px"><span class="bt">'+ORD.map(s=>q.c[s]?'<i style="width:'+q.c[s]/mx*100+'%;background:var('+SIT[s][1]+')"></i>':'').join('')+'</span></td></tr>'}).join('')+'</tbody></table></div>'+leg(R)+'</div>';
  const bx=(t,k,s)=>'<div class="card"><div class="ct"><h2>'+t+'</h2></div>'+barras(agrupar(rows,k).sort(s||porN),k,12)+'</div>';
- return h+'<div class="grid g11">'+bx('Por local','local',porAtraso)+bx('Por categoria','cat')+'</div><div class="grid g11">'+bx('Por tipo da ocorrência','otipo')+bx('Por status da ocorrência','ost')+'</div>'}
-const VS={s:r=>ORD.indexOf(r.s)*1e6+(r.dias==null?5e5:r.dias+5e5),cod:r=>norm(r.cod),nome:r=>norm(r.nome),resp:r=>norm(r.resp),local:r=>norm(r.local),fim:r=>r.fim==null?9e15:r.fim,prog:r=>r.prog};
-const COLS=[['cod','Código'],['nome','Plano'],['resp','Responsável'],['local','Local'],['fim','Término'],['dias','Prazo'],['prog','Progresso'],['s','Situação']];
-function vDetalhe(rows,rows0){const R=resumo(filtrar(rows0,{semS:true})),k=S.sort.k,d=S.sort.dir,vf=VS[k]||VS.fim;
- const L=[...rows].map(r=>[vf(r),r]).sort((a,b)=>(a[0]<b[0]?-1:a[0]>b[0]?1:0)*d).map(x=>x[1]);S.view=L;const PP=50,pgs=Math.max(1,Math.ceil(L.length/PP));if(S.page>=pgs)S.page=pgs-1;
- let h='<div class="card"><div class="sc">'+ORD.map(s=>'<button data-a="s" data-v="'+(S.f.s===s?'':s)+'" aria-pressed="'+(S.f.s===s)+'"><i style="background:var('+SIT[s][1]+')"></i>'+SIT[s][0]+' <b>'+nf(R.c[s])+'</b></button>').join('')+'<button class="btn sec" data-a="csv" style="margin-left:auto">Exportar CSV ('+nf(L.length)+')</button></div>';
+ return h+'<div class="grid g11">'+bx('Planos por local','local',PPOR)+bx('Planos por categoria','cat')+'</div><div class="grid g11">'+bx('Planos por tipo da ocorrência','otipo')+bx('Planos por status da ocorrência','ost')+'</div>'}
+const srt=(L,vf,d)=>L.map(x=>[vf(x),x]).sort((a,b)=>(a[0]<b[0]?-1:a[0]>b[0]?1:0)*d).map(x=>x[1]);
+const VP={s:r=>ORD.indexOf(r.s)*1e6+(r.dias==null?5e5:r.dias+5e5),cod:r=>norm(r.cod),nome:r=>norm(r.nome),ocod:r=>norm(r.ocod),resp:r=>norm(r.resp),local:r=>norm(r.local),fim:r=>r.fim==null?9e15:r.fim,prog:r=>r.prog};
+const VO={os:o=>OORD.indexOf(o.os)*1e6+(o.d==null?5e5:o.d+5e5),cod:o=>norm(o.cod),tit:o=>norm(o.tit),tipo:o=>norm(o.tipo+o.cat),resp:o=>norm(o.resp),st:o=>norm(o.st),n:o=>o.n,at:o=>o.at,pm:o=>o.pm,d:o=>o.d==null?1e9:o.d};
+const th=(cols,srt,t)=>'<tr>'+cols.map(c=>'<th'+(c[2]?' class="num"':'')+'>'+(c[0]?'<button data-a="sort" data-t="'+t+'" data-v="'+c[0]+'">'+c[1]+(srt.k===c[0]?(srt.dir>0?' ▲':' ▼'):'')+'</button>':c[1])+'</th>').join('')+'</tr>';
+const pgn=(n,PP)=>{const p=Math.max(1,Math.ceil(n/PP));if(S.page>=p)S.page=p-1;return '<div class="pgn"><span>'+nf(S.page*PP+1)+'–'+nf(Math.min(n,S.page*PP+PP))+' de '+nf(n)+'</span><button data-a="pg" data-v="-1" '+(S.page===0?'disabled':'')+'>Anterior</button><button data-a="pg" data-v="1" '+(S.page>=p-1?'disabled':'')+'>Próxima</button></div>'};
+const chips=(arr,ord,pal,act,cur)=>'<div class="sc">'+ord.map(s=>'<button data-a="'+act+'" data-v="'+(cur===s?'':s)+'" aria-pressed="'+(cur===s)+'"><i style="background:var('+pal[s][1]+')"></i>'+pal[s][0]+' <b>'+nf(arr.c[s])+'</b></button>').join('');
+function vDetOc(r0){const rows=filtrar(r0,{semS:true}),all=ocorrencias(rows),R=cnt(all,'os',OORD),f=S.f;
+ const L=srt(all.filter(o=>(!f.os||o.os===f.os)&&(!f.omes||(o.fim&&mk(o.fim)===f.omes))),VO[S.so.k]||VO.cod,S.so.dir);S.vo=L;
+ const COL=[['cod','Cód. ocorrência'],['tit','GMUD (título)'],['tipo','Tipo · categoria'],['resp','Resp. da ocorrência'],['st','Status'],['n','Planos',1],['at','Atrasados',1],['pm','Progresso'],['d','Prazo',1],['os','Situação'],['','Qualiex']];
+ let h='<div class="card">'+chips(R,OORD,OS,'os',f.os)+'<button class="btn sec" data-a="csvo" style="margin-left:auto">Exportar CSV ('+nf(L.length)+')</button></div>';
+ if(!L.length)return h+'<div class="empty">Nenhuma GMUD com os filtros atuais.</div></div>';
+ return h+'<div class="tw"><table><thead>'+th(COL,S.so,'o')+'</thead><tbody>'+L.slice(S.page*50,S.page*50+50).map(o=>'<tr class="clk" data-a="oc" data-v="'+enc(o.cod)+'"><td class="nw"><b>'+lk(o.link,o.cod)+'</b></td><td><div class="trunc" title="'+esc(o.tit)+'">'+esc(o.tit)+'</div></td><td><div class="trunc">'+esc(o.tipo)+'<small class="sub2">'+esc(o.cat)+'</small></div></td><td>'+esc(o.resp)+'</td><td class="nw">'+esc(o.st)+'</td><td class="num">'+o.n+'</td><td class="num '+(o.at?'rd':'')+'">'+(o.at?'<b>'+o.at+'</b>':0)+'</td><td class="nw">'+pbar(o.pm)+'</td><td class="num nw">'+prazoO(o)+'</td><td>'+opill(o.os)+'</td><td class="nw">'+lk(o.link,'Abrir')+'</td></tr>').join('')+'</tbody></table></div>'+pgn(L.length,50)+'</div>'}
+function vDetPlanos(rows,r0){const R=resumo(filtrar(r0,{semS:true})),L=srt(rows,VP[S.sp.k]||VP.fim,S.sp.dir);S.vp=L;
+ const COL=[['cod','Cód. plano'],['nome','Plano de ação'],['ocod','Cód. ocorrência'],['resp','Responsável'],['local','Local'],['fim','Término'],['',''+'Prazo',1],['prog','Progresso'],['s','Situação']];
+ let h='<div class="card">'+chips(R,ORD,SIT,'s',S.f.s)+'<button class="btn sec" data-a="csvp" style="margin-left:auto">Exportar CSV ('+nf(L.length)+')</button></div>';
  if(!L.length)return h+'<div class="empty">Nenhum plano com os filtros atuais.</div></div>';
- return h+'<div class="tw"><table><thead><tr>'+COLS.map(c=>'<th'+(c[0]==='dias'?' class="num"':'')+'><button data-a="sort" data-v="'+(c[0]==='dias'?'fim':c[0])+'">'+c[1]+(S.sort.k===(c[0]==='dias'?'fim':c[0])?(d>0?' ▲':' ▼'):'')+'</button></th>').join('')+'</tr></thead><tbody>'
- +L.slice(S.page*PP,S.page*PP+PP).map((r,i)=>'<tr class="clk" data-a="row" data-v="'+(S.page*PP+i)+'"><td class="nw">'+esc(r.cod)+'</td><td><div class="trunc" title="'+esc(r.nome)+'">'+esc(r.nome)+'</div><small class="mut">'+esc(r.ocod)+' '+esc(r.otit)+'</small></td><td>'+esc(r.resp)+'</td><td>'+esc(r.local)+'</td><td class="nw">'+fmtD(r.fim)+'</td><td class="num nw">'+prazo(r)+'</td><td class="nw"><span class="pg2"><i style="width:'+r.prog+'%"></i></span>'+Math.round(r.prog)+'%</td><td>'+pill(r.s)+'</td></tr>').join('')
- +'</tbody></table></div><div class="pgn"><span>'+nf(S.page*PP+1)+'–'+nf(Math.min(L.length,S.page*PP+PP))+' de '+nf(L.length)+'</span><button data-a="pg" data-v="-1" '+(S.page===0?'disabled':'')+'>Anterior</button><button data-a="pg" data-v="1" '+(S.page>=pgs-1?'disabled':'')+'>Próxima</button></div></div>'}
-function render(){const r0=base(),rows=filtrar(r0),R=resumo(rows);
+ return h+'<div class="tw"><table><thead>'+th(COL,S.sp,'p')+'</thead><tbody>'+L.slice(S.page*50,S.page*50+50).map(r=>'<tr class="clk" data-a="row" data-v="'+enc(pk(r))+'"><td class="nw"><b>'+esc(r.cod)+'</b></td><td><div class="trunc" title="'+esc(r.nome)+'">'+esc(r.nome)+'</div></td><td class="nw">'+lk(r.link,r.ocod)+'<small class="sub2">'+esc(r.otit.slice(0,38))+'</small></td><td>'+esc(r.resp)+'</td><td>'+esc(r.local)+'</td><td class="nw">'+fmtD(r.fim)+'</td><td class="num nw">'+prazo(r)+'</td><td class="nw">'+pbar(r.prog)+'</td><td>'+pill(r.s)+'</td></tr>').join('')+'</tbody></table></div>'+pgn(L.length,50)+'</div>'}
+function render(){const r0=base(),pr=filtrar(r0),isO=S.tab==='geral'||S.tab==='dgmud';
  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.tab));
- $('farol').innerHTML=R.n?ORD.map(k=>R.c[k]?'<i title="'+SIT[k][0]+'" style="width:'+R.c[k]/R.n*100+'%;background:var('+SIT[k][1]+')"></i>':'').join(''):'';
+ const FR=isO?cnt(ocorrencias(filtrar(r0,{semS:true})),'os',OORD):resumo(pr),pal=isO?OS:SIT,ord=isO?OORD:ORD;
+ $('farol').innerHTML=FR.n?ord.map(k=>FR.c[k]?'<i title="'+pal[k][0]+'" style="width:'+FR.c[k]/FR.n*100+'%;background:var('+pal[k][1]+')"></i>':'').join(''):'';
  let h=S.erro?'<div class="err"><b>Não foi possível carregar:</b> '+esc(S.erro)+'</div>':'';
  if(!S.all.length){$('main').innerHTML=h+(S.erro?'':'<div class="empty">Nenhum dado na aba. Clique em “Atualizar do Qualiex”.</div>');return}
  if(S.soG&&!S.gmN)h+='<div class="err">Nenhum plano foi identificado como GMUD; exibindo todos. Ajuste <b>FILTRO_GMUD</b> em CONFIG para o termo usado no Qualiex.</div>';
- if(S.f.mes)h+='<div class="chip">Término em '+lab(S.f.mes)+'<button data-a="rm" data-v="mes" aria-label="Remover">×</button></div>';
- $('main').innerHTML=h+(S.tab==='geral'?vGeral(rows,R):S.tab==='gestao'?vGestao(rows,R):vDetalhe(rows,r0))}
-function csv(){const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',D=t=>t?fmtD(t):'';
- const o=[['Código','Plano','Pertence à','Responsável','Verificador','Local','Tipo do plano','Início','Término','Concluído em','Progresso %','Custo estimado','Custo reportado','Situação','Status Qualiex','Ocorrência','Título da ocorrência','Status da ocorrência','Tipo da ocorrência','Categoria','Link'].map(q).join(';')]
- .concat(filtrar(base()).map(r=>[r.cod,r.nome,r.pai,r.resp,r.ver,r.local,r.tipo,D(r.ini),D(r.fim),D(r.real),r.prog,r.est,r.rep,SIT[r.s][0],r.st,r.ocod,r.otit,r.ost,r.otipo,r.cat,r.link].map(q).join(';')));
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+o.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='gmud_planos_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove()}
-function abrir(r){if(!r)return;const f=(l,v,w)=>'<div'+(w?' class="w"':'')+'><small>'+l+'</small>'+(v?esc(v):'—')+'</div>';
- $('dlg').innerHTML='<div class="dh"><h3>'+esc(r.cod)+' · '+esc(r.nome)+'</h3><button data-a="close" aria-label="Fechar">×</button></div><div class="db"><div class="w">'+pill(r.s)+' <span class="mut">'+esc(r.st)+' · '+prazo(r)+'</span></div>'
- +f('Responsável',r.resp)+f('Verificador',r.ver)+f('Local',r.local)+f('Tipo do plano',r.tipo)+f('Início',fmtD(r.ini))+f('Término',fmtD(r.fim))+f('Concluído em',fmtD(r.real))+f('Progresso',Math.round(r.prog)+'%')+f('Custo estimado',brl(r.est))+f('Custo reportado',brl(r.rep))
- +f('Ocorrência',r.ocod+' '+r.otit+' ('+r.ost+')',1)+f('Tipo / categoria',r.otipo+' / '+r.cat)+f('Pertence à',r.pai)+f('Descrição',r.desc,1)+f('Justificativa',r.just,1)+f('Último andamento '+(r.rdata?'('+fmtD(r.rdata)+')':''),r.rdesc,1)
- +(r.link?'<div class="w"><a href="'+esc(r.link)+'" target="_blank" rel="noopener">Abrir ocorrência no Qualiex</a></div>':'')+'</div>';$('dlg').showModal()}
+ ['mes','omes'].forEach(k=>{if(S.f[k])h+='<div class="chip">Prazo em '+lab(S.f[k])+(k==='omes'?' (GMUDs)':' (planos)')+'<button data-a="rm" data-v="'+k+'" aria-label="Remover">×</button></div> '});
+ $('main').innerHTML=h+(S.tab==='geral'?vGeral(r0):S.tab==='planos'?vPlanos(pr):S.tab==='gestao'?vGestao(pr,resumo(pr)):S.tab==='dgmud'?vDetOc(r0):vDetPlanos(pr,r0))}
+/* ===== exportação ===== */
+function baixar(nome,cab,linhas){const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob(['\ufeff'+[cab.map(q).join(';')].concat(linhas.map(l=>l.map(q).join(';'))).join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=nome+'_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove()}
+const D=t=>t?fmtD(t):'';
+function csvP(){baixar('gmud_planos',['Cód. plano','Plano de ação','Pertence à','Responsável','Verificador','Local','Tipo do plano','Início','Término','Concluído em','Progresso %','Custo estimado','Custo reportado','Situação','Status Qualiex','Cód. ocorrência','Título da ocorrência','Status da ocorrência','Resp. da ocorrência','Tipo da ocorrência','Categoria','Link da ocorrência'],S.vp.map(r=>[r.cod,r.nome,r.pai,r.resp,r.ver,r.local,r.tipo,D(r.ini),D(r.fim),D(r.real),r.prog,r.est,r.rep,SIT[r.s][0],r.st,r.ocod,r.otit,r.ost,r.oresp,r.otipo,r.cat,r.link]))}
+function csvO(){baixar('gmud_ocorrencias',['Cód. ocorrência','Título','Tipo','Categoria','Responsável','Status Qualiex','Local','Planos','Atrasados','Concluídos','Progresso médio %','Prazo final','Situação','Link'],S.vo.map(o=>[o.cod,o.tit,o.tipo,o.cat,o.resp,o.st,o.local,o.n,o.at,o.cn,o.pm,D(o.fim),OS[o.os][0],o.link]))}
+/* ===== detalhe (modal) ===== */
+const fld=(l,v,w)=>'<div'+(w?' class="w"':'')+'><small>'+l+'</small>'+(v?esc(v):'—')+'</div>';
+function modal(t,b){const d=$('dlg');d.innerHTML='<div class="dh"><h3>'+t+'</h3><button data-a="close" aria-label="Fechar">×</button></div><div class="db">'+b+'</div>';if(!d.open)d.showModal();d.querySelector('.db').scrollTop=0}
+function abrirPlano(r){if(!r)return;modal(esc(r.cod)+' · '+esc(r.nome),'<div class="w">'+pill(r.s)+' <span class="mut">'+esc(r.st)+' · '+prazo(r)+'</span></div>'
+ +fld('Responsável',r.resp)+fld('Verificador',r.ver)+fld('Local',r.local)+fld('Tipo do plano',r.tipo)+fld('Início',fmtD(r.ini))+fld('Término',fmtD(r.fim))+fld('Concluído em',fmtD(r.real))+fld('Progresso',Math.round(r.prog)+'%')+fld('Custo estimado',brl(r.est))+fld('Custo reportado',brl(r.rep))
+ +fld('Descrição',r.desc,1)+fld('Justificativa',r.just,1)+fld('Último andamento '+(r.rdata?'('+fmtD(r.rdata)+')':''),r.rdesc,1)
+ +'<div class="w"><small>Ocorrência (GMUD)</small><b>'+lk(r.link,r.ocod)+'</b> · '+esc(r.otit)+' <span class="mut">('+esc(r.ost)+')</span><br><button class="btn sec" style="margin-top:8px" data-a="oc" data-v="'+enc(r.ocod)+'">Ver GMUD e todos os planos</button> '+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">Abrir no Qualiex</a>':'')+'</div>')}
+function abrirOc(cod){const o=ocorrencias(S.all.filter(r=>r.ocod===cod))[0];if(!o)return;
+ modal(lk(o.link,o.cod)+' · '+esc(o.tit),'<div class="w">'+opill(o.os)+' <span class="mut">'+esc(o.st)+' · prazo '+prazoO(o)+'</span></div>'+fld('Responsável pela ocorrência',o.resp)+fld('Local',o.local)+fld('Tipo',o.tipo)+fld('Categoria',o.cat)
+ +fld('Planos de ação',o.n+' ('+o.cn+' concluídos, '+o.at+' atrasados)')+fld('Progresso médio',o.pm+'%')
+ +'<div class="w">'+(o.link?'<a href="'+esc(o.link)+'" target="_blank" rel="noopener">Abrir ocorrência no Qualiex</a>':'')+'</div><div class="w"><small>Planos de ação desta GMUD</small><div class="tw"><table><thead><tr><th>Cód. plano</th><th>Plano</th><th>Responsável</th><th>Término</th><th>Prazo</th><th>Progresso</th><th>Situação</th></tr></thead><tbody>'
+ +o.pl.slice().sort((a,b)=>VP.s(a)-VP.s(b)).map(r=>'<tr class="clk" data-a="row" data-v="'+enc(pk(r))+'"><td class="nw">'+esc(r.cod)+'</td><td>'+esc(r.nome)+'</td><td>'+esc(r.resp)+'</td><td class="nw">'+fmtD(r.fim)+'</td><td class="nw">'+prazo(r)+'</td><td class="nw">'+pbar(r.prog)+'</td><td>'+pill(r.s)+'</td></tr>').join('')+'</tbody></table></div></div>')}
 /* ===== eventos ===== */
-document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,v=el.dataset.v!=null?decodeURIComponent(el.dataset.v):'',f=S.f,go=()=>{S.tab='detalhe';S.page=0};
- if(a==='refresh'){atualizar();return}if(a==='csv'){csv();return}if(a==='close'){$('dlg').close();return}
- if(a==='row'){abrir(S.tab==='detalhe'?S.view[+v]:S.all.find(r=>(r.cod+'|'+r.ocod+'|'+r.nome)===v));return}
- if(a==='tab'){S.tab=v;S.page=0}else if(a==='clear'){S.f={};S.page=0;document.querySelectorAll('#fb input[data-f]').forEach(i=>i.value='');montarFiltros()}
- else if(a==='s'){f.s=v||undefined;go()}else if(a==='mes'){f.mes=v;go()}else if(a==='f'){f[el.dataset.k]=v;montarFiltros();go()}
- else if(a==='rm'){delete f[v]}else if(a==='sort'){S.sort=S.sort.k===v?{k:v,dir:-S.sort.dir}:{k:v,dir:1}}else if(a==='pg'){S.page+=+v}
- if(a==='s'||a==='f')montarFiltros();render();window.scrollTo(0,0)});
+document.addEventListener('click',e=>{if(e.target.closest('a'))return;const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,v=el.dataset.v!=null?decodeURIComponent(el.dataset.v):'',f=S.f,go=t=>{S.tab=t;S.page=0};
+ if(a==='refresh'){atualizar();return}if(a==='csvp'){csvP();return}if(a==='csvo'){csvO();return}if(a==='close'){$('dlg').close();return}
+ if(a==='row'){abrirPlano(S.all.find(r=>pk(r)===v));return}if(a==='oc'){abrirOc(v);return}
+ if(a==='tab'){S.tab=v;S.page=0}else if(a==='clear'){S.f={};S.page=0;document.querySelectorAll('#fb input[data-f]').forEach(i=>i.value='')}
+ else if(a==='s'){f.s=v||undefined;go('dplano')}else if(a==='os'){f.os=v||undefined;go('dgmud')}else if(a==='mes'){f.mes=v;go('dplano')}else if(a==='omes'){f.omes=v;go('dgmud')}
+ else if(a==='f'){f[el.dataset.k]=v;go(el.dataset.t||'dplano')}else if(a==='rm'){delete f[v]}
+ else if(a==='sort'){const o=el.dataset.t==='o'?'so':'sp';S[o]=S[o].k===v?{k:v,dir:-S[o].dir}:{k:v,dir:1}}else if(a==='pg'){S.page+=+v}
+ montarFiltros();render();window.scrollTo(0,0)});
 carregar();
 </script></body></html>
