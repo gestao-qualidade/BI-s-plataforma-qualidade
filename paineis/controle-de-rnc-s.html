@@ -266,6 +266,8 @@ tbody tr:hover td{background:#E8F0FF}
 .p-aberta{background:#E3ECFC;color:#0A1F6B} .p-concluida{background:var(--okBg);color:#0A5E55}
 .p-cancelada{background:var(--semBg);color:#4B586F} .p-reprovada{background:var(--vencBg);color:#8E1B35}
 .bl[disabled]{cursor:default;opacity:.85}
+.msp{max-height:340px;overflow:auto;min-width:290px}
+.msp label span{flex:1}
 </style>
 </head>
 <body>
@@ -291,14 +293,17 @@ tbody tr:hover td{background:#E8F0FF}
 
 <div class="fb" id="fb">
   <div class="fbi">
-    <label>Período <select id="fPer"></select></label>
+    <label>Ano <select id="fAno"><option value="">Todos</option></select></label>
+    <label>Mês <select id="fMes"><option value="">Todos</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select></label>
     <label>Data base
       <span class="seg" style="margin:0"><button data-a="base" data-v="emissao" aria-pressed="true">Emissão</button><button data-a="base" data-v="ocorrencia" aria-pressed="false">Ocorrência</button></span>
     </label>
     <label>Tipo <select id="fTipo"><option value="">Os dois tipos</option></select></label>
+    <details class="ms" id="fOcorr"><summary id="fOcorrSum">Ocorrência: Todas</summary><div class="msp" id="fOcorrPanel"></div></details>
+    <details class="ms" id="fPlano"><summary id="fPlanoSum">Status do plano: Todos</summary><div class="msp" id="fPlanoPanel"></div></details>
     <label>Cliente <select id="fCliente"><option value="">Todos</option></select></label>
     <label>Categoria <select id="fCat"><option value="">Todas</option></select></label>
-    <label>Status <select id="fStatus"><option value="">Todos</option></select></label>
+    <label>Status da RNC <select id="fStatus"><option value="">Todos</option></select></label>
     <input type="search" id="fQ" placeholder="Buscar código, cliente, categoria…" aria-label="Buscar">
     <div class="chips" id="chips"></div>
     <button class="btn sec" data-a="clear" style="margin-left:auto">Limpar filtros</button>
@@ -311,7 +316,7 @@ tbody tr:hover td{background:#E8F0FF}
 <script>
 /* ============================ CONFIGURAÇÃO ============================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbz0RoOKYRZaKRBVb6EYZvhe6GDzUfa8rI2eVEjS9Xo1oir8j9fv6-FQRDT4dFhdBt_k/exec",      // COLE AQUI a URL do Web App do Apps Script (termina em /exec).
+  API_URL: "",      // COLE AQUI a URL do Web App do Apps Script (termina em /exec).
   API_TOKEN: "",    // Mesmo valor de TOKEN_API no Apps Script.
   REFRESH_MIN: 5    // A cada quantos minutos a tela relê as planilhas (0 = desliga).
 };
@@ -328,13 +333,13 @@ const COMP=[
   {k:'extr', l:'Valor do extravio/NF',              cor:'#F08A24'},
   {k:'frete',l:'Valor do frete',                    cor:'#0E8A7D'}
 ];
-const DIMS=[['categoria','Categoria'],['cliente','Cliente'],['local','Local'],['transp','Transportadora'],['resp','Responsável'],['dir','Direcionada para'],['fornecedor','Fornecedor']];
+const DIMS=[['ocorr','Ocorrência'],['categoria','Categoria'],['cliente','Cliente'],['local','Local'],['transp','Transportadora'],['resp','Responsável'],['dir','Direcionada para'],['fornecedor','Fornecedor']];
 const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const S={
   hoje:null, mode:'', info:'', tab:'geral', rnc:[], planos:[], fora:0, demo:false, erro:'',
-  f:{per:'all',tipo:'',cliente:'',cat:'',status:'',q:'',mes:'',dim:null},
+  f:{ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),status:'',q:'',dim:null},
   base:'emissao', comp:{rnc:true,plano:true,extr:false,frete:false},
-  par:{dim:'categoria',met:'qtd'}, sort:{k:'dt',dir:-1}, page:0
+  par:{dim:'ocorr',met:'qtd'}, sort:{k:'dt',dir:-1}, page:0
 };
 S.hoje=inicioDia(new Date());
 
@@ -388,12 +393,12 @@ function normRnc(t){
       emissao:parseData(g(r,'Data de emissão')), dataOc:parseData(g(r,'Data da Ocorrência')),
       emissor:str(g(r,'Emissor')), resp:str(g(r,'Responsável')), categoria:str(g(r,'Categoria')),
       tipo:tk, local:str(g(r,'Local')), cliente:str(g(r,'Cliente')), fornecedor:str(g(r,'Nome do fornecedor')),
-      desc:str(g(r,'Descrição')), link:str(g(r,'Link')), transp:str(g(r,'Transportadora')), dir:str(g(r,'Direcionar ação para :')),
+      desc:str(g(r,'Descrição')), link:str(g(r,'Link')), ocorr:str(g(r,'Ocorrência')), transp:str(g(r,'Transportadora')), dir:str(g(r,'Direcionar ação para :')),
       custoRnc:num(g(r,'Custo')), extr:num(g(r,'Valor do Extravio/NF')), frete:num(g(r,'Valor do frete')),
       planos:[], custoPlanos:0, nPl:0, nPlFim:0, nPlAtr:0
     };
-    ['categoria','cliente','local','transp','resp','dir','fornecedor'].forEach(k=>{if(!o[k])o[k]='(não informado)'});
-    o.busca=norm([o.cod,o.cliente,o.categoria,o.desc,o.resp,o.local].join(' '));
+    ['categoria','cliente','local','transp','resp','dir','fornecedor','ocorr'].forEach(k=>{if(!o[k])o[k]='(não informado)'});
+    o.busca=norm([o.cod,o.cliente,o.categoria,o.ocorr,o.desc,o.resp,o.local].join(' '));
     out.push(o);
   });
   S.fora=fora; return out;
@@ -481,6 +486,7 @@ function gerarDemo(){
   const pick=a=>a[Math.floor(rnd()*a.length)], pw=a=>a[Math.floor(Math.pow(rnd(),1.8)*a.length)];
   const cli=['Cliente Alfa','Cliente Beta','Cliente Gama','Cliente Delta','Cliente Épsilon','Cliente Zeta','Cliente Eta','Cliente Teta','Cliente Iota','Cliente Kappa','Cliente Lambda','Cliente Mi'];
   const cat=['Avaria no transporte','Extravio de mercadoria','Atraso na entrega','Erro de separação','Divergência de inventário','Falha de documentação','Endereçamento incorreto','Avaria no armazenamento','Erro de faturamento','Falha de sistema'];
+  const oc=['Extravio de material - total','Extravio de material - parcial','Avaria de material','Atraso na entrega','Erro de separação','Divergência de estoque','Falta de material'];
   const tr=['Transportadora A','Transportadora B','Transportadora C','Transportadora D','Transportadora E'];
   const iso=n=>new Date(S.hoje.getTime()+n*DIA).toISOString().slice(0,10);
   const rc=[],pl=[];
@@ -489,7 +495,7 @@ function gerarDemo(){
     const cod='RNC-'+String(i).padStart(4,'0'), ago=Math.floor(Math.pow(rnd(),.8)*540), dt=iso(-ago);
     const st=ago<40&&rnd()<.6?'Aberta':rnd()<.86?'Concluída':rnd()<.5?'Cancelada':'Reprovada';
     const c=pw(cat), cu=rnd()<.6?Math.round(Math.exp(5+rnd()*3.2)):'', ex=c==='Extravio de mercadoria'||rnd()<.12?Math.round(Math.exp(6+rnd()*2.6)):'', fr=rnd()<.3?Math.round(60+rnd()*800):'';
-    rc.push([cod,st,'Execução do plano',dt,'Emissor '+(1+Math.floor(rnd()*5)),'Responsável 0'+(1+Math.floor(rnd()*8)),c,tipo,'', pick(['Matriz','Sanca','Filial']),pw(cli),'',  'Registro de exemplo '+i,'',cu,iso(-ago-Math.floor(rnd()*6)),pick(['Operações','Qualidade','Comercial','TI']),'', '',pick(tr),ex,fr]);
+    rc.push([cod,st,'Execução do plano',dt,'Emissor '+(1+Math.floor(rnd()*5)),'Responsável 0'+(1+Math.floor(rnd()*8)),c,tipo,'', pick(['Matriz','Sanca','Filial']),pw(cli),'',  'Registro de exemplo '+i,'',cu,iso(-ago-Math.floor(rnd()*6)),pick(['Operações','Qualidade','Comercial','TI']),'',pw(oc),pick(tr),ex,fr]);
     const n=Math.floor(rnd()*3.2);
     for(let k=0;k<n;k++){
       const fim=-ago+20+Math.floor(rnd()*60), q=rnd(), s2=q<.62?'Concluído':q<.8?'Em execução':q<.9?'Aguardando início':q<.95?'Verificando eficácia':'Cancelado';
@@ -505,42 +511,67 @@ function gerarDemo(){
 const dt=r=>(S.base==='ocorrencia'&&r.dataOc)?r.dataOc:(r.emissao||r.dataOc);
 function custo(r){return (S.comp.rnc?r.custoRnc:0)+(S.comp.plano?r.custoPlanos:0)+(S.comp.extr?r.extr:0)+(S.comp.frete?r.frete:0)}
 function custoComp(r,k){return k==='rnc'?r.custoRnc:k==='plano'?r.custoPlanos:k==='extr'?r.extr:r.frete}
-function periodoOk(r){
-  const f=S.f.per; if(f==='all') return true;
-  const d=dt(r); if(!d) return false;
-  if(f==='12m'||f==='6m'){const n=f==='12m'?11:5;return d>=new Date(S.hoje.getFullYear(),S.hoje.getMonth()-n,1)}
-  if(f[0]==='y') return d.getFullYear()===+f.slice(1);
-  return true;
-}
 function filtrar(rows,o){
   o=o||{}; const f=S.f,q=norm(f.q);
   return rows.filter(r=>{
-    if(!periodoOk(r)) return false;
+    if(f.ano||f.mesNum){const d=dt(r);if(!d)return false;if(f.ano&&d.getFullYear()!==+f.ano)return false;if(!o.semMes&&f.mesNum&&d.getMonth()+1!==+f.mesNum)return false}
+    if(!o.semOcorr&&f.ocorr.size&&!f.ocorr.has(r.ocorr)) return false;
+    if(f.plano.size&&!planoMatchRnc(r)) return false;
     if(f.tipo&&r.tipo!==f.tipo) return false;
     if(f.cliente&&r.cliente!==f.cliente) return false;
     if(f.cat&&r.categoria!==f.cat) return false;
     if(f.status&&r.status!==f.status) return false;
     if(q&&r.busca.indexOf(q)<0) return false;
-    if(!o.semMes&&f.mes&&mesKey(dt(r))!==f.mes) return false;
     if(f.dim&&r[f.dim.k]!==f.dim.v) return false;
     return true;
   });
 }
+const ORD_PL=['Aguardando início','Em execução','Verificando eficácia','Concluído','Suspenso','Cancelado'];
+function opcoesOcorr(){return [...new Set(S.rnc.map(r=>r.ocorr))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v])}
+function opcoesPlano(){
+  const u=[...new Set(S.planos.map(p=>p.status).filter(Boolean))].sort((a,b)=>{const ia=ORD_PL.indexOf(a),ib=ORD_PL.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,'pt-BR')});
+  return u.map(s=>['s:'+s,s]).concat([['atrasado','Atrasado (prazo vencido)'],['sem','RNC sem plano de ação']]);
+}
+function planoMatchRnc(r){
+  return [...S.f.plano].some(k=>k==='sem'?r.nPl===0:k==='atrasado'?r.nPlAtr>0:r.planos.some(p=>p.status===k.slice(2)));
+}
+function planoOk(p){
+  const sel=[...S.f.plano].filter(k=>k!=='sem'); if(!S.f.plano.size) return true;
+  return sel.some(k=>k==='atrasado'?p.atrasado:p.status===k.slice(2));
+}
+function montarMulti(){
+  const mk=(id,key,opts)=>{document.getElementById(id+'Panel').innerHTML=opts.map(o=>'<label><input type="checkbox" data-ms="'+key+'" value="'+esc(o[0])+'"><span>'+esc(o[1])+'</span></label>').join('')+'<button type="button" class="btn sec" data-a="msclear" data-v="'+key+'">Limpar seleção</button>'};
+  const oo=opcoesOcorr(), op=opcoesPlano();
+  S.f.ocorr=new Set([...S.f.ocorr].filter(v=>oo.some(o=>o[0]===v)));
+  S.f.plano=new Set([...S.f.plano].filter(v=>op.some(o=>o[0]===v)));
+  mk('fOcorr','ocorr',oo); mk('fPlano','plano',op); syncMulti();
+}
+function syncMulti(){
+  const rot=(key,v)=>key==='plano'?(opcoesPlano().find(o=>o[0]===v)||[v,v])[1]:v;
+  [['fOcorr','ocorr','Ocorrência','Todas'],['fPlano','plano','Status do plano','Todos']].forEach(a=>{
+    const set=S.f[a[1]]; document.querySelectorAll('#'+a[0]+'Panel input').forEach(i=>{i.checked=set.has(i.value)});
+    const arr=[...set], txt=arr.length===0?a[3]:arr.length===1?rot(a[1],arr[0]):arr.length+' selecionados';
+    document.getElementById(a[0]+'Sum').textContent=a[2]+': '+txt;
+    document.getElementById(a[0]).classList.toggle('on',arr.length>0);
+  });
+}
+function mesSel(m){return (!S.f.mesNum||+m.slice(5)===+S.f.mesNum)&&(!S.f.ano||m.slice(0,4)===S.f.ano)}
+function syncPeriodo(){document.getElementById('fAno').value=S.f.ano;document.getElementById('fMes').value=S.f.mesNum}
 function montarFiltros(){
   const fill=(id,arr,cur)=>{const el=document.getElementById(id);const first=el.options[0].outerHTML;el.innerHTML=first+arr.map(v=>'<option value="'+esc(v[0])+'">'+esc(v[1])+'</option>').join('');el.value=cur||''};
   const uniq=k=>[...new Set(S.rnc.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v]);
   const anos=[...new Set(S.rnc.map(r=>dt(r)).filter(Boolean).map(d=>d.getFullYear()))].sort((a,b)=>b-a);
-  const per=document.getElementById('fPer');
-  per.innerHTML='<option value="all">Todo o histórico</option><option value="12m">Últimos 12 meses</option><option value="6m">Últimos 6 meses</option>'+anos.map(a=>'<option value="y'+a+'">Ano '+a+'</option>').join('');
-  per.value=S.f.per;
+  const ano=document.getElementById('fAno');
+  ano.innerHTML='<option value="">Todos</option>'+anos.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
+  ano.value=S.f.ano; document.getElementById('fMes').value=S.f.mesNum;
   fill('fTipo',TIPOS.map(t=>[t.k,t.l]),S.f.tipo); fill('fCliente',uniq('cliente'),S.f.cliente);
   fill('fCat',uniq('categoria'),S.f.cat); fill('fStatus',uniq('status'),S.f.status);
   document.getElementById('fQ').value=S.f.q;
+  montarMulti();
   document.querySelectorAll('[data-a="base"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.base));
 }
 function chips(){
   const f=S.f,c=[],add=(k,t)=>c.push('<span class="chip">'+esc(t)+'<button data-a="rm" data-v="'+k+'" aria-label="Remover filtro">×</button></span>');
-  if(f.mes) add('mes','Mês: '+mesLabel(f.mes));
   if(f.dim) add('dim',DIMS.find(d=>d[0]===f.dim.k)[1]+': '+f.dim.v);
   document.getElementById('chips').innerHTML=c.join('');
 }
@@ -582,7 +613,7 @@ function colunas(meses,series,val,fmt){
   const tot=meses.map(m=>series.reduce((a,s)=>a+val(m,s),0)), mx=Math.max(1e-9,...tot);
   let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img"><line x1="'+ml+'" x2="'+(W-ml)+'" y1="'+(mt+ch)+'" y2="'+(mt+ch)+'" stroke="#DCE2EB"/>';
   meses.forEach((m,k)=>{
-    const x=ml+k*sl+(sl-bw)/2; let yy=mt+ch; const dim=S.f.mes&&S.f.mes!==m;
+    const x=ml+k*sl+(sl-bw)/2; let yy=mt+ch; const dim=!mesSel(m);
     series.forEach(se=>{const v=val(m,se),h=v/mx*ch;if(h>0){yy-=h;s+='<rect x="'+x+'" y="'+yy+'" width="'+bw+'" height="'+h+'" fill="'+se.cor+'"'+(dim?' opacity=".3"':'')+'><title>'+mesLabel(m)+' · '+se.l+': '+fmt(v)+'</title></rect>'}});
     if(tot[k]>0) s+='<text x="'+(x+bw/2)+'" y="'+(yy-6)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#12203A" font-family="IBM Plex Sans Condensed,Arial"'+(dim?' opacity=".4"':'')+'>'+fmt(tot[k])+'</text>';
     const l=mesLabel(m).split('/');
@@ -627,7 +658,7 @@ function pareto(rows){
   if(!l.length) return '<div class="empty">Sem dados para o Pareto com os filtros atuais.</div>';
   const MAXB=10; let items=l.slice(0,MAXB); if(l.length>MAXB){const rest=l.slice(MAXB);items.push({k:null,v:rest.reduce((a,x)=>a+x.v,0),nome:'Demais ('+rest.length+')'})}
   const fmt=met==='qtd'?nf:brlc;
-  const W=860,H=330,mt=30,mb=92,ml=46,mr=44,n=items.length,sl=(W-ml-mr)/n,bw=Math.min(54,sl-14),ch=H-mt-mb,mx=Math.max(...items.map(i=>i.v));
+  const W=860,H=330,mt=30,mb=92,ml=58,mr=44,n=items.length,sl=(W-ml-mr)/n,bw=Math.min(54,sl-14),ch=H-mt-mb,mx=Math.max(...items.map(i=>i.v));
   let acc=0,pts=[];
   let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Gráfico de Pareto">';
   [0,.25,.5,.75,1].forEach(p=>{const y=mt+ch-p*ch;s+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+y+'" y2="'+y+'" stroke="#E4EAF4"/><text x="'+(W-mr+6)+'" y="'+(y+4)+'" font-size="10" fill="#6B7A93">'+Math.round(p*100)+'%</text><text x="'+(ml-6)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#6B7A93">'+fmt(met==='qtd'?Math.round(mx*p):mx*p)+'</text>'});
@@ -635,10 +666,10 @@ function pareto(rows){
   items.forEach((it,k)=>{
     const x=ml+k*sl+(sl-bw)/2,h=it.v/mx*ch,y=mt+ch-h; acc+=it.v; const cum=acc/total, py=mt+ch-cum*ch;
     pts.push([x+bw/2,py,cum]);
-    const nome=it.k==null?it.nome:it.k, ativo=S.f.dim&&S.f.dim.k===dim&&S.f.dim.v===it.k;
-    s+='<rect '+(it.k!=null?'data-a="dim" data-v="'+encodeURIComponent(it.k)+'" style="cursor:pointer" ':'')+'x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="3" fill="'+(it.k==null?'#A9B4C6':(S.f.dim&&!ativo?'#9DB8F5':'#2F6BFF'))+'"><title>'+esc(nome)+': '+fmt(it.v)+' ('+Math.round(it.v/total*100)+'%) · acumulado '+Math.round(cum*100)+'%</title></rect>';
+    const nome=it.k==null?it.nome:it.k, selOn=dim==='ocorr'?S.f.ocorr.size>0:!!S.f.dim, ativo=dim==='ocorr'?S.f.ocorr.has(it.k):(S.f.dim&&S.f.dim.k===dim&&S.f.dim.v===it.k);
+    s+='<rect '+(it.k!=null?'data-a="dim" data-v="'+encodeURIComponent(it.k)+'" style="cursor:pointer" ':'')+'x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="3" fill="'+(it.k==null?'#A9B4C6':(selOn&&!ativo?'#9DB8F5':'#2F6BFF'))+'"><title>'+esc(nome)+': '+fmt(it.v)+' ('+Math.round(it.v/total*100)+'%) · acumulado '+Math.round(cum*100)+'%</title></rect>';
     s+='<text x="'+(x+bw/2)+'" y="'+(y-5)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#12203A" font-family="IBM Plex Sans Condensed,Arial">'+fmt(it.v)+'</text>';
-    const lb=nome.length>20?nome.slice(0,19)+'…':nome;
+    const lb=nome.length>22?nome.slice(0,11).trim()+'…'+nome.slice(-9).trim():nome;
     s+='<text transform="translate('+(x+bw/2+4)+','+(mt+ch+14)+') rotate(-32)" text-anchor="end" font-size="11" fill="#3B4A66">'+esc(lb)+'</text>';
   });
   s+='<polyline fill="none" stroke="#0A1F6B" stroke-width="2.2" points="'+pts.map(p=>p[0]+','+p[1]).join(' ')+'"/>';
@@ -661,7 +692,7 @@ function vGeral(){
   const rows=filtrar(S.rnc), base=filtrar(S.rnc,{semMes:true});
   const nci=rows.filter(r=>r.tipo==='nci').length, rc=rows.length-nci, ct=rows.reduce((a,r)=>a+custo(r),0);
   const abertas=rows.filter(r=>norm(r.status)==='aberta').length;
-  const pls=rows.reduce((a,r)=>a+r.nPl,0), atr=rows.reduce((a,r)=>a+r.nPlAtr,0);
+  const plsL=rows.flatMap(r=>r.planos.filter(planoOk)), pls=plsL.length, atr=plsL.filter(p=>p.atrasado).length;
   let h='<div class="grid g6">'
     +kpi('k-acc',nf(rows.length),'RNCs no escopo','interna + reclamação do cliente','x')
     +kpi('',nf(nci),'Não conformidade interna',pct(nci,rows.length)+'% do total','tipo','nci')
@@ -677,7 +708,7 @@ function vGeral(){
   const cli=topN(agrupar(rows,'cliente',TIPOS,(r,t)=>r.tipo===t.k?1:0),12,TIPOS);
   h+='<div class="grid g11">'
     +card('RNCs por cliente','12 maiores · clique para filtrar',barrasStack(cli,TIPOS,nf,'cliente')+legTipos())
-    +cardPareto(rows)+'</div>';
+    +cardPareto(S.par.dim==='ocorr'?filtrar(S.rnc,{semOcorr:true}):rows)+'</div>';
   h+=notaFora();
   return h;
 }
@@ -709,13 +740,17 @@ function vCustos(){
     +card('Custo por cliente','12 maiores · clique para filtrar',barrasStack(cli,sel,brlc,'cliente')+legComp())
     +card('RNCs mais caras','10 maiores',top.length?'<div class="tw"><table class="tbd" style="min-width:0"><thead><tr><th>RNC</th><th>Cliente</th><th>Tipo</th><th class="num">Custo</th></tr></thead><tbody>'
       +top.map(r=>'<tr><td class="nw">'+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod))+'</td><td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><span class="pill p-'+r.tipo+'">'+(r.tipo==='nci'?'Interna':'Cliente')+'</span></td><td class="num nw"><b>'+brl(custo(r))+'</b></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhuma RNC com custo no escopo.</div>')+'</div>';
+  const oc=topN(agrupar(rows,'ocorr',sel,(r,c)=>custoComp(r,c.k)),12,sel), ca=topN(agrupar(rows,'categoria',sel,(r,c)=>custoComp(r,c.k)),12,sel);
+  h+='<div class="grid g11">'
+    +card('Custo por ocorrência','12 maiores · clique para filtrar',barrasStack(oc,sel,brlc,'ocorr')+legComp())
+    +card('Custo por categoria','12 maiores · clique para filtrar',barrasStack(ca,sel,brlc,'cat')+legComp())+'</div>';
   h+='<p class="note">O custo total soma os componentes marcados acima. “Custo reportado nos planos” vem dos planos de ação ligados à RNC pelo código da ocorrência. Se o custo informado na RNC já incluir o valor do extravio ou do frete, desmarque o componente repetido para não contar duas vezes.</p>';
   return h+notaFora();
 }
 
 /* ---------- planos de ação ---------- */
 function vPlanos(){
-  const rows=filtrar(S.rnc), pls=rows.flatMap(r=>r.planos);
+  const rows=filtrar(S.rnc), pls=rows.flatMap(r=>r.planos.filter(planoOk));
   const feitos=pls.filter(p=>p.done).length, atr=pls.filter(p=>p.atrasado), semPl=rows.filter(r=>!r.nPl).length;
   const andam=pls.filter(p=>!p.done&&!p.inativo).length, custoRep=pls.reduce((a,p)=>a+p.custoRep,0);
   let h='<div class="grid g6">'
@@ -739,7 +774,7 @@ function vPlanos(){
 }
 
 /* ---------- detalhamento ---------- */
-const COLS=[['cod','Código'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
+const COLS=[['cod','Código'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['ocorr','Ocorrência'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
 function valSort(r,k){
   if(k==='dt'){const d=dt(r);return d?d.getTime():0}
   if(k==='custo')return custo(r); if(k==='pl')return r.nPlAtr*1000+r.nPl;
@@ -752,19 +787,19 @@ function vDetalhe(){
   const sl=rows.slice(S.page*PP,S.page*PP+PP), ct=rows.reduce((a,r)=>a+custo(r),0);
   let h='<div class="card"><div class="sc"><span class="ks3" style="margin:0"><b>'+nf(rows.length)+'</b> RNCs · custo total <b>'+brl(ct)+'</b></span><button class="btn sec" data-a="csv" style="margin-left:auto;border-radius:99px">Exportar CSV ('+nf(rows.length)+')</button></div>';
   if(!rows.length) return h+'<div class="empty">Nenhuma RNC com os filtros atuais.</div></div>';
-  h+='<div class="tw"><table class="tbd" style="min-width:1280px"><colgroup><col style="width:8%"><col style="width:8%"><col style="width:10%"><col style="width:17%"><col style="width:17%"><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:10%"></colgroup><thead><tr>'
+  h+='<div class="tw"><table class="tbd" style="min-width:1480px"><colgroup><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:13%"><col style="width:16%"><col style="width:12%"><col style="width:8%"><col style="width:11%"><col style="width:8%"><col style="width:11%"></colgroup><thead><tr>'
     +COLS.map(c=>'<th'+(c[0]==='custo'?' class="num"':'')+'><button data-a="sort" data-v="'+c[0]+'">'+c[1]+(S.sort.k===c[0]?(S.sort.dir>0?' ▲':' ▼'):'')+'</button></th>').join('')+'</tr></thead><tbody>'
     +sl.map(r=>{const sc=norm(r.status);const cls=sc==='aberta'?'aberta':sc==='concluida'?'concluida':sc==='cancelada'?'cancelada':'reprovada';
       return '<tr><td class="nw">'+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod))+'</td><td class="nw">'+fmtData(dt(r))+'</td><td><span class="pill p-'+r.tipo+'">'+(r.tipo==='nci'?'Interna':'Cliente')+'</span></td>'
-      +'<td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><div class="trunc" title="'+esc(r.categoria)+'">'+esc(r.categoria)+'</div></td><td><span class="pill p-'+cls+'">'+esc(r.status||'—')+'</span></td>'
+      +'<td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><div class="trunc" title="'+esc(r.ocorr)+'">'+esc(r.ocorr)+'</div></td><td><div class="trunc" title="'+esc(r.categoria)+'">'+esc(r.categoria)+'</div></td><td><span class="pill p-'+cls+'">'+esc(r.status||'—')+'</span></td>'
       +'<td><div class="trunc" title="'+esc(r.resp)+'">'+esc(r.resp)+'</div></td><td class="num nw">'+(custo(r)?brl(custo(r)):'—')+'</td><td class="nw">'+(r.nPl?r.nPl+' · '+(r.nPlAtr?'<b style="color:var(--venc)">'+r.nPlAtr+' atras.</b>':'em dia'):'<span style="color:var(--mute)">sem plano</span>')+'</td></tr>'}).join('')
     +'</tbody></table></div><div class="pg"><span>'+nf(S.page*PP+1)+'–'+nf(Math.min(rows.length,S.page*PP+PP))+' de '+nf(rows.length)+'</span><button data-a="pg" data-v="-1" '+(S.page===0?'disabled':'')+'>Anterior</button><button data-a="pg" data-v="1" '+(S.page>=pages-1?'disabled':'')+'>Próxima</button></div></div>';
   return h+notaFora();
 }
 function exportarCsv(){
   const rows=filtrar(S.rnc),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Código','Data','Tipo','Cliente','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
-  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
+  const head=['Código','Data','Tipo','Cliente','Ocorrência','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
+  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.ocorr,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out.join('\r\n')],{type:'text/csv;charset=utf-8'}));
   a.download='rnc_'+S.hoje.toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
 }
@@ -776,15 +811,19 @@ document.addEventListener('click',e=>{
   const a=el.dataset.a,v=el.dataset.v!=null?decodeURIComponent(el.dataset.v):'',f=S.f;
   if(a==='tab'){S.tab=v;S.page=0;render();window.scrollTo(0,0)}
   else if(a==='refresh')atualizar();
-  else if(a==='clear'){S.f={per:'all',tipo:'',cliente:'',cat:'',status:'',q:'',mes:'',dim:null};S.page=0;montarFiltros();render()}
-  else if(a==='base'){S.base=v;montarFiltros();S.f.mes='';render()}
-  else if(a==='mes'){f.mes=f.mes===v?'':v;S.page=0;render()}
+  else if(a==='clear'){S.f={ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),status:'',q:'',dim:null};S.page=0;montarFiltros();render()}
+  else if(a==='base'){S.base=v;montarFiltros();render()}
+  else if(a==='mes'){const y=v.slice(0,4),mm=String(+v.slice(5));if(f.ano===y&&f.mesNum===mm){f.mesNum=''}else{f.ano=y;f.mesNum=mm}syncPeriodo();S.page=0;render()}
   else if(a==='tipo'){f.tipo=f.tipo===v?'':v;document.getElementById('fTipo').value=f.tipo;S.page=0;render()}
+  else if(a==='ocorr'){f.ocorr=(f.ocorr.size===1&&f.ocorr.has(v))?new Set():new Set([v]);syncMulti();S.page=0;render()}
+  else if(a==='msclear'){f[v]=new Set();syncMulti();S.page=0;render()}
+  else if(a==='cat'){f.cat=f.cat===v?'':v;document.getElementById('fCat').value=f.cat;S.page=0;render()}
   else if(a==='cliente'){f.cliente=f.cliente===v?'':v;document.getElementById('fCliente').value=f.cliente;S.page=0;render()}
+  else if(a==='dim'&&S.par.dim==='ocorr'){f.ocorr=(f.ocorr.size===1&&f.ocorr.has(v))?new Set():new Set([v]);syncMulti();S.page=0;render()}
   else if(a==='dim'){f.dim=(f.dim&&f.dim.k===S.par.dim&&f.dim.v===v)?null:{k:S.par.dim,v};S.page=0;render()}
   else if(a==='parmet'){S.par.met=v;render()}
   else if(a==='comp'){S.comp[v]=!S.comp[v];render()}
-  else if(a==='rm'){if(v==='mes')f.mes='';else f.dim=null;S.page=0;render()}
+  else if(a==='rm'){f.dim=null;S.page=0;render()}
   else if(a==='sort'){S.sort=S.sort.k===v?{k:v,dir:-S.sort.dir}:{k:v,dir:v==='dt'||v==='custo'||v==='pl'?-1:1};render()}
   else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}
   else if(a==='csv')exportarCsv();
@@ -792,9 +831,11 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const id=e.target.id, v=e.target.value, f=S.f;
   if(id==='parDim'){S.par.dim=v;f.dim=null;render();return}
-  const m={fPer:'per',fTipo:'tipo',fCliente:'cliente',fCat:'cat',fStatus:'status'};
-  if(m[id]){f[m[id]]=v;f.mes='';S.page=0;if(id==='fPer')montarFiltros();render()}
+  if(e.target.dataset&&e.target.dataset.ms){const s=S.f[e.target.dataset.ms];e.target.checked?s.add(e.target.value):s.delete(e.target.value);syncMulti();S.page=0;render();return}
+  const m={fAno:'ano',fMes:'mesNum',fTipo:'tipo',fCliente:'cliente',fCat:'cat',fStatus:'status'};
+  if(m[id]){f[m[id]]=v;S.page=0;render()}
 });
+document.addEventListener('click',e=>{document.querySelectorAll('details.ms[open]').forEach(d=>{if(!d.contains(e.target))d.open=false})});
 let tq;document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(tq);tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220)});
 
 let ultimaCarga=Date.now();
