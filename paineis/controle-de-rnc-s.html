@@ -302,6 +302,7 @@ tbody tr:hover td{background:#E8F0FF}
     <label>Tipo <select id="fTipo"><option value="">Os dois tipos</option></select></label>
     <details class="ms" id="fOcorr"><summary id="fOcorrSum">Ocorrência: Todas</summary><div class="msp" id="fOcorrPanel"></div></details>
     <details class="ms" id="fPlano"><summary id="fPlanoSum">Status do plano: Todos</summary><div class="msp" id="fPlanoPanel"></div></details>
+    <details class="ms" id="fRespPl"><summary id="fRespPlSum">Responsável do plano: Todos</summary><div class="msp" id="fRespPlPanel"></div></details>
     <label>Cliente <select id="fCliente"><option value="">Todos</option></select></label>
     <label>Categoria <select id="fCat"><option value="">Todas</option></select></label>
     <label>Status da RNC <select id="fStatus"><option value="">Todos</option></select></label>
@@ -338,7 +339,7 @@ const DIMS=[['ocorr','Ocorrência'],['categoria','Categoria'],['cliente','Client
 const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const S={
   hoje:null, mode:'', info:'', tab:'geral', rnc:[], planos:[], fora:0, demo:false, erro:'',
-  f:{ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),status:'',q:'',dim:null},
+  f:{ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),respPl:new Set(),status:'',q:'',dim:null},
   base:'emissao', comp:{rnc:true,plano:true,extr:false,frete:false},
   par:{dim:'ocorr',met:'qtd'}, sort:{k:'dt',dir:-1}, page:0
 };
@@ -518,6 +519,7 @@ function filtrar(rows,o){
     if(f.ano||f.mesNum){const d=dt(r);if(!d)return false;if(f.ano&&d.getFullYear()!==+f.ano)return false;if(!o.semMes&&f.mesNum&&d.getMonth()+1!==+f.mesNum)return false}
     if(!o.semOcorr&&f.ocorr.size&&!f.ocorr.has(r.ocorr)) return false;
     if(f.plano.size&&!planoMatchRnc(r)) return false;
+    if(f.respPl.size&&!r.planos.some(p=>f.respPl.has(p.resp))) return false;
     if(f.tipo&&r.tipo!==f.tipo) return false;
     if(f.cliente&&r.cliente!==f.cliente) return false;
     if(f.cat&&r.categoria!==f.cat) return false;
@@ -533,10 +535,12 @@ function opcoesPlano(){
   const u=[...new Set(S.planos.map(p=>p.status).filter(Boolean))].sort((a,b)=>{const ia=ORD_PL.indexOf(a),ib=ORD_PL.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,'pt-BR')});
   return u.map(s=>['s:'+s,s]).concat([['atrasado','Atrasado (prazo vencido)'],['sem','RNC sem plano de ação']]);
 }
+function opcoesRespPl(){return [...new Set(S.planos.map(p=>p.resp))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v])}
 function planoMatchRnc(r){
   return [...S.f.plano].some(k=>k==='sem'?r.nPl===0:k==='atrasado'?r.nPlAtr>0:r.planos.some(p=>p.status===k.slice(2)));
 }
 function planoOk(p){
+  if(S.f.respPl.size&&!S.f.respPl.has(p.resp)) return false;
   const sel=[...S.f.plano].filter(k=>k!=='sem'); if(!S.f.plano.size) return true;
   return sel.some(k=>k==='atrasado'?p.atrasado:p.status===k.slice(2));
 }
@@ -545,11 +549,12 @@ function montarMulti(){
   const oo=opcoesOcorr(), op=opcoesPlano();
   S.f.ocorr=new Set([...S.f.ocorr].filter(v=>oo.some(o=>o[0]===v)));
   S.f.plano=new Set([...S.f.plano].filter(v=>op.some(o=>o[0]===v)));
-  mk('fOcorr','ocorr',oo); mk('fPlano','plano',op); syncMulti();
+  const orp=opcoesRespPl(); S.f.respPl=new Set([...S.f.respPl].filter(v=>orp.some(o=>o[0]===v)));
+  mk('fOcorr','ocorr',oo); mk('fPlano','plano',op); mk('fRespPl','respPl',orp); syncMulti();
 }
 function syncMulti(){
   const rot=(key,v)=>key==='plano'?(opcoesPlano().find(o=>o[0]===v)||[v,v])[1]:v;
-  [['fOcorr','ocorr','Ocorrência','Todas'],['fPlano','plano','Status do plano','Todos']].forEach(a=>{
+  [['fOcorr','ocorr','Ocorrência','Todas'],['fPlano','plano','Status do plano','Todos'],['fRespPl','respPl','Responsável do plano','Todos']].forEach(a=>{
     const set=S.f[a[1]]; document.querySelectorAll('#'+a[0]+'Panel input').forEach(i=>{i.checked=set.has(i.value)});
     const arr=[...set], txt=arr.length===0?a[3]:arr.length===1?rot(a[1],arr[0]):arr.length+' selecionados';
     document.getElementById(a[0]+'Sum').textContent=a[2]+': '+txt;
@@ -835,7 +840,7 @@ document.addEventListener('click',e=>{
   const a=el.dataset.a,v=el.dataset.v!=null?decodeURIComponent(el.dataset.v):'',f=S.f;
   if(a==='tab'){S.tab=v;S.page=0;render();window.scrollTo(0,0)}
   else if(a==='refresh')atualizar();
-  else if(a==='clear'){S.f={ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),status:'',q:'',dim:null};S.page=0;montarFiltros();render()}
+  else if(a==='clear'){S.f={ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),respPl:new Set(),status:'',q:'',dim:null};S.page=0;montarFiltros();render()}
   else if(a==='base'){S.base=v;montarFiltros();render()}
   else if(a==='mes'){const y=v.slice(0,4),mm=String(+v.slice(5));if(f.ano===y&&f.mesNum===mm){f.mesNum=''}else{f.ano=y;f.mesNum=mm}syncPeriodo();S.page=0;render()}
   else if(a==='tipo'){f.tipo=f.tipo===v?'':v;document.getElementById('fTipo').value=f.tipo;S.page=0;render()}
