@@ -268,6 +268,7 @@ tbody tr:hover td{background:#E8F0FF}
 .bl[disabled]{cursor:default;opacity:.85}
 .msp{max-height:340px;overflow:auto;min-width:290px}
 .msp label span{flex:1}
+.plc{line-height:1.3;margin:1px 0;font-size:12.5px}.plc span{color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -316,7 +317,7 @@ tbody tr:hover td{background:#E8F0FF}
 <script>
 /* ============================ CONFIGURAÇÃO ============================ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbz0RoOKYRZaKRBVb6EYZvhe6GDzUfa8rI2eVEjS9Xo1oir8j9fv6-FQRDT4dFhdBt_k/exec",      // COLE AQUI a URL do Web App do Apps Script (termina em /exec).
+  API_URL: "",      // COLE AQUI a URL do Web App do Apps Script (termina em /exec).
   API_TOKEN: "",    // Mesmo valor de TOKEN_API no Apps Script.
   REFRESH_MIN: 5    // A cada quantos minutos a tela relê as planilhas (0 = desliga).
 };
@@ -393,12 +394,12 @@ function normRnc(t){
       emissao:parseData(g(r,'Data de emissão')), dataOc:parseData(g(r,'Data da Ocorrência')),
       emissor:str(g(r,'Emissor')), resp:str(g(r,'Responsável')), categoria:str(g(r,'Categoria')),
       tipo:tk, local:str(g(r,'Local')), cliente:str(g(r,'Cliente')), fornecedor:str(g(r,'Nome do fornecedor')),
-      desc:str(g(r,'Descrição')), link:str(g(r,'Link')), ocorr:str(g(r,'Ocorrência')), transp:str(g(r,'Transportadora')), dir:str(g(r,'Direcionar ação para :')),
+      nome:str(g(r,'Nome')||g(r,'Nome da RNC')||g(r,'Título')||g(r,'Descrição')), desc:str(g(r,'Descrição')), link:str(g(r,'Link')), ocorr:str(g(r,'Ocorrência')), transp:str(g(r,'Transportadora')), dir:str(g(r,'Direcionar ação para :')),
       custoRnc:num(g(r,'Custo')), extr:num(g(r,'Valor do Extravio/NF')), frete:num(g(r,'Valor do frete')),
       planos:[], custoPlanos:0, nPl:0, nPlFim:0, nPlAtr:0
     };
     ['categoria','cliente','local','transp','resp','dir','fornecedor','ocorr'].forEach(k=>{if(!o[k])o[k]='(não informado)'});
-    o.busca=norm([o.cod,o.cliente,o.categoria,o.ocorr,o.desc,o.resp,o.local].join(' '));
+    o.busca=norm([o.cod,o.nome,o.cliente,o.categoria,o.ocorr,o.desc,o.resp,o.local].join(' '));
     out.push(o);
   });
   S.fora=fora; return out;
@@ -495,7 +496,7 @@ function gerarDemo(){
     const cod='RNC-'+String(i).padStart(4,'0'), ago=Math.floor(Math.pow(rnd(),.8)*540), dt=iso(-ago);
     const st=ago<40&&rnd()<.6?'Aberta':rnd()<.86?'Concluída':rnd()<.5?'Cancelada':'Reprovada';
     const c=pw(cat), cu=rnd()<.6?Math.round(Math.exp(5+rnd()*3.2)):'', ex=c==='Extravio de mercadoria'||rnd()<.12?Math.round(Math.exp(6+rnd()*2.6)):'', fr=rnd()<.3?Math.round(60+rnd()*800):'';
-    rc.push([cod,st,'Execução do plano',dt,'Emissor '+(1+Math.floor(rnd()*5)),'Responsável 0'+(1+Math.floor(rnd()*8)),c,tipo,'', pick(['Matriz','Sanca','Filial']),pw(cli),'',  'Registro de exemplo '+i,'',cu,iso(-ago-Math.floor(rnd()*6)),pick(['Operações','Qualidade','Comercial','TI']),'',pw(oc),pick(tr),ex,fr]);
+    rc.push([cod,st,'Execução do plano',dt,'Emissor '+(1+Math.floor(rnd()*5)),'Responsável 0'+(1+Math.floor(rnd()*8)),c,tipo,'', pick(['Matriz','Sanca','Filial']),pw(cli),'',  'Registro de exemplo '+i,'',cu,iso(-ago-Math.floor(rnd()*6)),pick(['Operações','Qualidade','Comercial','TI']),'',pw(oc),pick(tr),ex,fr,'RNC de exemplo '+i+' - '+c]);
     const n=Math.floor(rnd()*3.2);
     for(let k=0;k<n;k++){
       const fim=-ago+20+Math.floor(rnd()*60), q=rnd(), s2=q<.62?'Concluído':q<.8?'Em execução':q<.9?'Aguardando início':q<.95?'Verificando eficácia':'Cancelado';
@@ -503,7 +504,7 @@ function gerarDemo(){
     }
   }
   return {atualizadoEm:'exemplo',
-    rnc:{cols:['Código','Status','Etapa atual','Data de emissão','Emissor','Responsável','Categoria','Tipo','Riscos','Local','Cliente','Nome do fornecedor','Descrição','Link','Custo','Data da Ocorrência','Direcionar ação para :','Número da NF/OS','Ocorrência','Transportadora','Valor do Extravio/NF','Valor do frete'],rows:rc},
+    rnc:{cols:['Código','Status','Etapa atual','Data de emissão','Emissor','Responsável','Categoria','Tipo','Riscos','Local','Cliente','Nome do fornecedor','Descrição','Link','Custo','Data da Ocorrência','Direcionar ação para :','Número da NF/OS','Ocorrência','Transportadora','Valor do Extravio/NF','Valor do frete','Nome'],rows:rc},
     planos:{cols:['Código','Nome','Pertence à','Responsável pela ação (Quem?)','Tipo do plano de ação','Data de início','Duração','Data de término','Custo estimado','Progresso','Status','Concluída em','Custo reportado total','Código da ocorrência','Link da ocorrência'],rows:pl}};
 }
 
@@ -796,7 +797,7 @@ function vPlanos(){
 }
 
 /* ---------- detalhamento ---------- */
-const COLS=[['cod','Código RNC'],['plcod','Código do plano de ação'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['ocorr','Ocorrência'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
+const COLS=[['cod','Código RNC'],['nome','Nome da RNC'],['plcod','Código do plano de ação'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['ocorr','Ocorrência'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
 function valSort(r,k){
   if(k==='dt'){const d=dt(r);return d?d.getTime():0}
   if(k==='custo')return custo(r); if(k==='pl')return r.nPlAtr*1000+r.nPl;
@@ -810,10 +811,10 @@ function vDetalhe(){
   const sl=rows.slice(S.page*PP,S.page*PP+PP), ct=rows.reduce((a,r)=>a+custo(r),0);
   let h='<div class="card"><div class="sc"><span class="ks3" style="margin:0"><b>'+nf(rows.length)+'</b> RNCs · custo total <b>'+brl(ct)+'</b></span><button class="btn sec" data-a="csv" style="margin-left:auto;border-radius:99px">Exportar CSV ('+nf(rows.length)+')</button></div>';
   if(!rows.length) return h+'<div class="empty">Nenhuma RNC com os filtros atuais.</div></div>';
-  h+='<div class="tw"><table class="tbd" style="min-width:1650px"><colgroup><col style="width:7%"><col style="width:10%"><col style="width:6%"><col style="width:6%"><col style="width:12%"><col style="width:13%"><col style="width:10%"><col style="width:8%"><col style="width:10%"><col style="width:7%"><col style="width:11%"></colgroup><thead><tr>'
+  h+='<div class="tw"><table class="tbd" style="min-width:1900px"><colgroup><col style="width:6%"><col style="width:17%"><col style="width:10%"><col style="width:6%"><col style="width:5%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:6%"><col style="width:8%"></colgroup><thead><tr>'
     +COLS.map(c=>'<th'+(c[0]==='custo'?' class="num"':'')+'><button data-a="sort" data-v="'+c[0]+'">'+c[1]+(S.sort.k===c[0]?(S.sort.dir>0?' ▲':' ▼'):'')+'</button></th>').join('')+'</tr></thead><tbody>'
     +sl.map(r=>{const sc=norm(r.status);const cls=sc==='aberta'?'aberta':sc==='concluida'?'concluida':sc==='cancelada'?'cancelada':'reprovada';
-      return '<tr><td class="nw">'+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod))+'</td><td>'+(r.planos.length?r.planos.map(p=>'<span class="nw">'+esc(p.cod)+'</span>').join(', '):'<span style="color:var(--mute)">—</span>')+'</td><td class="nw">'+fmtData(dt(r))+'</td><td><span class="pill p-'+r.tipo+'">'+(r.tipo==='nci'?'Interna':'Cliente')+'</span></td>'
+      return '<tr><td class="nw">'+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod))+'</td><td><div class="trunc" title="'+esc(r.nome)+'">'+(r.nome?esc(r.nome):'<span style="color:var(--mute)">—</span>')+'</div></td><td>'+(r.planos.length?r.planos.map(p=>'<span class="nw">'+esc(p.cod)+'</span>').join(', '):'<span style="color:var(--mute)">—</span>')+'</td><td class="nw">'+fmtData(dt(r))+'</td><td><span class="pill p-'+r.tipo+'">'+(r.tipo==='nci'?'Interna':'Cliente')+'</span></td>'
       +'<td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><div class="trunc" title="'+esc(r.ocorr)+'">'+esc(r.ocorr)+'</div></td><td><div class="trunc" title="'+esc(r.categoria)+'">'+esc(r.categoria)+'</div></td><td><span class="pill p-'+cls+'">'+esc(r.status||'—')+'</span></td>'
       +'<td><div class="trunc" title="'+esc(r.resp)+'">'+esc(r.resp)+'</div></td><td class="num nw">'+(custo(r)?brl(custo(r)):'—')+'</td><td class="nw">'+(r.nPl?r.nPl+' · '+(r.nPlAtr?'<b style="color:var(--venc)">'+r.nPlAtr+' atras.</b>':'em dia'):'<span style="color:var(--mute)">sem plano</span>')+'</td></tr>'}).join('')
     +'</tbody></table></div><div class="pg"><span>'+nf(S.page*PP+1)+'–'+nf(Math.min(rows.length,S.page*PP+PP))+' de '+nf(rows.length)+'</span><button data-a="pg" data-v="-1" '+(S.page===0?'disabled':'')+'>Anterior</button><button data-a="pg" data-v="1" '+(S.page>=pages-1?'disabled':'')+'>Próxima</button></div></div>';
@@ -821,8 +822,8 @@ function vDetalhe(){
 }
 function exportarCsv(){
   const rows=filtrar(S.rnc),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Código','Códigos dos planos de ação','Data','Tipo','Cliente','Ocorrência','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
-  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,r.planos.map(p=>p.cod).join(' | '),fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.ocorr,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
+  const head=['Código','Nome da RNC','Códigos dos planos de ação','Data','Tipo','Cliente','Ocorrência','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
+  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,r.nome,r.planos.map(p=>p.cod).join(' | '),fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.ocorr,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out.join('\r\n')],{type:'text/csv;charset=utf-8'}));
   a.download='rnc_'+S.hoje.toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
 }
