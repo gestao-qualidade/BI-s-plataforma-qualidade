@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Plataforma de BIs - Qualidade · PierServ</title>
+<title>Plataforma de BI · PierServ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -50,6 +50,29 @@ input,select{font:inherit}
 .cfg code{background:#EEF3FC;padding:2px 6px;border-radius:6px;font-size:12px}
 .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
+
+/* ---------- painel de incorporação ---------- */
+.emb-box{margin-bottom:18px}
+.emb-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:4px 16px;margin-bottom:6px}
+.emb-2{display:flex;gap:8px}.emb-2 input{flex:1;min-width:0}.emb-2 select{width:84px;flex:none}
+.fld textarea{width:100%;border:1px solid #CBD7EE;border-radius:12px;padding:11px 13px;font:12px/1.5 ui-monospace,Consolas,monospace;background:#F6F9FF;color:var(--ink);resize:vertical}
+.emb-chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin:0 0 8px}
+.emb-chk input{width:auto}
+.emb-btns{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px}
+.emb-btn{border:0;border-radius:12px;padding:10px 16px;font-weight:700;font-size:13px;color:#fff;background:linear-gradient(180deg,var(--azure),var(--royal));text-decoration:none;display:inline-block;cursor:pointer}
+.emb-btn.sec{background:#EEF3FC;color:var(--navy);border:1px solid #CBD7EE}
+.emb-prevlbl{font-size:12px;font-weight:600;color:var(--mute);margin-bottom:6px}
+.emb-prevarea{background:repeating-conic-gradient(#EEF1F7 0 25%,#fff 0 50%) 0 0/16px 16px;border:1px dashed #CBD7EE;border-radius:12px;padding:12px;overflow:auto}
+.emb-stage{overflow:hidden;box-shadow:0 8px 24px -12px rgba(2,10,50,.6);background:#fff}
+.emb-stage iframe{width:100%;height:100%;border:0;display:block}
+.emb-row{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.96);border-radius:14px;padding:12px 16px;margin-bottom:8px;flex-wrap:wrap}
+.emb-info{flex:1;min-width:220px;color:var(--navy)}
+.emb-info small{display:block;color:var(--mute);font-size:12px}
+.emb-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;color:#fff}
+.emb-tag.ok{background:#0E8A7D}.emb-tag.off{background:#7A869C}
+.emb-acts{display:flex;gap:6px;flex-wrap:wrap}
+.emb-acts button{border:1px solid #CBD7EE;background:#fff;color:var(--navy);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.emb-acts button:hover{background:#EEF3FC}
 
 /* ---------- aplicativo e layout dinâmico ---------- */
 #tApp{display:flex;width:100vw;height:100vh;overflow:hidden;position:relative}
@@ -201,15 +224,16 @@ main{
   display: none;
 }
 .iframe-container.on { display: flex; flex-direction: column; }
-/* Mantém os painéis carregando em segundo plano antes de serem selecionados. */
-.iframe-container.preload{display:flex;position:fixed;left:-10000px;top:0;width:1280px;height:720px;visibility:hidden;pointer-events:none;}
 
-#dashboardFrames{position:relative;flex:1;min-height:0;width:100%;height:100%;}
-#dashboardFrames iframe{position:absolute;inset:0;width:100%;height:100%;border:0;visibility:hidden;background:#0A2A9A;}
-#dashboardFrames iframe.on{visibility:visible;z-index:1;}
+#frm{
+  width: 100%;
+  height: 100%;
+  border: 0;
+  flex: 1;
+}
 
 /* Modo Tela Cheia Iframe Native */
-.iframe-container:fullscreen #dashboardFrames, .iframe-container:-webkit-full-screen #dashboardFrames {
+.iframe-container:fullscreen #frm, .iframe-container:-webkit-full-screen #frm {
   width: 100vw;
   height: 100vh;
 }
@@ -357,7 +381,7 @@ main{
   <div class="acard cfg">
     <div class="top"><img src="/logo.png" alt="PierServ"></div>
     <h1>Falta configurar o endereço</h1>
-    <p>Abra o arquivo <code>public/config.js</code> e cole o endereço <code>/exec</code> do Apps Script da . O passo a passo está no <b>LEIA-ME</b>.</p>
+    <p>Abra o arquivo <code>public/config.js</code> e cole o endereço <code>/exec</code> do Apps Script da plataforma. O passo a passo está no <b>LEIA-ME</b>.</p>
   </div>
 </section>
 
@@ -368,7 +392,7 @@ main{
 <section class="tela auth" id="tLogin">
   <div class="acard">
     <div class="top"><img src="/logo.png" alt="PierServ"></div>
-    <h1></h1>
+    <h1>Plataforma de BI</h1>
     <p>Entre com o seu e-mail e a sua senha.</p>
     <form id="fLogin">
       <label class="fld"><span>E-mail</span><input id="lEmail" type="email" autocomplete="username" required></label>
@@ -397,7 +421,7 @@ main{
     <div class="sb-top">
       <div class="sb-brand">
         <img src="/logo.png" alt="PierServ">
-        <div class="sb-tag">Plataforma de BIs<br>Qualidade</div>
+        <div class="sb-tag">Plataforma de BI</div>
       </div>
       <button class="btn-toggle-sb" id="btnCollapse" title="Recolher/Expandir menu" type="button">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -407,11 +431,12 @@ main{
     <div class="sb-user" id="sbUser"></div>
   </aside>
   <main>
-    <div class="top"><button id="btnMenu" aria-label="Abrir menu">☰</button><b>BIs da Qualidade </b></div>
+    <div class="top"><button id="btnMenu" aria-label="Abrir menu">☰</button><b>Plataforma de BI</b></div>
     <div class="view" id="vHome"></div>
     <div class="view" id="vSenha"></div>
     <div class="view" id="vAdmin"></div>
     <div class="view" id="vTvConfig"></div>
+    <div class="view" id="vEmbed"></div>
     
     <div class="iframe-container" id="iframeWrap">
       <div class="top-bar-iframe" id="topBarIframe">
@@ -423,7 +448,7 @@ main{
           </button>
         </div>
       </div>
-      <div id="dashboardFrames"></div>
+      <iframe id="frm" title="Painel"></iframe>
     </div>
   </main>
 </section>
@@ -455,6 +480,7 @@ const ICONS = {
   users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.3c2 .8 3.5 2.8 3.5 5.7"/>',
   home:'<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>',
   tv:'<rect x="2" y="7" width="20" height="13" rx="2"/><path d="m17 2-5 5-5-5"/>',
+  code:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/>'
 };
 const ico = n => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || ICONS.chart) + '</svg>';
@@ -523,7 +549,7 @@ window.BI = {
 function guardarSessao(s) { sessao = s; localStorage.setItem('bi_sessao', s); }
 function sairLocal(msg) {
   sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
-  $('dashboardFrames').innerHTML = ''; clearInterval(dashboardRefreshTimer); dashboardRefreshTimer = null;
+  $('frm').src = 'about:blank'; $('frm').dataset.id = '';
   $('lSenha').value = '';
   $('loginMsg').className = 'msg'; $('loginMsg').textContent = msg || '';
   tela('tLogin');
@@ -583,6 +609,7 @@ function rota() {
   if (h.startsWith('#/painel/')) { const p = eu.paineis.find(x => x.id === h.slice(9)); if (p) return { t: 'painel', p: p }; }
   if (h === '#/admin' && eu.papel === 'admin') return { t: 'admin' };
   if (h === '#/tv' && eu.papel === 'admin') return { t: 'tv' };
+  if (h === '#/embed' && eu.papel === 'admin') return { t: 'embed' };
   if (h === '#/senha') return { t: 'senha' };
   return { t: 'home' };
 }
@@ -600,6 +627,7 @@ function renderApp() {
   if (eu.papel === 'admin') {
     m += '<div class="sec">Administração</div>'
       + '<button class="mi' + (r.t === 'tv' ? ' on' : '') + '" data-go="#/tv">' + ico('tv') + '<span>Modo TV / Apresentação</span></button>'
+      + '<button class="mi' + (r.t === 'embed' ? ' on' : '') + '" data-go="#/embed">' + ico('code') + '<span>Painel de incorporação</span></button>'
       + '<button class="mi' + (r.t === 'admin' ? ' on' : '') + '" data-go="#/admin">' + ico('users') + '<span>Usuários e acessos</span></button>';
   }
   $('menu').innerHTML = m;
@@ -614,19 +642,20 @@ function renderApp() {
   $('vSenha').classList.toggle('on', r.t === 'senha');
   $('vAdmin').classList.toggle('on', r.t === 'admin');
   $('vTvConfig').classList.toggle('on', r.t === 'tv');
+  $('vEmbed').classList.toggle('on', r.t === 'embed');
   $('iframeWrap').classList.toggle('on', r.t === 'painel');
-  $('iframeWrap').classList.toggle('preload', r.t !== 'painel');
 
-  // Mantém um iframe por painel, carregado uma única vez ao entrar no app.
-  // A navegação lateral apenas alterna a visibilidade, sem recarregar o painel.
-  prepararFramesDashboards();
   if (r.t === 'painel') {
     $('topBarTitle').innerHTML = ico(r.p.icone) + ' <span>' + esc(r.p.nome) + '</span>';
     $('topBarIframe').classList.add('on');
-    $('dashboardFrames').querySelectorAll('iframe').forEach(f => f.classList.toggle('on', f.dataset.id === r.p.id));
+    if ($('frm').dataset.id !== r.p.id) {
+      $('frm').dataset.id = r.p.id;
+      const sep = r.p.pagina.includes('?') ? '&' : '?';
+      $('frm').src = r.p.pagina + sep + '_t=' + Date.now();
+    }
   } else {
     $('topBarIframe').classList.remove('on');
-    $('dashboardFrames').querySelectorAll('iframe').forEach(f => f.classList.remove('on'));
+    if ($('frm').dataset.id) { $('frm').dataset.id = ''; $('frm').src = 'about:blank'; }
   }
 
   if (r.t === 'home') renderHome();
@@ -636,65 +665,20 @@ function renderApp() {
   }
   if (r.t === 'admin') montarAdmin();
   if (r.t === 'tv') montarTvConfig();
+  if (r.t === 'embed') montarEmbed();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (b && b.closest('#tApp')) location.hash = b.dataset.go;
 });
 
-let homeCardsSignature = null;
 function renderHome() {
-  // Preserva os cards e seus iframes ao voltar para Início; só recria se a lista de painéis permitidos mudar.
-  const assinatura = JSON.stringify((eu.paineis || []).map(p => String(p.id)));
-  if (homeCardsSignature === assinatura && $('vHome').querySelector('.grid')) {
-    iniciarAtualizacaoDashboards();
-    return;
-  }
-  homeCardsSignature = assinatura;
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + (eu.paineis.length
-      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="eager" tabindex="-1" aria-hidden="true" scrolling="no" data-id="' + esc(p.id) + '" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
     + '</div>';
   ajustarMiniaturas();
-  iniciarAtualizacaoDashboards();
-}
-
-const DASHBOARD_REFRESH_MS = 10 * 60 * 1000;
-let dashboardRefreshTimer = null;
-
-function prepararFramesDashboards() {
-  const box = $('dashboardFrames');
-  const permitidos = new Set((eu && eu.paineis || []).map(p => String(p.id)));
-  box.querySelectorAll('iframe').forEach(f => { if (!permitidos.has(f.dataset.id)) f.remove(); });
-  (eu && eu.paineis || []).forEach(p => {
-    if (box.querySelector('iframe[data-id="' + CSS.escape(String(p.id)) + '"]')) return;
-    const f = document.createElement('iframe');
-    f.title = p.nome;
-    f.dataset.id = p.id;
-    f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    box.appendChild(f);
-  });
-  iniciarAtualizacaoDashboards();
-}
-
-function iniciarAtualizacaoDashboards() {
-  if (dashboardRefreshTimer) return;
-  dashboardRefreshTimer = setInterval(atualizarDashboardsEPreviews, DASHBOARD_REFRESH_MS);
-}
-
-function atualizarDashboardsEPreviews() {
-  if (!eu || eu.trocarSenha) return;
-  // Atualiza os dashboards em segundo plano, preservando qual deles está visível.
-  $('dashboardFrames').querySelectorAll('iframe').forEach(f => {
-    const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
-    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
-  });
-  // Atualiza também as miniaturas/cards da página inicial a cada 10 minutos.
-  document.querySelectorAll('#vHome .th iframe[data-id]').forEach(f => {
-    const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
-    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now();
-  });
 }
 
 function ajustarMiniaturas() {
@@ -905,6 +889,130 @@ function fecharTv() {
   if (document.fullscreenElement) document.exitFullscreen();
 }
 
+/* ---------- Painel de incorporação ---------- */
+const emb = { links: [], modo: null, url: '', t: null };   // modo: null | 'novo' | token do link escolhido
+const dtBR = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+const gv = id => $(id).value;
+const nomePainel = id => { const p = eu.paineis.find(x => x.id === id); return p ? p.nome : id; };
+
+async function montarEmbed() {
+  $('vEmbed').innerHTML = '<div class="pg"><h1>Painel de incorporação</h1><div class="sub">Gere o código (iframe) para mostrar um painel dentro de qualquer site, sem login. Quem tiver o link vê os dados daquele painel; por isso cada link tem validade e pode ser cancelado quando quiser.</div>'
+    + '<div class="bar"><button class="novo" id="embNovo">＋ Novo link de incorporação</button></div>'
+    + '<div id="embBuilder"></div><div id="embLista"><div class="vazio">Carregando…</div></div></div>';
+  emb.modo = null;
+  try {
+    emb.links = (await chamar({ acao: 'admin', op: 'embedListar' })).embeds;
+    embLista();
+  } catch (e) { $('embLista').innerHTML = '<div class="vazio">' + esc(e.message) + '</div>'; }
+}
+
+function embLista() {
+  $('embLista').innerHTML = emb.links.length
+    ? emb.links.slice().reverse().map(l => {
+        const st = l.status !== 'ativo' ? ['Cancelado', 'off'] : l.expirado ? ['Expirado', 'off'] : ['Ativo', 'ok'];
+        const t = esc(l.token);
+        return '<div class="emb-row"><div class="emb-info"><b>' + esc(l.descricao || nomePainel(l.painel)) + '</b>'
+          + '<small>' + esc(nomePainel(l.painel)) + ' · criado em ' + dtBR(l.criadoEm) + ' · ' + (l.expira ? 'vale até ' + dtBR(l.expira) : 'sem validade') + '</small></div>'
+          + '<span class="emb-tag ' + st[1] + '">' + st[0] + '</span><div class="emb-acts">'
+          + (st[1] === 'ok' ? '<button data-emb="usar" data-t="' + t + '">Montar código</button><button data-emb="rev" data-t="' + t + '">Cancelar link</button>' : '')
+          + '<button data-emb="del" data-t="' + t + '">Excluir</button></div></div>';
+      }).join('')
+    : '<div class="vazio">Nenhum link criado ainda. Clique em “Novo link de incorporação”.</div>';
+}
+
+function embForm() {
+  const op = (v, t, sel) => '<option value="' + v + '"' + (sel ? ' selected' : '') + '>' + t + '</option>';
+  const novo = emb.modo === 'novo';
+  const l = emb.links.find(x => x.token === emb.modo);
+  let h = '<div class="box emb-box"><h2>' + (novo ? 'Novo link de incorporação' : 'Código de incorporação — ' + esc(l ? (l.descricao || nomePainel(l.painel)) : '')) + '</h2>';
+  if (novo) {
+    h += '<div class="emb-g">'
+      + '<label class="fld"><span>Painel</span><select id="embPainel">' + eu.paineis.map(p => op(esc(p.id), esc(p.nome))).join('') + '</select></label>'
+      + '<label class="fld"><span>Nome deste link (opcional)</span><input id="embDesc" maxlength="80" placeholder="Ex.: Site da diretoria"></label>'
+      + '<label class="fld"><span>Validade do link</span><select id="embDias">' + op(0, 'Sem validade') + op(7, '7 dias') + op(30, '30 dias', true) + op(90, '90 dias') + op(365, '1 ano') + '</select></label></div>'
+      + '<div class="dica">Depois de criar o link, você escolhe tamanho, zoom e outros ajustes e copia o código.</div>'
+      + '<button class="emb-btn" id="embCriar">Criar link e montar código</button>';
+  } else {
+    h += '<div class="emb-g" id="embOpc">'
+      + '<div class="fld"><span>Largura</span><div class="emb-2"><input id="embLarg" type="number" min="1" value="100"><select id="embLargU">' + op('%', '%', true) + op('px', 'px') + '</select></div></div>'
+      + '<div class="fld"><span>Altura</span><div class="emb-2"><input id="embAlt" type="number" min="1" value="700"><select id="embAltU">' + op('px', 'px', true) + op('vh', 'vh') + '</select></div></div>'
+      + '<label class="fld"><span>Zoom do conteúdo</span><select id="embZoom">' + [50, 60, 70, 80, 90, 100, 110, 120].map(z => op(z, z + '%', z === 100)).join('') + '</select></label>'
+      + '<label class="fld"><span>Cor de fundo</span><select id="embFundo">' + op('', 'Padrão do painel', true) + op('transparent', 'Transparente') + op('FFFFFF', 'Branco') + op('0A2A9A', 'Azul PierServ') + '</select></label>'
+      + '<label class="fld"><span>Cantos arredondados (px)</span><input id="embRaio" type="number" min="0" max="60" value="12"></label>'
+      + '<div class="fld"><span>Rolagem automática</span><label class="emb-chk"><input type="checkbox" id="embRolar"> Subir e descer sozinho</label>'
+      + '<select id="embVel">' + op(20, 'Muito lenta') + op(40, 'Lenta', true) + op(70, 'Normal') + op(120, 'Rápida') + '</select></div></div>'
+      + '<label class="fld"><span>Código para colar no site</span><textarea id="embCodigo" readonly rows="4"></textarea></label>'
+      + '<div class="emb-btns"><button class="emb-btn" id="embCopiar">Copiar código</button><button class="emb-btn sec" id="embCopiarLink">Copiar só o link</button><a class="emb-btn sec" id="embAbrir" target="_blank" rel="noopener">Abrir em nova aba</a></div>'
+      + '<div class="emb-prevlbl">Pré-visualização</div>'
+      + '<div class="emb-prevarea" id="embArea"><div class="emb-stage" id="embStage"><iframe id="embPrev" title="Pré-visualização"></iframe></div></div>';
+  }
+  $('embBuilder').innerHTML = h + '</div>';
+}
+
+function embAtualiza() {
+  const l = emb.links.find(x => x.token === emb.modo);
+  if (!l || !$('embOpc')) return;
+  const u = new URL('embed.html', location.href.split('#')[0].split('?')[0]);
+  u.searchParams.set('t', l.token);
+  const z = parseInt(gv('embZoom'), 10); if (z !== 100) u.searchParams.set('zoom', z);
+  if (gv('embFundo')) u.searchParams.set('bg', gv('embFundo'));
+  const raio = Math.max(0, Math.min(60, parseInt(gv('embRaio'), 10) || 0));
+  if (raio) u.searchParams.set('raio', raio);
+  if ($('embRolar').checked) { u.searchParams.set('rolar', '1'); u.searchParams.set('vel', gv('embVel')); }
+  const larg = Math.max(1, parseFloat(gv('embLarg')) || 100), alt = Math.max(1, parseFloat(gv('embAlt')) || 700);
+  const W = larg + gv('embLargU'), H = alt + gv('embAltU');
+  emb.url = u.href;
+  $('embCodigo').value = '<iframe src="' + emb.url + '" title="' + nomePainel(l.painel).replace(/"/g, '&quot;')
+    + '" style="width:' + W + ';max-width:100%;height:' + H + ';border:0;border-radius:' + raio + 'px" loading="lazy" allowfullscreen></iframe>';
+  $('embAbrir').href = emb.url;
+
+  const area = Math.max(200, $('embArea').clientWidth - 24);
+  const wpx = Math.min(gv('embLargU') === '%' ? area * larg / 100 : larg, area);
+  const hpx = gv('embAltU') === 'vh' ? innerHeight * alt / 100 : alt;
+  const st = $('embStage');
+  st.style.width = wpx + 'px'; st.style.height = hpx + 'px'; st.style.borderRadius = raio + 'px';
+  const pv = $('embPrev');
+  if (pv.dataset.u !== emb.url) {
+    clearTimeout(emb.t);
+    emb.t = setTimeout(() => { pv.dataset.u = emb.url; pv.src = emb.url; }, 400);
+  }
+}
+
+async function copiar(txt) {
+  try { await navigator.clipboard.writeText(txt); }
+  catch (e) {
+    const a = document.createElement('textarea'); a.value = txt; document.body.appendChild(a); a.select();
+    document.execCommand('copy'); a.remove();
+  }
+  toast('Copiado.');
+}
+
+$('vEmbed').addEventListener('click', async e => {
+  const id = e.target.id, b = e.target.closest('[data-emb]');
+  try {
+    if (id === 'embNovo') { emb.modo = 'novo'; embForm(); return; }
+    if (id === 'embCriar') {
+      e.target.disabled = true;
+      const j = await chamar({ acao: 'admin', op: 'embedCriar', painel: gv('embPainel'), descricao: gv('embDesc'), dias: gv('embDias') });
+      emb.links.push(j.embed); emb.modo = j.embed.token;
+      embLista(); embForm(); embAtualiza(); toast('Link criado.');
+      return;
+    }
+    if (id === 'embCopiar') { await copiar(gv('embCodigo')); return; }
+    if (id === 'embCopiarLink') { await copiar(emb.url); return; }
+    if (!b) return;
+    const t = b.dataset.t, a = b.dataset.emb;
+    if (a === 'usar') { emb.modo = t; embForm(); embAtualiza(); $('embBuilder').scrollIntoView({ behavior: 'smooth' }); return; }
+    const msg = a === 'rev' ? 'Cancelar este link? Os sites que o usam deixarão de mostrar o painel.' : 'Excluir este link definitivamente?';
+    if (!confirm(msg)) return;
+    emb.links = (await chamar({ acao: 'admin', op: a === 'rev' ? 'embedRevogar' : 'embedExcluir', token: t })).embeds;
+    if (emb.modo === t) { emb.modo = null; $('embBuilder').innerHTML = ''; }
+    embLista(); toast(a === 'rev' ? 'Link cancelado.' : 'Link excluído.');
+  } catch (err) { toast(err.message, true); const c = $('embCriar'); if (c) c.disabled = false; }
+});
+$('vEmbed').addEventListener('input', e => { if (e.target.closest('#embOpc')) embAtualiza(); });
+$('vEmbed').addEventListener('change', e => { if (e.target.closest('#embOpc')) embAtualiza(); });
+
 /* ---------- Administração ---------- */
 const adm = { lista: [], paineis: [], filtro: 'ativo', busca: '' };
 
@@ -962,7 +1070,7 @@ function montarFormNovo() {
 $('vAdmin').addEventListener('click', e => { if (e.target.id === 'admNovo') { $('admForm').classList.toggle('on'); const i = $('admForm').querySelector('input[name=nome]'); if (i) i.focus(); } });
 
 function mostrarCred(u, senha, titulo) {
-  const texto = 'Acesso à Plataforma de BIs - Qualidade\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
+  const texto = 'Acesso à Plataforma de BI\nEndereço: ' + location.origin + '\nE-mail: ' + u.email + '\nSenha provisória: ' + senha + '\n(troque a senha no primeiro acesso)';
   const c = $('admCred'); c.classList.add('on');
   c.innerHTML = '<h3>✅ ' + esc(titulo) + ' — envie estes dados para ' + esc(u.nome) + '</h3><pre id="credTxt">' + esc(texto) + '</pre>'
     + '<button class="b p" id="btnCopiar">Copiar</button> <button class="b s" id="btnFecharCred">Fechar</button><br><small>Esta senha aparece só agora. Depois dela, o sistema não consegue mostrá-la de novo (use "Senha" para gerar outra).</small>';
