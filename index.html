@@ -371,6 +371,29 @@ main{
   .top{display:flex}
   .pg{padding:22px 16px 40px}
 }
+
+/* ---------- Assistente de IA ---------- */
+.ia-fab{position:fixed;right:22px;bottom:22px;z-index:60;width:56px;height:56px;border-radius:50%;border:0;color:#fff;background:linear-gradient(135deg,#7A5CFF,var(--azure));box-shadow:0 10px 28px -6px rgba(47,107,255,.7);display:grid;place-items:center;cursor:pointer;transition:transform .15s}
+.ia-fab:hover{transform:scale(1.07)}
+.ia-panel{position:fixed;right:22px;bottom:90px;z-index:61;width:min(420px,calc(100vw - 24px));height:min(620px,calc(100vh - 120px));background:#fff;border-radius:18px;box-shadow:0 24px 60px -12px rgba(2,10,50,.6);display:none;flex-direction:column;overflow:hidden}
+.ia-panel.on{display:flex}
+.ia-h{display:flex;align-items:center;gap:10px;padding:12px 14px;color:#fff;font-weight:700;background:linear-gradient(135deg,#7A5CFF,var(--royal))}
+.ia-h span{flex:1}.ia-h button{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer}
+.ia-log{flex:1;overflow:auto;padding:14px;background:#F6F9FF}
+.ia-m{max-width:90%;padding:10px 13px;border-radius:14px;margin:0 0 10px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.ia-m.u{margin-left:auto;background:var(--royal);color:#fff}
+.ia-m.a{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.ia-cp{margin-top:6px;border:1px solid #CBD7EE;background:#fff;color:var(--navy);border-radius:8px;padding:3px 9px;font-size:11px;cursor:pointer}
+.ia-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ia-chips button{border:1px solid #CBD7EE;background:#fff;color:var(--navy);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.ia-chips button:hover{background:#EEF3FC}
+.ia-in{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.ia-in textarea{flex:1;resize:none;border:1px solid #CBD7EE;border-radius:12px;padding:9px 12px;font:13px/1.4 inherit;height:42px}
+.ia-in button{border:0;border-radius:12px;padding:0 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,#7A5CFF,var(--azure));cursor:pointer}
+.ia-dots i{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--mute);animation:iad 1s infinite}
+.ia-dots i:nth-child(2){animation-delay:.15s}.ia-dots i:nth-child(3){animation-delay:.3s}
+@keyframes iad{50%{opacity:.25}}
+.ia-sum{margin-top:12px;border:0;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;color:#fff;background:linear-gradient(135deg,#7A5CFF,var(--azure));cursor:pointer}
 </style>
 <script src="/config.js"></script>
 </head>
@@ -451,6 +474,12 @@ main{
       <div id="dashboardFrames"></div>
     </div>
   </main>
+  <button class="ia-fab" data-ia="abrir" type="button" title="Assistente de IA" aria-label="Assistente de IA"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button>
+  <div class="ia-panel" id="iaPanel">
+    <div class="ia-h"><span>✨ Assistente de IA</span><button data-ia="limpar" type="button">Nova conversa</button><button data-ia="fechar" type="button">✕</button></div>
+    <div class="ia-log" id="iaLog"></div>
+    <div class="ia-in"><textarea id="iaTxt" placeholder="Pergunte sobre os dados dos painéis…"></textarea><button data-ia="enviar" type="button">Enviar</button></div>
+  </div>
 </section>
 
 <!-- Modo TV / Apresentação -->
@@ -546,6 +575,7 @@ window.BI = {
   dados: async (painel, op, fresh) => (await chamar({ acao: 'dados', painel: painel, op: op || '', fresh: !!fresh })).dados
 };
 
+const iaEst = { hist: [], ctx: null, ctxT: 0, busy: false };
 let homeCardsSignature = null;
 const DASHBOARD_REFRESH_MS = 10 * 60 * 1000;
 let dashboardRefreshTimer = null;
@@ -555,6 +585,7 @@ function sairLocal(msg) {
   sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
   $('dashboardFrames').innerHTML = ''; clearInterval(dashboardRefreshTimer); dashboardRefreshTimer = null;
   homeCardsSignature = null; $('vHome').innerHTML = '';
+  iaEst.hist = []; iaEst.ctx = null; $('iaLog').innerHTML = ''; $('iaPanel').classList.remove('on');
   $('lSenha').value = '';
   $('loginMsg').className = 'msg'; $('loginMsg').textContent = msg || '';
   tela('tLogin');
@@ -688,6 +719,8 @@ function renderHome() {
   homeCardsSignature = assinatura;
   const nome = (eu.nome || '').split(' ')[0];
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
+    + (eu.paineis.length ? '<button class="ia-sum" data-ia="resumo" type="button">✨ Resumo com IA</button>' : '')
+    + ''
     + (eu.paineis.length
       ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="eager" tabindex="-1" aria-hidden="true" scrolling="no" data-id="' + esc(p.id) + '" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
@@ -1206,6 +1239,65 @@ setInterval(async () => {
     if (mudou) renderApp();
   } catch (e) {}
 }, 120000);
+
+/* ---------- Assistente de IA ---------- */
+const IA_TTL = 10 * 60 * 1000, IA_MAX = 24000;
+const IA_RESUMO = 'Faça um resumo executivo de todos os painéis: principais números, o que está bom, o que exige atenção e 3 ações sugeridas.';
+const IA_SUG = [['Resumo executivo', IA_RESUMO], ['O que merece atenção hoje?', 'O que está fora da meta ou piorou e merece atenção hoje?'], ['Maiores pendências', 'Quais são as maiores pendências e riscos em aberto?']];
+const iaFmt = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^#+\s*(.+)$/gm, '<b>$1</b>').replace(/\n/g, '<br>');
+
+function iaAbrir(on) {
+  const p = $('iaPanel'); p.classList.toggle('on', on == null ? !p.classList.contains('on') : on);
+  if (p.classList.contains('on')) { iaBoasVindas(); $('iaTxt').focus(); }
+}
+function iaBoasVindas() {
+  if ($('iaLog').children.length) return;
+  $('iaLog').innerHTML = '<div class="ia-m a">Olá! Posso resumir seus painéis e responder perguntas com base nos dados deles. Escolha uma sugestão ou pergunte.</div>'
+    + '<div class="ia-chips">' + IA_SUG.map((s, i) => '<button type="button" data-ia="chip" data-i="' + i + '">' + esc(s[0]) + '</button>').join('') + '</div>';
+}
+function iaMsg(tipo, conteudo, html) {
+  const log = $('iaLog'); log.querySelectorAll('.ia-chips').forEach(c => c.remove());
+  const d = document.createElement('div'); d.className = 'ia-m ' + tipo;
+  if (html) d.innerHTML = conteudo; else d.textContent = conteudo;
+  log.appendChild(d); log.scrollTop = log.scrollHeight; return d;
+}
+// Lê os dados de todos os painéis liberados ao usuário (respeitando as permissões do servidor) e guarda por 10 min.
+async function iaContexto() {
+  if (iaEst.ctx && Date.now() - iaEst.ctxT < IA_TTL) return iaEst.ctx;
+  const res = await Promise.allSettled(eu.paineis.map(p => window.BI.dados(p.id)));
+  iaEst.ctx = eu.paineis.map((p, i) => {
+    let d = res[i].status === 'fulfilled' ? JSON.stringify(res[i].value) : null;
+    if (d && d.length > IA_MAX) d = d.slice(0, IA_MAX) + '…[cortado]';
+    return { painel: p.nome, descricao: p.descricao || '', dados: d || 'sem dados disponíveis' };
+  });
+  iaEst.ctxT = Date.now(); return iaEst.ctx;
+}
+async function iaEnviar(texto) {
+  texto = (texto || '').trim(); if (!texto || iaEst.busy) return;
+  iaAbrir(true); iaBoasVindas(); iaMsg('u', texto); iaEst.busy = true;
+  const pend = iaMsg('a', '<span class="ia-dots"><i></i><i></i><i></i></span>', true);
+  try {
+    const contexto = await iaContexto();
+    const j = await chamar({ acao: 'ia', pergunta: texto, historico: iaEst.hist.slice(-6), contexto: contexto });
+    iaEst.hist.push({ role: 'user', content: texto }, { role: 'assistant', content: j.resposta });
+    pend.dataset.raw = j.resposta;
+    pend.innerHTML = iaFmt(j.resposta) + '<div><button type="button" class="ia-cp" data-ia="copiar">Copiar</button></div>';
+  } catch (e) { pend.textContent = 'Não consegui responder: ' + e.message; }
+  iaEst.busy = false; $('iaLog').scrollTop = $('iaLog').scrollHeight;
+}
+function iaEnviarCaixa() { const t = $('iaTxt').value; $('iaTxt').value = ''; iaEnviar(t); }
+$('iaTxt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaEnviarCaixa(); } });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-ia]'); if (!b) return;
+  const a = b.dataset.ia;
+  if (a === 'abrir') iaAbrir();
+  else if (a === 'fechar') iaAbrir(false);
+  else if (a === 'resumo') iaEnviar(IA_RESUMO);
+  else if (a === 'chip') iaEnviar(IA_SUG[b.dataset.i][1]);
+  else if (a === 'enviar') iaEnviarCaixa();
+  else if (a === 'copiar') copiar(b.closest('.ia-m').dataset.raw || '');
+  else if (a === 'limpar') { iaEst.hist = []; iaEst.ctx = null; $('iaLog').innerHTML = ''; iaBoasVindas(); }
+});
 })();
 </script>
 </body>
