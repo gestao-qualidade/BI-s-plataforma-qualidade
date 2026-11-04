@@ -1261,14 +1261,69 @@ function iaMsg(tipo, conteudo, html) {
   if (html) d.innerHTML = conteudo; else d.textContent = conteudo;
   log.appendChild(d); log.scrollTop = log.scrollHeight; return d;
 }
+// Acha tabelas (listas de registros) dentro do retorno de um painel.
+function iaTabelas(v) {
+  const t = [];
+  (function achar(x, nome, prof) {
+    if (!x || typeof x !== 'object' || prof > 4) return;
+    if (Array.isArray(x)) {
+      if (x.length > 1 && x.every(r => r && typeof r === 'object' && !Array.isArray(r))) t.push({ nome: nome, linhas: x });
+      else if (x.length > 1 && Array.isArray(x[0]) && x[0].every(c => typeof c === 'string') && x.slice(1).every(Array.isArray)) {
+        const h = x[0]; t.push({ nome: nome, linhas: x.slice(1).map(r => { const o = {}; h.forEach((k, i) => { o[k] = r[i]; }); return o; }) });
+      } else x.slice(0, 30).forEach(y => achar(y, nome, prof + 1));
+      return;
+    }
+    const h = x.cabecalho || x.colunas || x.headers, L = x.linhas || x.rows;
+    if (Array.isArray(h) && Array.isArray(L) && L.length && Array.isArray(L[0])) {
+      t.push({ nome: nome, linhas: L.map(r => { const o = {}; h.forEach((k, i) => { o[k] = r[i]; }); return o; }) }); return;
+    }
+    Object.keys(x).forEach(k => achar(x[k], nome ? nome + '.' + k : k, prof + 1));
+  })(v, '', 0);
+  return t;
+}
+// Calcula TODOS os totais sobre todas as linhas (exatos) e anexa uma amostra pequena.
+function iaPerfil(nome, L) {
+  const cols = {};
+  L.forEach(r => Object.keys(r).forEach(k => { (cols[k] = cols[k] || []).push(r[k]); }));
+  const out = { tabela: nome || 'dados', total_linhas: L.length, colunas: {} };
+  Object.keys(cols).forEach(k => {
+    const v = cols[k].filter(x => x !== '' && x != null);
+    if (!v.length) return;
+    if (v.every(x => typeof x === 'number')) {
+      const s = v.reduce((a, b) => a + b, 0);
+      out.colunas[k] = { soma: +s.toFixed(2), media: +(s / v.length).toFixed(2), min: Math.min.apply(null, v), max: Math.max.apply(null, v) }; return;
+    }
+    const c = {}; v.forEach(x => { x = String(x).slice(0, 60); c[x] = (c[x] || 0) + 1; });
+    const ks = Object.keys(c);
+    out.colunas[k] = ks.length <= 25 ? { contagem: c } : { valores_distintos: ks.length, preenchidos: v.length };
+  });
+  const st = Object.keys(out.colunas).find(k => /status|situa[cç]/i.test(k) && out.colunas[k].contagem);
+  if (st) {
+    out.por_status = {};
+    Object.keys(out.colunas).filter(k => k !== st && out.colunas[k].contagem).slice(0, 6).forEach(k => {
+      const m = {};
+      L.forEach(r => { const a = String(r[k] == null ? '' : r[k]).slice(0, 60), b = String(r[st] == null ? '' : r[st]).slice(0, 60); if (a) { (m[a] = m[a] || {})[b] = (m[a][b] || 0) + 1; } });
+      out.por_status[k + ' x ' + st] = m;
+    });
+  }
+  const am = []; let n = 0;
+  for (const r of L) { const s = JSON.stringify(r); if (n + s.length > 6000) break; am.push(r); n += s.length; }
+  out.amostra_linhas = am.length; out.amostra = am;
+  return out;
+}
+const iaResumir = v => iaTabelas(v).map(t => iaPerfil(t.nome, t.linhas));
+
 // Lê os dados de todos os painéis liberados ao usuário (respeitando as permissões do servidor) e guarda por 10 min.
 async function iaContexto() {
   if (iaEst.ctx && Date.now() - iaEst.ctxT < IA_TTL) return iaEst.ctx;
   const res = await Promise.allSettled(eu.paineis.map(p => window.BI.dados(p.id)));
   iaEst.ctx = eu.paineis.map((p, i) => {
-    let d = res[i].status === 'fulfilled' ? JSON.stringify(res[i].value) : null;
-    if (d && d.length > IA_MAX) d = d.slice(0, IA_MAX) + '…[cortado]';
-    return { painel: p.nome, descricao: p.descricao || '', dados: d || 'sem dados disponíveis' };
+    const base = { painel: p.nome, descricao: p.descricao || '' };
+    if (res[i].status !== 'fulfilled' || res[i].value == null) return Object.assign(base, { dados: 'sem dados disponíveis' });
+    const perfis = iaResumir(res[i].value);   // totais exatos calculados sobre TODAS as linhas
+    if (perfis.length) return Object.assign(base, { resumo_calculado: perfis });
+    const d = JSON.stringify(res[i].value), cortado = d.length > IA_MAX;
+    return Object.assign(base, { dados: cortado ? d.slice(0, IA_MAX) : d, dados_cortados: cortado });
   });
   iaEst.ctxT = Date.now(); return iaEst.ctx;
 }
