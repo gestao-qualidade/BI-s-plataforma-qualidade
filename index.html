@@ -1282,16 +1282,22 @@ function iaTabelas(v) {
   return t;
 }
 // Calcula TODOS os totais sobre todas as linhas (exatos) e anexa uma amostra pequena.
+const iaMes = x => { if (typeof x !== 'string') return null; let m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(x); if (m) return m[3] + '-' + m[2]; m = /^(\d{4})-(\d{2})-\d{2}/.exec(x); return m ? m[1] + '-' + m[2] : null; };
 function iaPerfil(nome, L) {
   const cols = {};
   L.forEach(r => Object.keys(r).forEach(k => { (cols[k] = cols[k] || []).push(r[k]); }));
-  const out = { tabela: nome || 'dados', total_linhas: L.length, colunas: {} };
+  const out = { tabela: nome || 'dados', total_linhas: L.length, colunas: {} }, datas = [];
   Object.keys(cols).forEach(k => {
     const v = cols[k].filter(x => x !== '' && x != null);
     if (!v.length) return;
     if (v.every(x => typeof x === 'number')) {
       const s = v.reduce((a, b) => a + b, 0);
       out.colunas[k] = { soma: +s.toFixed(2), media: +(s / v.length).toFixed(2), min: Math.min.apply(null, v), max: Math.max.apply(null, v) }; return;
+    }
+    const ms = v.map(iaMes);
+    if (ms.filter(Boolean).length >= v.length * 0.8) {
+      const pm = {}; ms.forEach(m => { if (m) pm[m] = (pm[m] || 0) + 1; }); const o = Object.keys(pm).sort();
+      out.colunas[k] = { tipo: 'data', primeira: o[0], ultima: o[o.length - 1], por_mes: pm }; datas.push(k); return;
     }
     const c = {}; v.forEach(x => { x = String(x).slice(0, 60); c[x] = (c[x] || 0) + 1; });
     const ks = Object.keys(c);
@@ -1300,6 +1306,11 @@ function iaPerfil(nome, L) {
   const st = Object.keys(out.colunas).find(k => /status|situa[cç]/i.test(k) && out.colunas[k].contagem);
   if (st) {
     out.por_status = {};
+    datas.slice(0, 2).forEach(k => {
+      const m = {};
+      L.forEach(r => { const a = iaMes(r[k]), b = String(r[st] == null ? '' : r[st]).slice(0, 60); if (a) { (m[a] = m[a] || {})[b] = (m[a][b] || 0) + 1; } });
+      out.por_status['mês de ' + k + ' x ' + st] = m;
+    });
     Object.keys(out.colunas).filter(k => k !== st && out.colunas[k].contagem).slice(0, 6).forEach(k => {
       const m = {};
       L.forEach(r => { const a = String(r[k] == null ? '' : r[k]).slice(0, 60), b = String(r[st] == null ? '' : r[st]).slice(0, 60); if (a) { (m[a] = m[a] || {})[b] = (m[a][b] || 0) + 1; } });
@@ -1329,7 +1340,9 @@ async function iaContexto() {
 }
 async function iaEnviar(texto) {
   texto = (texto || '').trim(); if (!texto || iaEst.busy) return;
-  iaAbrir(true); iaBoasVindas(); iaMsg('u', texto); iaEst.busy = true;
+  iaAbrir(true); iaBoasVindas(); iaMsg('u', texto);
+  if (texto === '/diagnostico') { iaDiagnostico(); return; }
+  iaEst.busy = true;
   const pend = iaMsg('a', '<span class="ia-dots"><i></i><i></i><i></i></span>', true);
   try {
     const contexto = await iaContexto();
@@ -1339,6 +1352,18 @@ async function iaEnviar(texto) {
     pend.innerHTML = iaFmt(j.resposta) + '<div><button type="button" class="ia-cp" data-ia="copiar">Copiar</button></div>';
   } catch (e) { pend.textContent = 'Não consegui responder: ' + e.message; }
   iaEst.busy = false; $('iaLog').scrollTop = $('iaLog').scrollHeight;
+}
+async function iaDiagnostico() {
+  const pend = iaMsg('a', 'Lendo os painéis…');
+  try {
+    iaEst.ctx = null; const ctx = await iaContexto();
+    pend.innerHTML = iaFmt(ctx.map(c => {
+      if (!c.resumo_calculado) return '**' + c.painel + '**: sem tabela reconhecida (' + (c.dados === 'sem dados disponíveis' ? 'sem dados' : String(c.dados).length + ' caracteres') + '). Início: ' + String(c.dados).slice(0, 250);
+      return '**' + c.painel + '**: ' + c.resumo_calculado.map(t => t.tabela + ' → ' + t.total_linhas + ' linhas; colunas: ' + Object.keys(t.colunas).join(', ')
+        + (t.por_status ? '; datas: ' + Object.keys(t.colunas).filter(k => t.colunas[k].tipo).map(k => k + ' ' + t.colunas[k].primeira + ' a ' + t.colunas[k].ultima).join(', ') : '')
+        + '; 1ª linha: ' + JSON.stringify(t.amostra[0] || {}).slice(0, 300)).join(' | ');
+    }).join('\n\n'));
+  } catch (e) { pend.textContent = e.message; }
 }
 function iaEnviarCaixa() { const t = $('iaTxt').value; $('iaTxt').value = ''; iaEnviar(t); }
 $('iaTxt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaEnviarCaixa(); } });
