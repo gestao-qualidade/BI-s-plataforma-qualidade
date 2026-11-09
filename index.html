@@ -325,6 +325,23 @@ main{
 .tvopt small{color:var(--mute);font-size:12px;line-height:1.35}
 .tvopt.on{border-color:var(--azure);background:#EEF3FF;box-shadow:0 0 0 3px rgba(47,107,255,.15)}
 @media (max-width:640px){.tvfmt{grid-template-columns:1fr}}
+.tvlist{display:grid;gap:6px}
+.tvp{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid #DCE5F5;border-radius:12px;padding:8px 10px}
+.tvp .chk{border:0;padding:4px 2px;background:none;font-size:14px;font-weight:600;color:var(--navy);justify-content:flex-start}
+.tvp input[type=checkbox]{width:auto;flex:none}
+.tvp span{margin:0}
+.tvp .chk:has(input:checked){background:none}
+.tvst{font-size:12px;color:var(--mute)}.tvst.on{color:#0A6F64;font-weight:600}
+.tvpa{display:flex;gap:6px}.tvpa .b{padding:6px 11px;font-size:12px}
+.tvacts{display:flex;gap:10px;align-items:center;margin-top:16px}.tvacts .btn-main{flex:1;margin:0}.tvacts .b{padding:12px 16px}
+.tvf-modal{display:none;position:fixed;inset:0;z-index:600;background:rgba(3,10,52,.7);backdrop-filter:blur(4px);padding:2.5vh 2.5vw}
+.tvf-modal.on{display:block}
+.tvf-box{height:100%;display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,5,40,.9)}
+.tvf-hd{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#071a66,#1747B8 70%,#2F6BFF);color:#fff}
+.tvf-hd small{display:block;color:#C9D7F5;font-size:12px;margin-top:2px}.tvf-hd small b{color:#fff}
+.tvf-bt{display:flex;gap:8px;flex:none}
+#tvfFrame{flex:1;width:100%;border:0;background:#0A2A9A}
+@media (max-width:860px){.tvp{grid-template-columns:1fr}}
 
 /* ---------- administração ---------- */
 .bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
@@ -765,62 +782,142 @@ let tvTempo = 60;
 let tvPausado = false;
 let tvFormato = localStorage.getItem('bi_tv_formato') === 'tv' ? 'tv' : 'normal';
 
-function montarTvConfig() {
+/* Configuração da apresentação: fica salva no servidor (quem configura num computador e roda a TV em outro).
+   Se o script da plataforma ainda não tiver essa função, guarda neste navegador. */
+let tvCfg = null, tvCfgServidor = true, tvCfgTimer = null;
+const TV_CFG_LOCAL = 'bi_tv_config';
+function tvCfgPadrao() { return { formato: tvFormato, tempo: 60, rolar: true, vel: 'auto', sel: null, filtros: {} }; }
+async function tvCfgCarregar() {
+  try {
+    const j = await chamar({ acao: 'admin', op: 'tvLer' });
+    tvCfgServidor = true;
+    return Object.assign(tvCfgPadrao(), j.config || {});
+  } catch (e) {
+    tvCfgServidor = false;
+    let l = null; try { l = JSON.parse(localStorage.getItem(TV_CFG_LOCAL) || 'null'); } catch (x) {}
+    return Object.assign(tvCfgPadrao(), l || {});
+  }
+}
+function tvCfgSalvar(avisar) {
+  clearTimeout(tvCfgTimer);
+  tvCfgTimer = setTimeout(async () => {
+    try { localStorage.setItem(TV_CFG_LOCAL, JSON.stringify(tvCfg)); } catch (e) {}
+    if (!tvCfgServidor) { if (avisar) toast('Configuração salva neste computador.'); return; }
+    try { await chamar({ acao: 'admin', op: 'tvSalvar', config: JSON.stringify(tvCfg) }); if (avisar) toast('Configuração salva. A TV vai usar esta configuração.'); }
+    catch (e) { toast('Não consegui salvar no servidor: ' + e.message, true); }
+  }, avisar ? 0 : 500);
+}
+function tvLerTela() {
+  if (!$('tvPaineisCheck')) return;
+  tvCfg.sel = [...$('tvPaineisCheck').querySelectorAll('input[data-tvid]')].filter(i => i.checked).map(i => i.dataset.tvid);
+  tvCfg.formato = ($('tvFmt').querySelector('input:checked') || {}).value === 'tv' ? 'tv' : 'normal';
+  tvCfg.tempo = parseInt($('tvTempoSel').value, 10) || 60;
+  tvCfg.rolar = $('tvRolar').checked;
+  tvCfg.vel = $('tvVel').value;
+  tvFormato = tvCfg.formato; localStorage.setItem('bi_tv_formato', tvFormato);
+}
+function tvFiltroTxt(id) {
+  const f = tvCfg.filtros[id];
+  if (!f || !f.estado || !f.ativos) return '<span class="tvst">sem filtro · mostra tudo</span>';
+  return '<span class="tvst on">' + f.ativos + (f.ativos === 1 ? ' filtro aplicado' : ' filtros aplicados') + '</span>';
+}
+
+async function montarTvConfig() {
+  $('vTvConfig').innerHTML = '<div class="pg"><h1>Modo Apresentação TV (Loop)</h1><div class="sub">Carregando a configuração…</div></div>';
+  tvCfg = await tvCfgCarregar();
+  tvFormato = tvCfg.formato === 'tv' ? 'tv' : 'normal';
   const pSelec = eu.paineis || [];
-  $('vTvConfig').innerHTML = '<div class="pg"><h1>Modo Apresentação TV (Loop)</h1><div class="sub">Configure a rotação automática dos dashboards para ser exibida em TVs ou monitores. Os dados atualizam em tempo real.</div>'
-    + '<div class="box" style="max-width:600px">'
-    + '<div class="fld"><span>Selecione os painéis que entrarão na apresentação:</span><div class="pn" id="tvPaineisCheck">'
-    + pSelec.map(p => '<label class="chk"><input type="checkbox" data-tvid="' + esc(p.id) + '" checked> ' + esc(p.nome) + '</label>').join('')
+  const marcado = id => !tvCfg.sel || tvCfg.sel.indexOf(id) >= 0;
+  const op = (v, t) => '<option value="' + v + '"' + (String(tvCfg.tempo) === String(v) || String(tvCfg.vel) === String(v) ? ' selected' : '') + '>' + t + '</option>';
+  $('vTvConfig').innerHTML = '<div class="pg"><h1>Modo Apresentação TV (Loop)</h1><div class="sub">Configure aqui e inicie em qualquer computador: a seleção, o formato, o tempo e os filtros de cada painel ficam salvos'
+    + (tvCfgServidor ? ' na plataforma.' : ' <b>só neste navegador</b> (atualize o script da plataforma para a TV usar a mesma configuração).') + '</div>'
+    + '<div class="box" style="max-width:760px">'
+    + '<div class="fld"><span>Painéis da apresentação e o que cada um mostra:</span><div class="tvlist" id="tvPaineisCheck">'
+    + pSelec.map(p => '<div class="tvp"><label class="chk"><input type="checkbox" data-tvid="' + esc(p.id) + '"' + (marcado(p.id) ? ' checked' : '') + '> ' + esc(p.nome) + '</label>'
+        + '<span class="tvfs" data-tvfs="' + esc(p.id) + '">' + tvFiltroTxt(p.id) + '</span>'
+        + '<span class="tvpa"><button class="b s" data-tvf="' + esc(p.id) + '">Escolher filtros</button>'
+        + '<button class="b s" data-tvlimpa="' + esc(p.id) + '" title="Voltar a mostrar tudo"' + (tvCfg.filtros[p.id] ? '' : ' disabled') + '>Limpar</button></span></div>').join('')
     + '</div></div>'
     + '<div class="fld"><span>Formato de exibição:</span><div class="tvfmt" id="tvFmt">'
     + '<label class="tvopt"><input type="radio" name="tvfmt" value="normal"' + (tvFormato === 'normal' ? ' checked' : '') + '><b>Normal</b><small>Cada BI completo, como na tela do portal, com rolagem automática para mostrar o que fica abaixo.</small></label>'
     + '<label class="tvopt"><input type="radio" name="tvfmt" value="tv"' + (tvFormato === 'tv' ? ' checked' : '') + '><b>Modo TV 1920×1080</b><small>Cada BI na tela única feita para TV: indicadores, gráficos e pendências sem rolar a página.</small></label>'
     + '</div></div>'
-    + '<label class="fld"><span>Tempo de permanência em cada dashboard:</span>'
-    + '<select id="tvTempoSel">'
-    + '<option value="15">15 segundos (Rápido)</option>'
-    + '<option value="30">30 segundos</option>'
-    + '<option value="60" selected>1 minuto (Recomendado)</option>'
-    + '<option value="180">3 minutos</option>'
-    + '<option value="300">5 minutos</option>'
-    + '</select></label>'
-    + '<div id="tvRolaBox"><div class="fld"><label class="chk"><input type="checkbox" id="tvRolar" checked> Rolar a página devagar (para ver o que fica abaixo na TV)</label></div>'
-    + '<label class="fld"><span>Velocidade da rolagem (sobe e desce):</span>'
-    + '<select id="tvVel">'
-    + '<option value="auto" selected>Automática (ajusta ao tempo de cada painel)</option>'
-    + '<option value="20">Muito lenta</option>'
-    + '<option value="40">Lenta</option>'
-    + '<option value="70">Normal</option>'
-    + '<option value="120">Rápida</option>'
-    + '<option value="200">Muito rápida</option>'
-    + '</select></label>'
+    + '<label class="fld"><span>Tempo de permanência em cada dashboard:</span><select id="tvTempoSel">'
+    + op(15, '15 segundos (Rápido)') + op(30, '30 segundos') + op(60, '1 minuto (Recomendado)') + op(180, '3 minutos') + op(300, '5 minutos') + '</select></label>'
+    + '<div id="tvRolaBox"><div class="fld"><label class="chk"><input type="checkbox" id="tvRolar"' + (tvCfg.rolar !== false ? ' checked' : '') + '> Rolar a página devagar (para ver o que fica abaixo na TV)</label></div>'
+    + '<label class="fld"><span>Velocidade da rolagem (sobe e desce):</span><select id="tvVel">'
+    + op('auto', 'Automática (ajusta ao tempo de cada painel)') + op(20, 'Muito lenta') + op(40, 'Lenta') + op(70, 'Normal') + op(120, 'Rápida') + op(200, 'Muito rápida') + '</select></label>'
     + '<div class="sub" style="margin:-4px 0 10px;font-size:12px">Nas velocidades fixas, se o painel for grande e o tempo de permanência for curto, ele passa para o próximo antes de terminar de subir.</div></div>'
     + '<div class="dica" id="tvFmtDica" style="display:none">No Modo TV 1920×1080 cada painel já cabe inteiro na tela, então não há rolagem. Painéis que ainda não têm o Modo TV aparecem no formato normal.</div>'
-    + '<button class="btn-main" id="btnStartTv" style="margin-top:16px">Iniciar Apresentação em Tela Cheia</button>'
-    + '</div></div>';
+    + '<div class="tvacts"><button class="b s" id="btnSalvarTv">Salvar configuração</button><button class="btn-main" id="btnStartTv">Iniciar Apresentação em Tela Cheia</button></div>'
+    + '</div></div>'
+    + '<div class="tvf-modal" id="tvfModal"><div class="tvf-box"><div class="tvf-hd"><div><b id="tvfTit">Filtros</b><small>Use os filtros do próprio painel. Quando ele estiver mostrando só o que deve aparecer na TV, clique em <b>Salvar filtros</b>.</small></div>'
+    + '<div class="tvf-bt"><button class="b s" id="tvfCancelar">Cancelar</button><button class="b p" id="tvfSalvar">Salvar filtros</button></div></div><iframe id="tvfFrame" title="Escolher filtros"></iframe></div></div>';
 
-  $('btnStartTv').onclick = iniciarApresentacaoTv;
   const syncFmt = () => {
-    tvFormato = ($('tvFmt').querySelector('input:checked') || {}).value === 'tv' ? 'tv' : 'normal';
-    localStorage.setItem('bi_tv_formato', tvFormato);
-    $('tvRolaBox').style.display = tvFormato === 'tv' ? 'none' : '';
-    $('tvFmtDica').style.display = tvFormato === 'tv' ? '' : 'none';
+    const tv = ($('tvFmt').querySelector('input:checked') || {}).value === 'tv';
+    $('tvRolaBox').style.display = tv ? 'none' : '';
+    $('tvFmtDica').style.display = tv ? '' : 'none';
     $('tvFmt').querySelectorAll('.tvopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
   };
-  $('tvFmt').addEventListener('change', syncFmt);
   syncFmt();
+  $('vTvConfig').onchange = e => { if (e.target.closest('#tvFmt')) syncFmt(); tvLerTela(); tvCfgSalvar(false); };
+  $('btnSalvarTv').onclick = () => { tvLerTela(); tvCfgSalvar(true); };
+  $('btnStartTv').onclick = iniciarApresentacaoTv;
+  $('vTvConfig').onclick = async e => {
+    const bf = e.target.closest('[data-tvf]'), bl = e.target.closest('[data-tvlimpa]');
+    if (bf) tvAbrirFiltros(bf.dataset.tvf);
+    if (bl && !bl.disabled) { delete tvCfg.filtros[bl.dataset.tvlimpa]; tvAtualizaLinha(bl.dataset.tvlimpa); tvCfgSalvar(true); }
+    if (e.target.id === 'tvfCancelar') tvFecharFiltros();
+    if (e.target.id === 'tvfSalvar') {
+      const b = e.target; b.disabled = true; b.textContent = 'Salvando…';
+      try {
+        const r = await tvLerFiltrosFrame($('tvfFrame'));
+        if (r.ativos) tvCfg.filtros[tvFiltroAtual] = { estado: r.estado, ativos: r.ativos };
+        else delete tvCfg.filtros[tvFiltroAtual];
+        tvAtualizaLinha(tvFiltroAtual); tvLerTela(); tvCfgSalvar(true); tvFecharFiltros();
+      } catch (err) { toast(err.message, true); }
+      b.disabled = false; b.textContent = 'Salvar filtros';
+    }
+  };
+}
+let tvFiltroAtual = null;
+function tvAtualizaLinha(id) {
+  const s = $('tvPaineisCheck').querySelector('[data-tvfs="' + CSS.escape(id) + '"]'); if (s) s.innerHTML = tvFiltroTxt(id);
+  const l = $('tvPaineisCheck').querySelector('[data-tvlimpa="' + CSS.escape(id) + '"]'); if (l) l.disabled = !tvCfg.filtros[id];
+}
+function tvAbrirFiltros(id) {
+  const p = eu.paineis.find(x => x.id === id); if (!p) return;
+  tvFiltroAtual = id;
+  const f = tvCfg.filtros[id];
+  $('tvfTit').textContent = 'Filtros da apresentação · ' + p.nome;
+  $('tvfFrame').src = urlPainel(p, 'normal', 'tvcfg=1' + (f && f.estado ? '&filtros=' + encodeURIComponent(f.estado) : ''));
+  $('tvfModal').classList.add('on');
+}
+function tvFecharFiltros() { $('tvfModal').classList.remove('on'); $('tvfFrame').src = 'about:blank'; tvFiltroAtual = null; }
+/* Pergunta ao painel quais filtros estão ligados (mesmo site: direto; outro site: por mensagem). */
+function tvLerFiltrosFrame(fr) {
+  return new Promise((ok, falha) => {
+    try { const api = fr.contentWindow.biFiltros; if (api) { ok(api.ler()); return; } } catch (e) {}
+    const id = Math.random().toString(36).slice(2);
+    const fim = setTimeout(() => { removeEventListener('message', h); falha(new Error('Este painel ainda não aceita filtros da apresentação. Atualize o HTML do painel.')); }, 5000);
+    function h(e) { const d = e.data || {}; if (d.bi === 'filtros' && d.id === id) { clearTimeout(fim); removeEventListener('message', h); ok({ estado: d.estado, ativos: d.ativos }); } }
+    addEventListener('message', h);
+    try { fr.contentWindow.postMessage({ bi: 'filtros-ler', id: id }, '*'); } catch (e) {}
+  });
 }
 
 function iniciarApresentacaoTv() {
-  const marcados = [...$('tvPaineisCheck').querySelectorAll('input:checked')].map(i => i.dataset.tvid);
+  tvLerTela(); tvCfgSalvar(false);
+  const marcados = tvCfg.sel || [];
   if (!marcados.length) { toast('Selecione ao menos um painel para apresentar.', true); return; }
   
   tvLista = eu.paineis.filter(p => marcados.includes(p.id));
-  tvTempo = parseInt($('tvTempoSel').value, 10) || 60;
+  tvTempo = tvCfg.tempo || 60;
   tvIndex = 0;
   tvPausado = false;
-  tvRolar = tvFormato === 'tv' ? false : ($('tvRolar') ? $('tvRolar').checked : true);
-  tvVel = $('tvVel') ? $('tvVel').value : 'auto';
+  tvRolar = tvFormato === 'tv' ? false : tvCfg.rolar !== false;
+  tvVel = tvCfg.vel || 'auto';
 
   const ov = $('tvOverlay');
   ov.classList.add('on');
@@ -839,7 +936,8 @@ function tvCriaFrame(p) {
   const f = document.createElement('iframe');
   f.title = p.nome;
   f.dataset.id = p.id;
-  f.src = urlPainel(p, tvFormato);
+  const fl = tvCfg && tvCfg.filtros[p.id];
+  f.src = urlPainel(p, tvFormato, fl && fl.estado ? 'filtros=' + encodeURIComponent(fl.estado) : '');
   return f;
 }
 
