@@ -1229,10 +1229,10 @@ function escalaTV(){
   const s=Math.min(innerWidth/1920,innerHeight/1080);
   el.style.transform='translate('+Math.max(0,(innerWidth-1920*s)/2)+'px,'+Math.max(0,(innerHeight-1080*s)/2)+'px) scale('+s+')';
 }
-function setModo(m){
+function setModo(m,salvar){
   S.modo=m==='tv'?'tv':'normal';
   document.body.classList.toggle('tv',S.modo==='tv');
-  try{localStorage.setItem('docreg_modo',S.modo)}catch(e){}
+  try{if(salvar!==false)localStorage.setItem('docreg_modo',S.modo)}catch(e){}
   if(S.modo==='tv'){const mn=document.getElementById('main');if(mn)mn.innerHTML='';}
   if(S.modo==='tv'){try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
   else{try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
@@ -1290,7 +1290,30 @@ let tq;document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(t
 let ultimaCarga=Date.now();
 const _carregar=carregar;
 carregar=function(m){ultimaCarga=Date.now();return _carregar(m)};
-(function(){let m='normal';try{m=new URLSearchParams(location.search).get('modo')||localStorage.getItem('docreg_modo')||'normal'}catch(e){}if(m==='tv'){S.modo='tv';document.body.classList.add('tv')}})();
+(function(){let m='normal';try{m=new URLSearchParams(location.search).get('modo')||localStorage.getItem('docreg_modo')||'normal'}catch(e){}if(m==='tv'){S.modo='tv';document.body.classList.add('tv')}
+  try{if(window.google&&google.script&&google.script.url)google.script.url.getLocation(l=>{const v=l&&l.parameter&&l.parameter.modo;if(v==='tv'&&S.modo!=='tv')setModo('tv',false);else if(v==='normal'&&S.modo==='tv')setModo('normal',false)})}catch(e){}})();
+
+/* ============ FILTROS DEFINIDOS NO PORTAL (apresentação na TV) ============ */
+const BIF_CHAVES=['f'];
+function bifSer(){const o={};BIF_CHAVES.forEach(k=>o[k]=S[k]);return JSON.stringify(o,(k,v)=>v instanceof Set?{$set:[...v]}:v)}
+function bifDes(t){return JSON.parse(t,(k,v)=>v&&typeof v==='object'&&Array.isArray(v.$set)?new Set(v.$set):v)}
+const BIF_PADRAO=bifSer();
+let BIF=null;
+function bifPor(o){Object.keys(o||{}).forEach(k=>{if(BIF_CHAVES.indexOf(k)<0)return;const v=o[k];
+  if(v&&typeof v==='object'&&!(v instanceof Set)&&!Array.isArray(v)&&S[k]&&typeof S[k]==='object'&&!(S[k] instanceof Set))Object.assign(S[k],v);else S[k]=v})}
+function bifAtivos(){const a=JSON.parse(BIF_PADRAO),b=JSON.parse(bifSer());let n=0;
+  BIF_CHAVES.forEach(k=>{const x=a[k],y=b[k];
+    if(x&&typeof x==='object'&&!Array.isArray(x)&&!x.$set){Object.keys(Object.assign({},x,y)).forEach(j=>{const vx=JSON.stringify(x[j]),vy=JSON.stringify(y&&y[j]);if(vx!==vy&&!((x[j]==null||x[j]==='')&&(y[j]==null||y[j]==='')))n++})}
+    else if(JSON.stringify(x)!==JSON.stringify(y))n++});return n}
+function bifAplicar(t){try{BIF=typeof t==='string'?bifDes(t):t}catch(e){BIF=null;return}bifPor(BIF);try{montarFiltros();const q=document.getElementById('fQ');if(q)q.value=S.f.q||''}catch(e){}render()}
+const _bifSetData=setData;
+setData=function(){if(BIF)bifPor(BIF);return _bifSetData.apply(this,arguments)};
+window.biFiltros={ler:()=>({estado:bifSer(),ativos:bifAtivos()}),aplicar:t=>bifAplicar(t)};
+addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.source)e.source.postMessage({bi:'filtros',id:d.id,estado:bifSer(),ativos:bifAtivos()},'*')});
+(function(){let t='';try{t=new URLSearchParams(location.search).get('filtros')||''}catch(e){}
+  if(t)bifAplicar(t);
+  try{if(!t&&window.google&&google.script&&google.script.url)google.script.url.getLocation(l=>{const v=l&&l.parameter&&l.parameter.filtros;if(v)bifAplicar(v)})}catch(e){}})();
+
 window.addEventListener('resize',escalaTV);
 setInterval(()=>{if(S.modo==='tv'&&!document.hidden){render();escalaTV()}},60000);
 carregar(false);
