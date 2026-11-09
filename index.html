@@ -317,6 +317,15 @@ main{
 }
 .tv-btn:hover { background: rgba(255,255,255,0.3); }
 
+/* escolha do formato do Modo TV */
+.tvfmt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tvopt{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;border:1px solid #CBD7EE;border-radius:14px;padding:12px 14px;background:#fff;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.tvopt input{grid-row:1/3;margin-top:3px;accent-color:var(--royal)}
+.tvopt b{color:var(--navy);font-size:14px}
+.tvopt small{color:var(--mute);font-size:12px;line-height:1.35}
+.tvopt.on{border-color:var(--azure);background:#EEF3FF;box-shadow:0 0 0 3px rgba(47,107,255,.15)}
+@media (max-width:640px){.tvfmt{grid-template-columns:1fr}}
+
 /* ---------- administração ---------- */
 .bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap}
@@ -552,6 +561,11 @@ let homeCardsSignature = null;
 const DASHBOARD_REFRESH_MS = 10 * 60 * 1000;
 let dashboardRefreshTimer = null;
 
+/* Endereço do painel com o modo de exibição: 'normal' (painel completo) ou 'tv' (tela única 1920×1080). */
+function urlPainel(p, modo, extra) {
+  return p.pagina + (p.pagina.includes('?') ? '&' : '?') + 'modo=' + (modo === 'tv' ? 'tv' : 'normal') + (extra ? '&' + extra : '') + '&_t=' + Date.now();
+}
+
 function guardarSessao(s) { sessao = s; localStorage.setItem('bi_sessao', s); }
 function sairLocal(msg) {
   sessao = ''; eu = null; localStorage.removeItem('bi_sessao');
@@ -692,7 +706,7 @@ function renderHome() {
   $('vHome').innerHTML = '<div class="pg"><h1>Olá' + (nome ? ', ' + esc(nome) : '') + '</h1><div class="sub">Escolha um painel para abrir.</div>'
     + ''
     + (eu.paineis.length
-      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="eager" tabindex="-1" aria-hidden="true" scrolling="no" data-id="' + esc(p.id) + '" title="Prévia de ' + esc(p.nome) + '" src="' + esc(p.pagina) + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now() + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
+      ? '<div class="grid">' + eu.paineis.map(p => '<button class="pc" data-go="#/painel/' + esc(p.id) + '"><div class="th"><iframe loading="eager" tabindex="-1" aria-hidden="true" scrolling="no" data-id="' + esc(p.id) + '" title="Prévia de ' + esc(p.nome) + '" src="' + esc(urlPainel(p, 'normal', 'miniatura=1')) + '"></iframe></div><h3>' + ico(p.icone) + '<span>' + esc(p.nome) + '</span></h3><p>' + esc(p.descricao) + '</p></button>').join('') + '</div>'
       : '<div class="vazio">Nenhum painel foi liberado para você ainda. Peça ao administrador.</div>')
     + '</div>';
   ajustarMiniaturas();
@@ -708,7 +722,7 @@ function prepararFramesDashboards() {
     const f = document.createElement('iframe');
     f.title = p.nome;
     f.dataset.id = p.id;
-    f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    f.src = urlPainel(p, 'normal');
     box.appendChild(f);
   });
   iniciarAtualizacaoDashboards();
@@ -724,12 +738,12 @@ function atualizarDashboardsEPreviews() {
   // Atualiza os dashboards em segundo plano, preservando qual deles está visível.
   $('dashboardFrames').querySelectorAll('iframe').forEach(f => {
     const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
-    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    if (p) f.src = urlPainel(p, 'normal');
   });
   // Atualiza também as miniaturas/cards da página inicial.
   document.querySelectorAll('#vHome .th iframe[data-id]').forEach(f => {
     const p = eu.paineis.find(x => String(x.id) === f.dataset.id);
-    if (p) f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + 'miniatura=1&_t=' + Date.now();
+    if (p) f.src = urlPainel(p, 'normal', 'miniatura=1');
   });
 }
 
@@ -749,6 +763,7 @@ let tvLista = [];
 let tvIndex = 0;
 let tvTempo = 60;
 let tvPausado = false;
+let tvFormato = localStorage.getItem('bi_tv_formato') === 'tv' ? 'tv' : 'normal';
 
 function montarTvConfig() {
   const pSelec = eu.paineis || [];
@@ -756,6 +771,10 @@ function montarTvConfig() {
     + '<div class="box" style="max-width:600px">'
     + '<div class="fld"><span>Selecione os painéis que entrarão na apresentação:</span><div class="pn" id="tvPaineisCheck">'
     + pSelec.map(p => '<label class="chk"><input type="checkbox" data-tvid="' + esc(p.id) + '" checked> ' + esc(p.nome) + '</label>').join('')
+    + '</div></div>'
+    + '<div class="fld"><span>Formato de exibição:</span><div class="tvfmt" id="tvFmt">'
+    + '<label class="tvopt"><input type="radio" name="tvfmt" value="normal"' + (tvFormato === 'normal' ? ' checked' : '') + '><b>Normal</b><small>Cada BI completo, como na tela do portal, com rolagem automática para mostrar o que fica abaixo.</small></label>'
+    + '<label class="tvopt"><input type="radio" name="tvfmt" value="tv"' + (tvFormato === 'tv' ? ' checked' : '') + '><b>Modo TV 1920×1080</b><small>Cada BI na tela única feita para TV: indicadores, gráficos e pendências sem rolar a página.</small></label>'
     + '</div></div>'
     + '<label class="fld"><span>Tempo de permanência em cada dashboard:</span>'
     + '<select id="tvTempoSel">'
@@ -765,7 +784,7 @@ function montarTvConfig() {
     + '<option value="180">3 minutos</option>'
     + '<option value="300">5 minutos</option>'
     + '</select></label>'
-    + '<div class="fld"><label class="chk"><input type="checkbox" id="tvRolar" checked> Rolar a página devagar (para ver o que fica abaixo na TV)</label></div>'
+    + '<div id="tvRolaBox"><div class="fld"><label class="chk"><input type="checkbox" id="tvRolar" checked> Rolar a página devagar (para ver o que fica abaixo na TV)</label></div>'
     + '<label class="fld"><span>Velocidade da rolagem (sobe e desce):</span>'
     + '<select id="tvVel">'
     + '<option value="auto" selected>Automática (ajusta ao tempo de cada painel)</option>'
@@ -775,11 +794,21 @@ function montarTvConfig() {
     + '<option value="120">Rápida</option>'
     + '<option value="200">Muito rápida</option>'
     + '</select></label>'
-    + '<div class="sub" style="margin:-4px 0 10px;font-size:12px">Nas velocidades fixas, se o painel for grande e o tempo de permanência for curto, ele passa para o próximo antes de terminar de subir.</div>'
+    + '<div class="sub" style="margin:-4px 0 10px;font-size:12px">Nas velocidades fixas, se o painel for grande e o tempo de permanência for curto, ele passa para o próximo antes de terminar de subir.</div></div>'
+    + '<div class="dica" id="tvFmtDica" style="display:none">No Modo TV 1920×1080 cada painel já cabe inteiro na tela, então não há rolagem. Painéis que ainda não têm o Modo TV aparecem no formato normal.</div>'
     + '<button class="btn-main" id="btnStartTv" style="margin-top:16px">Iniciar Apresentação em Tela Cheia</button>'
     + '</div></div>';
 
   $('btnStartTv').onclick = iniciarApresentacaoTv;
+  const syncFmt = () => {
+    tvFormato = ($('tvFmt').querySelector('input:checked') || {}).value === 'tv' ? 'tv' : 'normal';
+    localStorage.setItem('bi_tv_formato', tvFormato);
+    $('tvRolaBox').style.display = tvFormato === 'tv' ? 'none' : '';
+    $('tvFmtDica').style.display = tvFormato === 'tv' ? '' : 'none';
+    $('tvFmt').querySelectorAll('.tvopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
+  };
+  $('tvFmt').addEventListener('change', syncFmt);
+  syncFmt();
 }
 
 function iniciarApresentacaoTv() {
@@ -790,7 +819,7 @@ function iniciarApresentacaoTv() {
   tvTempo = parseInt($('tvTempoSel').value, 10) || 60;
   tvIndex = 0;
   tvPausado = false;
-  tvRolar = $('tvRolar') ? $('tvRolar').checked : true;
+  tvRolar = tvFormato === 'tv' ? false : ($('tvRolar') ? $('tvRolar').checked : true);
   tvVel = $('tvVel') ? $('tvVel').value : 'auto';
 
   const ov = $('tvOverlay');
@@ -810,7 +839,7 @@ function tvCriaFrame(p) {
   const f = document.createElement('iframe');
   f.title = p.nome;
   f.dataset.id = p.id;
-  f.src = p.pagina + (p.pagina.includes('?') ? '&' : '?') + '_t=' + Date.now();
+  f.src = urlPainel(p, tvFormato);
   return f;
 }
 
