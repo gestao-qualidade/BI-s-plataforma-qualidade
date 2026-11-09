@@ -537,6 +537,15 @@ const ataPainel = () => (eu && eu.paineis || []).find(p => p.id === ATA_ID);
 /* A Ata roda no Google (outro site): ela mesma avisa ao portal os filtros escolhidos para a TV. */
 let ataFiltroTv = { estado: '', ativos: 0 };
 window.addEventListener('message', e => { const d = e.data || {}; if (d.bi === 'filtros-ata') ataFiltroTv = { estado: String(d.estado || ''), ativos: parseInt(d.ativos, 10) || 0 }; });
+/* A Ata usa o login do portal: quando ela pede, o portal entrega a sessão — só para páginas do Google
+   (onde a Ata roda) e só se o usuário tiver acesso à Análise Crítica. A Ata confere a sessão com a API do portal. */
+const ORIGEM_ATA = /^https:\/\/([a-z0-9-]+\.)*(googleusercontent\.com|script\.google\.com)$/;
+window.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.tipo !== 'ata-pedir-sessao' || !sessao || !ataPainel() || !e.source) return;
+  if (!ORIGEM_ATA.test(e.origin) && e.origin !== location.origin) return;
+  try { e.source.postMessage({ tipo: 'ata-sessao', sessao: sessao }, e.origin); } catch (err) {}
+});
 
 /* ---------- Controle do Menu Retrátil ---------- */
 function initSidebarToggle() {
