@@ -1233,6 +1233,7 @@ function setModo(m){
   S.modo=m==='tv'?'tv':'normal';
   document.body.classList.toggle('tv',S.modo==='tv');
   try{localStorage.setItem('docreg_modo',S.modo)}catch(e){}
+  if(S.modo==='tv'){const mn=document.getElementById('main');if(mn)mn.innerHTML='';}
   if(S.modo==='tv'){try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
   else{try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
   render(); escalaTV(); window.scrollTo(0,0);
