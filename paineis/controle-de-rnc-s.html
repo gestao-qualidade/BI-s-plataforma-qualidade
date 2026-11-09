@@ -269,6 +269,48 @@ tbody tr:hover td{background:#E8F0FF}
 .msp{max-height:340px;overflow:auto;min-width:290px}
 .msp label span{flex:1}
 .plc{line-height:1.3;margin:1px 0;font-size:12.5px}.plc span{color:var(--ink2)}
+
+/* ===== MODO TV 1920×1080 ===== */
+#tv{display:none}
+body.tv{overflow:hidden;height:100vh}
+body.tv>*:not(#tv):not(.toast):not(dialog):not(script){display:none!important}
+body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;z-index:1}
+.tvw{width:1920px;height:1080px;padding:18px 26px;display:grid;grid-template-rows:76px 112px minmax(0,1fr) minmax(0,1fr);gap:14px;color:var(--ink)}
+.tvh{display:flex;align-items:center;gap:22px;color:#fff;min-width:0}
+.tvh img{height:70px;filter:drop-shadow(0 0 18px rgba(130,180,255,.5))}
+.tvt{padding-left:22px;border-left:1px solid rgba(255,255,255,.28)}
+.tvh img+.tvt{}
+.tvt h1{font-size:28px;margin:0}
+.tvt .sub{font-size:13px;color:#B9CCF5;margin-top:4px}
+.tvr{margin-left:auto;display:flex;align-items:center;gap:14px}
+.tvclk{font-family:var(--num);font-size:36px;font-weight:700;line-height:1;text-align:right;color:#fff}
+.tvclk small{display:block;font-size:13px;font-weight:500;color:#C3D3F7;font-family:'IBM Plex Sans',sans-serif}
+.tvinfo{font-size:12px;color:#C9D7F5;max-width:260px;text-align:right}
+.tvk{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0}
+.tvk.um{grid-template-columns:1fr}
+.tvg{display:grid;grid-template-columns:34px 1fr;gap:8px;min-height:0;height:100%;grid-template-rows:minmax(0,1fr)}
+.tvl{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:12px;letter-spacing:.8px;text-transform:uppercase;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:12px;white-space:nowrap;overflow:hidden}
+.tvkk{display:grid;gap:10px;min-height:0;height:100%;grid-template-rows:minmax(0,1fr)}
+.tvkk .kpi{padding:8px 11px;height:100%;min-height:0;overflow:hidden;width:100%}
+.tvkk .kpi .kv{font-size:27px;line-height:1;white-space:nowrap}
+.tvkk .kpi .kl{font-size:12.5px;line-height:1.2;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tvkk .kpi .ks{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.tvrow{display:grid;gap:14px;min-height:0}
+.tvw .card{display:flex;flex-direction:column;min-height:0;padding:12px 14px;margin:0}
+.tvw .card .ct{margin-bottom:6px}
+.tvw .cb{flex:1;min-height:0;overflow:hidden}
+.tvw .sl{gap:2px}
+.tvw .sr{padding:3px 6px}
+.tvw .mb{height:4px}
+.tvw .leg{margin-top:4px}
+.tvw table{font-size:12.5px}
+.tvw td{padding:5px 8px}.tvw th{padding:6px 8px;position:static}
+.tvw .tw{overflow:hidden}
+.tvw .trunc{max-width:260px}
+.tvw .empty{padding:18px}
+.tvw .bl{padding:3px 6px}
+.tvw .ks3{font-size:12.5px;margin:0 0 4px}
+.tvvazio{grid-row:2/5;display:grid;place-items:center;color:#fff;font-size:18px;border:1px dashed rgba(255,255,255,.4);border-radius:14px}
 </style>
 </head>
 <body>
@@ -280,6 +322,7 @@ tbody tr:hover td{background:#E8F0FF}
     </div>
     <div class="hr">
       <span id="src"></span>
+      <button class="btn sec" data-a="modo" data-v="tv" title="Tela única para TV ou monitor 1920×1080">Modo TV 1920×1080</button>
       <button class="btn" id="btnRefresh" data-a="refresh">Atualizar</button>
     </div>
   </div>
@@ -313,6 +356,7 @@ tbody tr:hover td{background:#E8F0FF}
 </div>
 
 <main id="main"></main>
+<div id="tv"></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -875,6 +919,106 @@ if(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0){
   setInterval(()=>{if(!document.hidden&&!atualizando)carregar(false)},CONFIG.REFRESH_MIN*60000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-ultimaCarga>CONFIG.REFRESH_MIN*60000)carregar(false)});
 }
+
+function tvFiltros(){const f=S.f;return !!(f.ano||f.mesNum||f.tipo||f.cliente||f.cat||f.status||f.q||f.dim||f.ocorr.size||f.plano.size||f.respPl.size)}
+function vTV(){
+  const head=tvHead('Não conformidade interna e reclamação do cliente',tvFiltros());
+  if(!S.rnc.length) return '<div class="tvw">'+head+'<div class="tvvazio">Nenhuma RNC para exibir.</div></div>';
+  const rows=filtrar(S.rnc), base=filtrar(S.rnc,{semMes:true});
+  const nci=rows.filter(r=>r.tipo==='nci').length, rc=rows.length-nci, ct=rows.reduce((a,r)=>a+custo(r),0);
+  const abertas=rows.filter(r=>norm(r.status)==='aberta').length, comCusto=rows.filter(r=>custo(r)>0).length;
+  const pls=rows.flatMap(r=>r.planos.filter(planoOk)), atr=pls.filter(p=>p.atrasado), feitos=pls.filter(p=>p.done).length;
+  const andam=pls.filter(p=>!p.done&&!p.inativo).length, semPl=rows.filter(r=>!r.nPl).length, custoRep=pls.reduce((a,p)=>a+p.custoRep,0);
+  const k1=kpi('k-acc',nf(rows.length),'RNCs no escopo','interna + reclamação do cliente','x')
+    +kpi('',nf(nci),'Interna',pct(nci,rows.length)+'% do total','tipo','nci')
+    +kpi('k-v30',nf(rc),'Reclamação do cliente',pct(rc,rows.length)+'% do total','tipo','rc')
+    +kpi('',nf(abertas),'RNCs abertas',pct(abertas,rows.length)+'% do total','x')
+    +kpi('k-venc',brlc(ct),'Custo da NC','média '+brl(rows.length?ct/rows.length:0)+' por RNC','tab','custos')
+    +kpi('k-v30',brl(comCusto?ct/comCusto:0),'Custo médio por RNC',nf(comCusto)+' RNCs com custo','tab','custos');
+  const k2=kpi('k-acc',nf(pls.length),'Planos vinculados','a '+nf(rows.length-semPl)+' RNCs','tab','planos')
+    +kpi('k-ok',nf(feitos),'Concluídos',pct(feitos,pls.length)+'% dos planos','tab','planos')
+    +kpi('k-v30',nf(andam),'Em andamento','sem suspensos e cancelados','tab','planos')
+    +kpi('k-venc',nf(atr.length),'Atrasados',pct(atr.length,andam)+'% dos em andamento','tab','planos')
+    +kpi('',nf(semPl),'RNCs sem plano',pct(semPl,rows.length)+'% das RNCs','tab','planos')
+    +kpi('',brlc(custoRep),'Custo nos planos','custo reportado','tab','planos');
+  let h='<div class="tvw">'+head+'<div class="tvk">'+tvGrupo('RNCs',k1,6)+tvGrupo('Planos',k2,6)+'</div>';
+  const meses=mesesDe(base,12);
+  const pr=pareto(S.par.dim==='ocorr'?filtrar(S.rnc,{semOcorr:true}):rows);
+  const dn=DIMS.find(d=>d[0]===S.par.dim)[1].toLowerCase();
+  const parBody=typeof pr==='string'? pr : '<p class="ks3"><b>'+pr.n80+' de '+pr.itens+'</b> '+dn+(pr.itens>1?'s':'')+' concentram 80%. Maior ofensor: <b>'+esc(pr.top.k)+'</b> ('+Math.round(pr.top.v/pr.total*100)+'%).</p>'+pr.svg;
+  h+=tvRow('minmax(0,1.45fr) minmax(0,.8fr) minmax(0,1.45fr)',[
+    tvCard('RNCs mês a mês','últimos 12 meses',colunas(meses,TIPOS,(m,t)=>base.filter(r=>mesKey(dt(r))===m&&r.tipo===t.k).length,nf)+legTipos()),
+    tvCard('Por tipo de ocorrência','quantidade e custo',donut(rows)),
+    tvCard('Pareto das não conformidades','por '+dn+' · '+(S.par.met==='qtd'?'quantidade':'custo'),parBody)
+  ]);
+  const cli=topN(agrupar(rows,'cliente',TIPOS,(r,t)=>r.tipo===t.k?1:0),8,TIPOS);
+  const SCa=[{k:'atr',l:'Atrasado',cor:'#C0304F'}];
+  const resp=topN(agrupar(atr,'resp',SCa,()=>1),8,SCa).filter(x=>x.total>0);
+  const lista=atr.slice().sort((a,b)=>b.diasAtraso-a.diasAtraso).slice(0,8);
+  const tab=lista.length?'<div class="tw"><table><thead><tr><th>RNC</th><th>Plano de ação</th><th>Responsável</th><th class="num">Atraso</th></tr></thead><tbody>'
+    +lista.map(p=>'<tr><td class="nw">'+esc(p.occ)+'</td><td><div class="trunc" style="max-width:250px" title="'+esc(p.nome)+'">'+esc(p.nome)+'</div></td><td><div class="trunc" style="max-width:160px">'+esc(p.resp)+'</div></td><td class="num nw" style="color:var(--venc);font-weight:600">'+nf(p.diasAtraso)+' dias</td></tr>').join('')+'</tbody></table></div>'
+    :'<div class="empty">Nenhum plano de ação atrasado.</div>';
+  h+=tvRow('minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr)',[
+    tvCard('RNCs por cliente','8 maiores',barrasStack(cli,TIPOS,nf,'cliente')+legTipos()),
+    tvCard('Planos atrasados por responsável','8 maiores',resp.length?barrasStack(resp,SCa,nf,'x'):'<div class="empty">Nenhum plano atrasado.</div>'),
+    tvCard('Planos de ação mais atrasados','8 mais antigos',tab)
+  ]);
+  return h+'</div>';
+}
+
+/* ============================ MODO TV 1920×1080 ============================ */
+const TVK='tvmodo_'+document.title;
+function tvCard(t,s,b){return '<div class="card"><div class="ct"><h2>'+t+'</h2><span>'+(s||'')+'</span></div><div class="cb">'+b+'</div></div>'}
+function tvRow(cols,cards){return '<div class="tvrow" style="grid-template-columns:'+cols+'">'+cards.join('')+'</div>'}
+function tvGrupo(l,k,n){return '<div class="tvg"><span class="tvl">'+l+'</span><div class="tvkk" style="grid-template-columns:repeat('+n+',minmax(0,1fr))">'+k+'</div></div>'}
+function tvHead(sub,filtros){
+  const lg=document.querySelector('header img'), h1=document.querySelector('header h1'), src=document.getElementById('src');
+  const ag=new Date(), p=n=>String(n).padStart(2,'0');
+  return '<div class="tvh">'+(lg?'<img src="'+lg.src+'" alt="PierServ">':'')
+    +'<div class="tvt"'+(lg?'':' style="border:0;padding:0"')+'><h1>'+esc(h1?h1.textContent:document.title)+'</h1><div class="sub">'+sub+(filtros?' · <b style="color:#FFD36B">com filtros aplicados</b>':'')+'</div></div>'
+    +'<div class="tvr"><div class="tvclk">'+p(ag.getHours())+':'+p(ag.getMinutes())+'<small>'+p(ag.getDate())+'/'+p(ag.getMonth()+1)+'/'+ag.getFullYear()+'</small></div>'
+    +'<div class="tvinfo">'+esc(src?src.textContent:'')+'</div>'
+    +'<button class="btn" data-a="refresh">Atualizar</button><button class="btn" data-a="modo" data-v="normal">Sair do modo TV</button></div></div>';
+}
+function tvEscala(){
+  const el=document.getElementById('tv'); if(!el||S.modo!=='tv') return;
+  const s=Math.min(innerWidth/1920,innerHeight/1080);
+  el.style.transform='translate('+Math.max(0,(innerWidth-1920*s)/2)+'px,'+Math.max(0,(innerHeight-1080*s)/2)+'px) scale('+s+')';
+}
+function tvRender(){
+  let h; try{h=vTV()}catch(e){h='<div class="tvw"><div class="err">Não foi possível montar o modo TV: '+esc(e.message)+'</div></div>'}
+  document.getElementById('tv').innerHTML=h;
+  document.querySelectorAll('#tv .tvkk .kv').forEach(e=>{let f=27;while(e.scrollWidth>e.clientWidth+1&&f>16){f--;e.style.fontSize=f+'px'}});
+  tvEscala();
+}
+function tvSair(){
+  S.modo='normal'; document.body.classList.remove('tv');
+  try{localStorage.setItem(TVK,'normal'); if(document.fullscreenElement) document.exitFullscreen()}catch(e){}
+}
+function tvSetModo(m){
+  if(m==='tv'){
+    S.modo='tv'; document.body.classList.add('tv');
+    try{localStorage.setItem(TVK,'tv')}catch(e){}
+    try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}
+    tvRender();
+  }else{ tvSair(); _tvRenderBase(); window.scrollTo(0,0) }
+}
+const _tvRenderBase=render;
+render=function(){ if(S.modo==='tv'){tvRender();return} return _tvRenderBase.apply(this,arguments) };
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]'); if(!el) return;
+  const a=el.dataset.a;
+  if(a==='modo'){e.stopPropagation();e.preventDefault();tvSetModo(el.dataset.v);return}
+  if(S.modo==='tv'&&a!=='refresh'){tvSair();setTimeout(()=>{_tvRenderBase();window.scrollTo(0,0)},0)}
+},true);
+addEventListener('resize',tvEscala);
+setInterval(()=>{if(S.modo==='tv'&&!document.hidden)tvRender()},60000);
+if(!(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)) setInterval(()=>{if(S.modo==='tv'&&!document.hidden&&!atualizando)carregar(false)},5*60000);
+(function(){
+  let m=''; try{m=new URLSearchParams(location.search).get('modo')||localStorage.getItem(TVK)||''}catch(e){}
+  if(m==='tv') tvSetModo('tv');
+  try{ if(window.google&&google.script&&google.script.url) google.script.url.getLocation(l=>{if(l&&l.parameter&&l.parameter.modo==='tv'&&S.modo!=='tv')tvSetModo('tv')}) }catch(e){}
+})();
 </script>
 </body>
 </html>
