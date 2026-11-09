@@ -558,19 +558,20 @@ function vTV(){
   const av=aval(base).length, nokL=base.filter(r=>r.c==='nok'), nokA=all.filter(r=>em(r,GA)&&r.c==='nok');
   const ad=k=>st.find(x=>x.g.k===k).ad, cls=v=>v==null?'':v>=META?'k-ok':'k-venc', sub=v=>v==null?'sem itens avaliados':pp(v-META)+' vs meta';
   const aS=ad('SANCA'), aM=ad('MATRIZ'), aH=ad('HEINEKEN');
-  let k1=kpi(cls(aS),fp(aS),'Aderência Sanca',sub(aS),'tab','geral')+kpi(cls(aM),fp(aM),'Aderência Matriz',sub(aM),'tab','geral');
-  k1+= (aS!=null&&aM!=null)? kpi('k-acc',pp(aS-aM),'Sanca × Matriz',(aS-aM>=0?'Sanca':'Matriz')+' à frente','tab','geral') : kpi('k-acc','—','Sanca × Matriz','sem comparação','tab','geral');
-  k1+=kpi('',nf(new Set(base.map(r=>r.cod)).size),'Auditorias','Sanca e Matriz no período','tab','geral')
-    +kpi('',nf(av),'Itens avaliados','sem N/A e sem resposta','tab','geral')
-    +kpi('k-venc',nf(nokL.length),'Não conformidades',fp(av?nokL.length/av*100:null)+' dos avaliados','tab','det');
   const pl=filtrarP().filter(p=>em(p,GA)), done=pl.filter(p=>p.done).length, and=pl.filter(p=>!p.done&&!p.ina).length, atr=pl.filter(p=>p.atr);
-  const k2=kpi(cls(aH),fp(aH),'Aderência Heineken',sub(aH),'tab','heineken')
-    +kpi('k-v30',nf(nokA.filter(r=>r.w>=4).length),'NC de peso alto','peso 4 ou 5 · todos os galpões','tab','det')
-    +kpi('k-acc',nf(pl.length),'Planos de ação','vinculados às auditorias','tab','plano')
+  const k1=kpi(cls(aS),fp(aS),'Sanca',sub(aS),'tab','geral')
+    +kpi(cls(aM),fp(aM),'Matriz',sub(aM),'tab','geral')
+    +kpi(cls(aH),fp(aH),'Heineken',sub(aH),'tab','heineken')
+    +((aS!=null&&aM!=null)? kpi('k-acc',pp(aS-aM),'Sanca × Matriz',(aS-aM>=0?'Sanca':'Matriz')+' à frente','tab','geral') : kpi('k-acc','—','Sanca × Matriz','sem comparação','tab','geral'));
+  const k2=kpi('',nf(new Set(base.map(r=>r.cod)).size),'Auditorias','Sanca e Matriz no período','tab','geral')
+    +kpi('',nf(av),'Itens avaliados','sem N/A e sem resposta','tab','geral')
+    +kpi('k-venc',nf(nokL.length),'Não conformidades',fp(av?nokL.length/av*100:null)+' dos avaliados','tab','det')
+    +kpi('k-v30',nf(nokA.filter(r=>r.w>=4).length),'NC de peso alto','peso 4 ou 5 · todos os galpões','tab','det');
+  const k3=kpi('k-acc',nf(pl.length),'Planos de ação','vinculados às auditorias','tab','plano')
     +kpi('k-ok',nf(done),'Concluídos',Math.round(pl.length?done/pl.length*100:0)+'% dos planos','tab','plano')
     +kpi('k-v30',nf(and),'Em andamento','sem suspensos e cancelados','tab','plano')
     +kpi('k-venc',nf(atr.length),'Atrasados',Math.round(and?atr.length/and*100:0)+'% dos em andamento','tab','plano');
-  let h='<div class="tvw">'+head+'<div class="tvk">'+tvGrupo('Auditorias',k1,6)+tvGrupo('Planos',k2,6)+'</div>';
+  let h='<div class="tvw">'+head+'<div class="tvk" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+tvGrupo('Aderência',k1,4)+tvGrupo('Auditorias',k2,4)+tvGrupo('Planos',k3,4)+'</div>';
   const meses=[...new Set(semMes.map(r=>mesKey(r.dt)).filter(Boolean))].sort().slice(-12);
   const gauge=st.map(x=>'<div style="margin:2px 0"><div style="display:flex;justify-content:space-between;font-weight:600"><span><i class="sw" style="background:'+x.g.cor+'"></i> '+x.g.l+'</span><span style="font-family:IBM Plex Sans Condensed,Arial;font-size:22px;color:'+(x.ad==null?'var(--mute)':x.ad>=META?'var(--ok)':'var(--venc)')+'">'+fp(x.ad)+'</span></div><div class="gz"><i style="width:'+(x.ad||0)+'%;background:'+gr(x.g.cor)+'"></i><b style="left:'+META+'%"></b><em style="left:'+META+'%">meta '+META+'%</em></div></div>').join('');
   h+=tvRow('minmax(0,1.5fr) minmax(0,.85fr) minmax(0,1.15fr)',[
