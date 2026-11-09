@@ -256,6 +256,58 @@ tbody tr:hover td{background:#E8F0FF}
 .lk{background:none;border:0;padding:0;font:inherit;text-decoration:underline dotted;text-underline-offset:3px}
 select.on{background:linear-gradient(135deg,var(--navy),var(--azure));color:#fff;border-color:transparent}
 select.on option,select.on optgroup{color:var(--ink);background:#fff}
+.sec-t .sn{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(180deg,#fff,#D5E3FF);color:var(--navy);font-weight:700;font-size:14px;align-self:center;box-shadow:0 4px 12px -4px rgba(0,8,50,.7)}
+.sec-t:first-child{margin-top:4px}
+#fAprov,#fAval,#fSeg{max-width:190px}
+.fg{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--royal);min-width:92px}
+.fbi2{padding-top:0;border-top:1px dashed #DCE5F5;padding-top:8px}
+.subnav{display:inline-flex;gap:4px;padding:4px;margin-bottom:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:99px;backdrop-filter:blur(6px)}
+.subnav button{border:0;background:transparent;color:#DCE7FC;padding:8px 18px;border-radius:99px;font-size:13px;font-weight:500}
+.subnav button b{font-family:var(--num);margin-left:4px}
+.subnav button[aria-pressed=true]{background:linear-gradient(180deg,#fff,#DDE8FF);color:var(--navy);font-weight:600;box-shadow:0 6px 18px -8px rgba(0,8,50,.7)}
+/* ===== modo TV 1920×1080 ===== */
+#tv{display:none}
+body.tv{overflow:hidden;height:100vh}
+body.tv header,body.tv .fb,body.tv main{display:none}
+body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;z-index:1}
+.tvw{width:1920px;height:1080px;padding:18px 26px;display:grid;grid-template-rows:76px 112px minmax(0,1fr) minmax(0,1.05fr);gap:14px;color:var(--ink)}
+.tvh{display:flex;align-items:center;gap:22px;color:#fff}
+.tvh img{height:70px;filter:drop-shadow(0 0 18px rgba(130,180,255,.5))}
+.tvt{padding-left:22px;border-left:1px solid rgba(255,255,255,.28)}
+.tvt h1{font-size:28px}
+.tvr{margin-left:auto;display:flex;align-items:center;gap:14px}
+.tvclk{font-family:var(--num);font-size:36px;font-weight:700;line-height:1;text-align:right}
+.tvclk small{display:block;font-size:13px;font-weight:500;color:#C3D3F7;font-family:'IBM Plex Sans',sans-serif}
+.tvinfo{font-size:12px;color:#C9D7F5;max-width:230px;text-align:right}
+.tvk{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0}
+.tvg,.tvkk{min-height:0;height:100%;grid-template-rows:minmax(0,1fr)}
+.tvkk .kpi{min-height:0}
+.tvkk .kpi .kv{line-height:1}
+.tvg{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:stretch}
+.tvl{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-weight:600;font-size:13px;letter-spacing:.8px;text-transform:uppercase;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:12px}
+.tvl b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#fff;color:var(--navy);transform:rotate(90deg);font-size:12px}
+.tvkk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.tvkk .kpi{padding:8px 11px;height:100%;overflow:hidden}
+.tvkk .kpi .kv{font-size:28px}
+.tvkk .kpi .kl{font-size:12.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.tvkk .kpi .ks{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tvav{grid-column:1/-1;display:grid;place-items:center;color:#fff;border:1px dashed rgba(255,255,255,.4);border-radius:12px}
+.tvr3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;min-height:0}
+.tvr4{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:14px;min-height:0}
+.tvw .card{display:flex;flex-direction:column;min-height:0;padding:12px 14px}
+.tvw .card .ct{margin-bottom:6px}
+.tvw .cb{flex:1;min-height:0;overflow:hidden}
+.tvw .sl{gap:2px}
+.tvw .sr{padding:3px 6px}
+.tvw .mb{height:4px}
+.tvw .leg{margin-top:4px}
+.tvw table{font-size:12.5px}
+.tvw td{padding:5px 8px} .tvw th{padding:6px 8px}
+.tvw .tw{overflow:hidden}
+.tvw .trunc{max-width:190px}
+.tvw .empty{padding:18px}
+.tvr4 .card:nth-child(3) th:nth-child(2),.tvr4 .card:nth-child(3) td:nth-child(2),.tvr4 .card:nth-child(3) th:nth-child(4),.tvr4 .card:nth-child(3) td:nth-child(4),.tvr4 .card:nth-child(3) th:nth-child(8),.tvr4 .card:nth-child(3) td:nth-child(8),.tvr4 .card:nth-child(3) th:nth-child(7),.tvr4 .card:nth-child(3) td:nth-child(7),.tvr4 .card:nth-child(2) th:nth-child(6),.tvr4 .card:nth-child(2) td:nth-child(6),.tvr4 .card:nth-child(3) th:nth-child(9),.tvr4 .card:nth-child(3) td:nth-child(9){display:none}
+.tvr4 .card:nth-child(3) .trunc{max-width:170px}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
@@ -268,40 +320,45 @@ select.on option,select.on optgroup{color:var(--ink);background:#fff}
     </div>
     <div class="hr">
       <span id="src"></span>
+      <button class="btn sec" data-a="modo" data-v="tv" title="Tela única para TV ou monitor 1920×1080">Modo TV 1920×1080</button>
       <button class="btn" id="btnRefresh" data-a="refresh">Atualizar</button>
     </div>
   </div>
   <nav role="tablist" aria-label="Seções">
-    <button role="tab" data-a="tab" data-v="geral" aria-selected="true">Visão geral</button>
-    <button role="tab" data-a="tab" data-v="galpoes" aria-selected="false">Galpões (regulatórios)</button>
-    <button role="tab" data-a="tab" data-v="detalhe" aria-selected="false">Detalhamento dos fornecedores</button>
-    <button role="tab" data-a="tab" data-v="aval" aria-selected="false">Avaliação de fornecedores</button>
+    <button role="tab" data-a="tab" data-v="geral" aria-selected="true">1 · Visão geral</button>
+    <button role="tab" data-a="tab" data-v="galpoes" aria-selected="false">2 · Galpões</button>
+    <button role="tab" data-a="tab" data-v="detalhe" aria-selected="false">3 · Detalhamento</button>
   </nav>
   <div class="farol" id="farol" aria-hidden="true"></div>
 </header>
 
 <div class="fb" id="fb">
   <div class="fbi">
-    <label>Obrigatório
-      <select id="fObr"><option value="sim">Somente obrigatórios</option><option value="">Todos</option><option value="nao">Não obrigatórios</option></select>
-    </label>
-    <label>Etapa <select id="fEtapa"><option value="">Todas</option></select></label>
-    <label>Segmento <select id="fSeg"><option value="">Todos</option></select></label>
-    <label>Responsável <select id="fResp"><option value="">Todos</option><option value="Bases">Bases</option><option value="APDV">APDV</option><option value="Transporte">Transporte</option><option value="Compras indiretas">Compras indiretas</option></select></label>
-    <details class="ms" id="fStatus"><summary id="fStatusSum">Status: Todos</summary><div class="msp" id="fStatusPanel"></div></details>
+    <span class="fg">Fornecedor</span>
     <span id="fAvBox" style="display:none">
       <label>Aprovação <select id="fAprov"><option value="">Todas</option></select></label>
       <label>Avaliação <select id="fAval"><option value="">Todos</option></select></label>
       <label>Reavaliação <select id="fReav"><option value="">Todas</option><option value="vencida">Vencida</option><option value="v30">Vence em até 30 dias</option><option value="ok">Em dia</option><option value="sem">Sem data</option></select></label>
-      <label>Fornecedor <select id="fSit"><option value="ativo">Ativos</option><option value="">Ativos e inativos</option><option value="inativo">Inativos</option></select></label>
+      <label>Situação <select id="fSit"><option value="ativo">Ativos</option><option value="">Ativos e inativos</option><option value="inativo">Inativos</option></select></label>
     </span>
+    <label>Etapa <select id="fEtapa"><option value="">Todas</option></select></label>
+    <label>Responsável <select id="fResp"><option value="">Todos</option><option value="Bases">Bases</option><option value="APDV">APDV</option><option value="Transporte">Transporte</option><option value="Compras indiretas">Compras indiretas</option></select></label>
+    <label>Segmento <select id="fSeg"><option value="">Todos</option></select></label>
     <input type="search" id="fQ" placeholder="Buscar fornecedor, código ou documento" aria-label="Buscar">
+  </div>
+  <div class="fbi fbi2">
+    <span class="fg">Documento</span>
+    <label>Obrigatório
+      <select id="fObr"><option value="sim">Somente obrigatórios</option><option value="">Todos</option><option value="nao">Não obrigatórios</option></select>
+    </label>
+    <details class="ms" id="fStatus"><summary id="fStatusSum">Status: Todos</summary><div class="msp" id="fStatusPanel"></div></details>
     <div class="chips" id="chips"></div>
     <button class="btn sec" data-a="clear" style="margin-left:auto">Limpar filtros</button>
   </div>
 </div>
 
 <main id="main"></main>
+<div id="tv"></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -325,7 +382,7 @@ const ST = {
 const MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const S = {
   hoje: inicioDia(new Date()), mode:'snapshot', info:'', tab:'geral',
-  forn:[], pend:[], galp:[], aval:[], F:new Map(), temAval:false, avHist:false, sortAv:{k:'prox',dir:1}, pageAv:0,
+  forn:[], pend:[], galp:[], aval:[], F:new Map(), temAval:false, avHist:false, det:'docs', sortAv:{k:'prox',dir:1}, pageAv:0,
   f:{obrig:'sim', etapa:'', seg:'', resp:'', doc:'', q:'', status:new Set(), bucket:'', aprov:'', aval:'', reav:'', sit:'ativo'},
   sort:{k:'sev', dir:1}, page:0, erro:''
 };
@@ -566,10 +623,11 @@ function agrupar(rows,keyFn,nameFn){
 function render(){
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.tab));
   chips(); farol();
+  if(S.modo==='tv'){document.getElementById('tv').innerHTML=vTV();return}
   const el=document.getElementById('main');
   let h=S.erro? '<div class="err"><b>Não foi possível carregar os dados ao vivo.</b> '+esc(S.erro)+'. Exibindo a última cópia disponível.</div>':'';
   if(!S.pend.length&&!S.galp.length){el.innerHTML=h+'<div class="empty">Sem dados para exibir. Rode a importação no Qualiex e atualize.</div>';return}
-  h+= S.tab==='geral'? vGeral() : S.tab==='galpoes'? vGalpoes() : S.tab==='aval'? vAval() : vDetalhe();
+  h+= S.tab==='geral'? vGeral() : S.tab==='galpoes'? vGalpoes() : subDetalhe()+(S.det==='aval'? vAval() : vDetalhe());
   el.innerHTML=h;
 }
 function farol(){
@@ -584,37 +642,6 @@ function kpi(cls,v,l,s,act){
 }
 
 /* ---------- visão geral ---------- */
-function vGeral(){
-  const rows=filtrar(S.pend,{semBucket:true});
-  const R=resumo(rows), g=resumo(S.galp), c=R.c;
-  const conf=pct(R.total-c.pendente-c.vencido,R.total);
-  let h='';
-  h+='<div class="card band">'
-    +'<div><h2>Galpões · documentos regulatórios</h2><p>Matriz e Sanca · '+g.total+' registros</p></div>'
-    +bs(g.c.vencido,'vencidos','var(--venc)')+bs(g.c.v30,'vencem em 30 dias','var(--v30)')+bs(g.c.pendente+g.c.semdata,'sem arquivo ou sem data','var(--pend)')+bs(g.c.ok+g.c.v90,'em dia','var(--ok)')
-    +'<button class="btn sec" data-a="tab" data-v="galpoes">Ver matriz</button></div>';
-  h+='<div class="grid g6">'
-    +kpi('',nf(R.total),'Documentos no escopo',nf(R.forns)+' fornecedores','x')
-    +kpi('k-pend',nf(c.pendente),'Sem arquivo',pct(c.pendente,R.total)+'% do escopo','st:pendente')
-    +kpi('k-venc',nf(c.vencido),'Vencidos',pct(c.vencido,R.total)+'% do escopo','st:vencido')
-    +kpi('k-v30',nf(c.v30),'Vencem em 30 dias',nf(c.v90)+' vencem em 31 a 90','st:v30')
-    +kpi('k-ok',conf+'%','Conformidade','com arquivo e dentro da validade','st:ok')
-    +kpi('k-venc',nf(R.fornCrit),'Fornecedores críticos','com documento vencido ou sem arquivo','crit')
-    +'</div>';
-  h+=secAval(rows);
-  if(S.temAval) h+='<div class="sec-t"><h2>Documentos regulatórios dos fornecedores</h2><span>vencimentos, segmentos e documentos críticos</span></div>';
-  h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Régua de vencimentos</h2><span>Clique em uma barra para ver os documentos</span></div>'+regua(rows)+legenda()+'</div>'
-    +'<div class="card"><div class="ct"><h2>Situação dos documentos</h2><span>'+nf(R.total)+' no total</span></div>'+painelStatus(R)+'</div></div>';
-  const crit=rows.filter(r=>r.st==='pendente'||r.st==='vencido'||r.st==='v30');
-  const segs=agrupar(crit,r=>r.seg,r=>r.seg).sort((a,b)=>(b.venc+b.pendente)-(a.venc+a.pendente)||b.v30-a.v30).slice(0,10);
-  const docs=agrupar(crit,r=>r.dkey,r=>r.docNome).sort((a,b)=>(b.venc+b.pendente)-(a.venc+a.pendente)||b.v30-a.v30).slice(0,10);
-  h+='<div class="grid g11"><div class="card"><div class="ct"><h2>Segmentos com mais pendências</h2><span>sem arquivo, vencidos e a vencer em 30 dias</span></div>'+barras(segs,'seg')+barLeg()+'</div>'
-    +'<div class="card"><div class="ct"><h2>Documentos mais críticos</h2><span>mesmo critério, agrupado pelo nome do documento</span></div>'+barras(docs,'doc')+barLeg()+'</div></div>';
-  h+=cruzAval(rows);
-  h+='<div class="card"><div class="ct"><h2>Fornecedores prioritários</h2><span>15 com mais documentos vencidos ou sem arquivo</span></div>'+tabForn(rows)+'</div>';
-  h+='<p class="note">Sem arquivo: documento exigido no segmento e ainda sem upload no Qualiex. Conformidade: documentos com arquivo e fora da condição de vencido, incluindo os sem data de vencimento. Os prazos são calculados com a data de hoje do seu navegador.'+(S.temAval?' Aprovação e avaliação vêm do relatório Avaliação de Fornecedores e são ligadas aos documentos pelo código do fornecedor; os filtros Aprovação, Avaliação, Reavaliação e Fornecedor valem para todo o painel.':'')+'</p>';
-  return h;
-}
 function bs(n,t,cor){return '<div class="bs"><div class="n" style="color:'+cor+'">'+nf(n)+'</div><div class="t">'+t+'</div></div>'}
 function legenda(){
   return '<div class="leg"><span><i class="hatch"></i>Sem arquivo</span><span><i style="background:var(--venc)"></i>Vencido</span><span><i style="background:var(--v30)"></i>Até 30 dias</span><span><i style="background:var(--v90)"></i>31 a 90 dias</span><span><i style="background:var(--ok)"></i>Mais de 90 dias</span><span><i style="background:var(--sem)"></i>Sem data de vencimento</span></div>';
@@ -669,14 +696,14 @@ function barras(items,tipo){
       +'<span class="bv" title="'+i.venc+' vencidos, '+i.pendente+' sem arquivo, '+i.v30+' a vencer em 30 dias">'+n+'</span></button>';
   }).join('');
 }
-function tabForn(rows){
+function tabForn(rows,lim){
   const m=new Map();
   rows.forEach(r=>{
     const k=r.cod||r.forn; let g=m.get(k);
     if(!g){g={cod:r.cod,forn:r.forn,etapa:r.etapa,link:r.link,F:r.F,p:0,v:0,a:0,t:0};m.set(k,g)}
     g.t++; if(r.st==='pendente')g.p++; else if(r.st==='vencido')g.v++; else if(r.st==='v30')g.a++;
   });
-  const l=[...m.values()].filter(g=>g.p+g.v>0).sort((a,b)=>(b.p+b.v)-(a.p+a.v)||b.a-a.a).slice(0,15);
+  const l=[...m.values()].filter(g=>g.p+g.v>0).sort((a,b)=>(b.p+b.v)-(a.p+a.v)||b.a-a.a).slice(0,lim||15);
   if(!l.length) return '<div class="empty">Nenhum fornecedor com pendência crítica.</div>';
   return '<div class="tw"><table><thead><tr><th>Fornecedor</th><th>Etapa</th>'+(S.temAval?'<th>Aprovação</th><th>Avaliação</th>':'')+'<th class="num">Sem arquivo</th><th class="num">Vencidos</th><th class="num">Vencem em 30 dias</th><th class="num">Documentos</th><th></th></tr></thead><tbody>'
     +l.map(g=>'<tr class="clk" data-a="fq" data-v="'+encodeURIComponent(g.cod||g.forn)+'"><td><div class="trunc" title="'+esc(g.forn)+'">'+esc(g.forn)+'</div><small style="color:var(--mute)">'+esc(g.cod)+'</small></td><td class="nw">'+esc(g.etapa)+'</td>'+(S.temAval&&g.F?'<td>'+pillAprov(g.F.aprov,g.F.aprovG)+'</td><td>'+pillAval(g.F.aval)+'</td>':S.temAval?'<td></td><td></td>':'')+'<td class="num">'+g.p+'</td><td class="num" style="color:var(--venc);font-weight:600">'+g.v+'</td><td class="num">'+g.a+'</td><td class="num">'+g.t+'</td><td class="nw">'+(g.link?'<a href="'+esc(g.link)+'" target="_blank" rel="noopener" data-x="1">Abrir no Qualiex</a>':'')+'</td></tr>').join('')
@@ -956,7 +983,7 @@ function painelReav(fs){
 
 /* ---------- seção na visão geral ---------- */
 function secAval(rows){
-  let h='<div class="sec-t"><h2>Avaliação e aprovação de fornecedores</h2><span>situação atual de cada fornecedor, cruzada com os documentos regulatórios</span></div>';
+  let h=secT('1','Fornecedores: avaliação e aprovação','visão macro · situação atual de cada fornecedor · clique para ver a lista');
   if(!S.temAval) return h+avisoAval();
   const fs=escopoForn({semBucket:true}), n=fs.length, cnt=fn=>fs.filter(fn).length;
   const avd=cnt(F=>F.res), apr=cnt(F=>F.aprovG==='aprov'), nok=cnt(F=>F.aprovG==='reprov'||F.aprovG==='restr'),
@@ -966,14 +993,14 @@ function secAval(rows){
   const aprCrit=fs.filter(F=>F.aprovG==='aprov'&&critSet.has(F)).length;
   const notas=fs.map(F=>F.nota).filter(v=>v!=null), media=notas.length? notas.reduce((a,b)=>a+b,0)/notas.length : null;
   h+='<div class="grid g4">'
-    +kpiV('k-info',nf(avd),'Fornecedores avaliados',pct(avd,n)+'% de '+nf(n)+' fornecedores no escopo','tab','aval')
+    +kpiV('k-info',nf(avd),'Fornecedores avaliados',pct(avd,n)+'% de '+nf(n)+' fornecedores no escopo','det','aval')
     +kpiV('k-ok',nf(apr),'Aprovados',pct(apr,avd)+'% dos avaliados','fa','aprov=g:aprov')
     +kpiV('k-venc',nf(nok),'Reprovados ou com restrição',pct(nok,avd)+'% dos avaliados','fa','aprov=g:nok')
     +kpiV('k-pend',nf(sem),'Sem avaliação','nenhuma avaliação válida no Qualiex','fa','aprov=g:sem')
     +kpiV('k-info',nf(ab),'Avaliações em aberto',nf(par)+' aguardando parecer','fa','aval=g:aberta')
     +kpiV('k-venc',nf(rv),'Reavaliação vencida',nf(r30)+' vencem em até 30 dias','fa','reav=vencida')
     +kpiV('k-v30',nf(aprCrit),'Aprovados com pendência documental','documento obrigatório vencido ou sem arquivo','aprcrit','')
-    +kpiV('k-ok',fmtNota(media),'Nota média','última avaliação concluída · '+nf(notas.length)+' fornecedores','tab','aval')
+    +kpiV('k-ok',fmtNota(media),'Nota média','última avaliação concluída · '+nf(notas.length)+' fornecedores','det','aval')
     +'</div>';
   h+='<div class="grid g3">'
     +'<div class="card"><div class="ct"><h2>Status de aprovação</h2><span>resultado da última avaliação concluída</span></div>'+painelAprov(fs)+'</div>'
@@ -982,9 +1009,8 @@ function secAval(rows){
     +'</div>';
   return h;
 }
-function cruzAval(rows){
-  if(!S.temAval) return '';
-  const fs=escopoForn({semBucket:true}), inFs=new Set(fs), G=new Map();
+function tabCruz(rows,fs){
+  const inFs=new Set(fs), G=new Map();
   fs.forEach(F=>{let g=G.get(F.aprov);if(!g){g={l:F.aprov,gr:F.aprovG,forn:0,fc:new Set(),t:0,v:0,p:0,a:0};G.set(F.aprov,g)}g.forn++});
   rows.forEach(r=>{
     if(!r.F||!inFs.has(r.F)) return; const g=G.get(r.F.aprov); if(!g) return;
@@ -992,20 +1018,23 @@ function cruzAval(rows){
     if(r.crit) g.fc.add(r.F);
   });
   const L=[...G.values()].sort((a,b)=>ix(APG_ORD,a.gr)-ix(APG_ORD,b.gr)||b.forn-a.forn);
-  let c1='<div class="card"><div class="ct"><h2>Aprovação × situação documental</h2><span>clique para ver os documentos do grupo</span></div>';
-  c1+= !L.length? '<div class="empty">Nenhum fornecedor com os filtros atuais.</div>'
-    : '<div class="tw"><table><thead><tr><th>Aprovação</th><th class="num" title="Fornecedores">Fornec.</th><th class="num" title="Fornecedores com documento obrigatório vencido ou sem arquivo">Críticos</th><th class="num" title="Documentos vencidos">Vencidos</th><th class="num" title="Documentos sem arquivo">Sem arq.</th><th class="num" title="Documentos que vencem em até 30 dias">30 dias</th><th class="num" title="Conformidade documental">Conform.</th></tr></thead><tbody>'
-      +L.map(g=>'<tr class="clk" data-a="fd" data-v="'+encodeURIComponent('aprov='+g.l)+'"><td>'+pillAprov(g.l,g.gr)+'</td><td class="num">'+nf(g.forn)+'</td><td class="num" style="font-weight:600">'+nf(g.fc.size)+'</td><td class="num" style="color:var(--venc);font-weight:600">'+nf(g.v)+'</td><td class="num">'+nf(g.p)+'</td><td class="num">'+nf(g.a)+'</td><td class="num">'+(g.t?pct(g.t-g.v-g.p,g.t)+'%':'—')+'</td></tr>').join('')
-      +'</tbody></table></div>';
-  c1+='</div>';
-  const prox=fs.filter(F=>F.prox).sort((a,b)=>a.prox-b.prox).slice(0,12);
-  let c2='<div class="card"><div class="ct"><h2>Próximas reavaliações</h2><span>12 primeiras, das vencidas às mais distantes</span></div>';
-  c2+= !prox.length? '<div class="empty">Nenhuma reavaliação programada com os filtros atuais.</div>'
-    : '<div class="tw"><table><thead><tr><th>Fornecedor</th><th>Aprovação</th><th>Próxima aval.</th><th>Prazo</th><th class="num" title="Documentos obrigatórios vencidos ou sem arquivo">Docs crít.</th></tr></thead><tbody>'
-      +prox.map(F=>'<tr class="clk" data-a="fq" data-v="'+encodeURIComponent(F.cod||F.forn)+'"><td><div class="trunc" style="max-width:150px" title="'+esc(F.forn)+'">'+esc(F.forn)+'</div><small style="color:var(--mute)">'+esc(F.cod)+'</small></td><td>'+pillAprov(F.aprov,F.aprovG)+'</td><td class="nw">'+fmtData(F.prox)+'</td><td class="nw">'+pillReav(F.reav,F.dprox)+'</td><td class="num" style="'+(F.docs.venc+F.docs.pend?'color:var(--venc);font-weight:600':'')+'">'+nf(F.docs.venc+F.docs.pend)+'</td></tr>').join('')
-      +'</tbody></table></div>';
-  c2+='</div>';
-  return '<div class="grid g11">'+c1+c2+'</div>';
+  if(!L.length) return '<div class="empty">Nenhum fornecedor com os filtros atuais.</div>';
+  return '<div class="tw"><table><thead><tr><th>Aprovação</th><th class="num" title="Fornecedores">Fornec.</th><th class="num" title="Fornecedores com documento obrigatório vencido ou sem arquivo">Críticos</th><th class="num" title="Documentos vencidos">Vencidos</th><th class="num" title="Documentos sem arquivo">Sem arq.</th><th class="num" title="Documentos que vencem em até 30 dias">30 dias</th><th class="num" title="Conformidade documental">Conform.</th></tr></thead><tbody>'
+    +L.map(g=>'<tr class="clk" data-a="fd" data-v="'+encodeURIComponent('aprov='+g.l)+'"><td>'+pillAprov(g.l,g.gr)+'</td><td class="num">'+nf(g.forn)+'</td><td class="num" style="font-weight:600">'+nf(g.fc.size)+'</td><td class="num" style="color:var(--venc);font-weight:600">'+nf(g.v)+'</td><td class="num">'+nf(g.p)+'</td><td class="num">'+nf(g.a)+'</td><td class="num">'+(g.t?pct(g.t-g.v-g.p,g.t)+'%':'—')+'</td></tr>').join('')
+    +'</tbody></table></div>';
+}
+function tabProx(fs,lim){
+  const prox=fs.filter(F=>F.prox).sort((a,b)=>a.prox-b.prox).slice(0,lim||12);
+  if(!prox.length) return '<div class="empty">Nenhuma reavaliação programada com os filtros atuais.</div>';
+  return '<div class="tw"><table><thead><tr><th>Fornecedor</th><th>Aprovação</th><th>Próxima aval.</th><th>Prazo</th><th class="num" title="Documentos obrigatórios vencidos ou sem arquivo">Docs crít.</th></tr></thead><tbody>'
+    +prox.map(F=>'<tr class="clk" data-a="fq" data-v="'+encodeURIComponent(F.cod||F.forn)+'"><td><div class="trunc" style="max-width:150px" title="'+esc(F.forn)+'">'+esc(F.forn)+'</div><small style="color:var(--mute)">'+esc(F.cod)+'</small></td><td>'+pillAprov(F.aprov,F.aprovG)+'</td><td class="nw">'+fmtData(F.prox)+'</td><td class="nw">'+pillReav(F.reav,F.dprox)+'</td><td class="num" style="'+(F.docs.venc+F.docs.pend?'color:var(--venc);font-weight:600':'')+'">'+nf(F.docs.venc+F.docs.pend)+'</td></tr>').join('')
+    +'</tbody></table></div>';
+}
+function cruzAval(rows){
+  if(!S.temAval) return '';
+  const fs=escopoForn({semBucket:true});
+  return '<div class="grid g11"><div class="card"><div class="ct"><h2>Aprovação × situação documental</h2><span>clique para ver os documentos do grupo</span></div>'+tabCruz(rows,fs)+'</div>'
+    +'<div class="card"><div class="ct"><h2>Próximas reavaliações</h2><span>12 primeiras, das vencidas às mais distantes</span></div>'+tabProx(fs,12)+'</div></div>';
 }
 
 /* ---------- galpões: avaliação de Matriz e Sanca ---------- */
@@ -1107,12 +1136,116 @@ function syncSelAval(){
 }
 function aplicarFv(v){const i=v.indexOf('=');if(i>0)S.f[v.slice(0,i)]=v.slice(i+1)}
 
+/* ============================ VISÃO GERAL REORGANIZADA ============================ */
+function secT(n,t,s){return '<div class="sec-t"><span class="sn">'+n+'</span><h2>'+t+'</h2><span>'+s+'</span></div>'}
+function vGeral(){
+  const rows=filtrar(S.pend,{semBucket:true});
+  const R=resumo(rows), c=R.c;
+  const conf=pct(R.total-c.pendente-c.vencido,R.total);
+  let h='';
+  /* 1 · fornecedores */
+  h+=secAval(rows);
+  /* 2 · documentos */
+  h+=secT('2','Documentos dos fornecedores','situação dos documentos exigidos nos segmentos · clique para abrir o detalhamento');
+  h+='<div class="grid g6">'
+    +kpi('',nf(R.total),'Documentos no escopo',nf(R.forns)+' fornecedores','x')
+    +kpi('k-pend',nf(c.pendente),'Sem arquivo',pct(c.pendente,R.total)+'% do escopo','st:pendente')
+    +kpi('k-venc',nf(c.vencido),'Vencidos',pct(c.vencido,R.total)+'% do escopo','st:vencido')
+    +kpi('k-v30',nf(c.v30),'Vencem em 30 dias',nf(c.v90)+' vencem em 31 a 90','st:v30')
+    +kpi('k-ok',conf+'%','Conformidade','com arquivo e dentro da validade','st:ok')
+    +kpi('k-venc',nf(R.fornCrit),'Fornecedores críticos','com documento vencido ou sem arquivo','crit')
+    +'</div>';
+  h+='<div class="grid g21"><div class="card"><div class="ct"><h2>Régua de vencimentos</h2><span>Clique em uma barra para ver os documentos</span></div>'+regua(rows)+legenda()+'</div>'
+    +'<div class="card"><div class="ct"><h2>Situação dos documentos</h2><span>'+nf(R.total)+' no total</span></div>'+painelStatus(R)+'</div></div>';
+  /* 3 · pendências */
+  h+=secT('3','Pendências para agir','onde estão os problemas · clique em uma linha ou barra para abrir o detalhamento');
+  h+=cruzAval(rows);
+  h+='<div class="card" style="margin-bottom:14px"><div class="ct"><h2>Fornecedores prioritários</h2><span>15 com mais documentos vencidos ou sem arquivo</span></div>'+tabForn(rows)+'</div>';
+  const crit=rows.filter(r=>r.st==='pendente'||r.st==='vencido'||r.st==='v30');
+  const segs=agrupar(crit,r=>r.seg,r=>r.seg).sort((a,b)=>(b.venc+b.pendente)-(a.venc+a.pendente)||b.v30-a.v30).slice(0,10);
+  const docs=agrupar(crit,r=>r.dkey,r=>r.docNome).sort((a,b)=>(b.venc+b.pendente)-(a.venc+a.pendente)||b.v30-a.v30).slice(0,10);
+  h+='<div class="grid g11"><div class="card"><div class="ct"><h2>Segmentos com mais pendências</h2><span>sem arquivo, vencidos e a vencer em 30 dias</span></div>'+barras(segs,'seg')+barLeg()+'</div>'
+    +'<div class="card"><div class="ct"><h2>Documentos mais críticos</h2><span>mesmo critério, agrupado pelo nome do documento</span></div>'+barras(docs,'doc')+barLeg()+'</div></div>';
+  h+='<p class="note">Sem arquivo: documento exigido no segmento e ainda sem upload no Qualiex. Conformidade: documentos com arquivo e fora da condição de vencido, incluindo os sem data de vencimento. Aprovação e avaliação vêm do relatório Avaliação de Fornecedores e são ligadas aos documentos pelo código do fornecedor. Os filtros de fornecedor valem para o painel inteiro. Os prazos são calculados com a data de hoje do seu navegador. Os documentos regulatórios dos galpões ficam na aba Galpões.</p>';
+  return h;
+}
+/* Sub-abas do Detalhamento */
+function subDetalhe(){
+  const nd=filtrar(S.pend).length, na=S.temAval? escopoForn().length : 0;
+  return '<div class="subnav"><button data-a="det" data-v="docs" aria-pressed="'+(S.det!=='aval')+'">Documentos <b>'+nf(nd)+'</b></button>'
+    +'<button data-a="det" data-v="aval" aria-pressed="'+(S.det==='aval')+'">Avaliações dos fornecedores'+(S.temAval?' <b>'+nf(na)+'</b>':'')+'</button></div>';
+}
+
+/* ============================ MODO TV 1920×1080 ============================ */
+function vTV(){
+  const rows=filtrar(S.pend,{semBucket:true}), R=resumo(rows), c=R.c, conf=pct(R.total-c.pendente-c.vencido,R.total);
+  const logo=(document.querySelector('header .logo')||{}).src||'';
+  const agora=new Date();
+  let h='<div class="tvw"><div class="tvh">'
+    +(logo?'<img src="'+logo+'" alt="PierServ">':'')
+    +'<div class="tvt"><h1>Controle de documentos regulatórios</h1><div class="sub">Fornecedores · avaliação, aprovação e documentos'+(filtrosAtivos()?' · <b style="color:#FFD36B">com filtros aplicados</b>':'')+'</div></div>'
+    +'<div class="tvr"><div class="tvclk">'+String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0')+'<small>'+fmtData(agora)+'</small></div>'
+    +'<div class="tvinfo">'+(S.mode==='snapshot'?'Cópia estática':'Qualiex · '+esc(S.info||'atualizado'))+'</div>'
+    +'<button class="btn" data-a="refresh">Atualizar</button><button class="btn" data-a="modo" data-v="normal">Sair do modo TV</button></div></div>';
+  /* KPIs */
+  let k1='';
+  if(S.temAval){
+    const fs=escopoForn({semBucket:true}), n=fs.length, cnt=fn=>fs.filter(fn).length;
+    const avd=cnt(F=>F.res), apr=cnt(F=>F.aprovG==='aprov'), nok=cnt(F=>F.aprovG==='reprov'||F.aprovG==='restr'),
+      sem=cnt(F=>F.aprovG==='sem'), ab=cnt(F=>ABERTAS.indexOf(F.aval)>=0), rv=cnt(F=>F.reav==='vencida');
+    k1=kpiV('k-info',nf(avd),'Avaliados',pct(avd,n)+'% de '+nf(n),'det','aval')
+      +kpiV('k-ok',nf(apr),'Aprovados',pct(apr,avd)+'% dos avaliados','fa','aprov=g:aprov')
+      +kpiV('k-venc',nf(nok),'Reprov./restrição',pct(nok,avd)+'% dos avaliados','fa','aprov=g:nok')
+      +kpiV('k-pend',nf(sem),'Sem avaliação','sem avaliação válida','fa','aprov=g:sem')
+      +kpiV('k-info',nf(ab),'Em aberto','início, andamento, parecer','fa','aval=g:aberta')
+      +kpiV('k-venc',nf(rv),'Reaval. vencida','próxima avaliação atrasada','fa','reav=vencida');
+  }else k1='<div class="tvav">Dados de avaliação ainda não chegaram ao painel.</div>';
+  const k2=kpi('',nf(R.total),'Documentos',nf(R.forns)+' fornecedores','x')
+    +kpi('k-pend',nf(c.pendente),'Sem arquivo',pct(c.pendente,R.total)+'% do escopo','st:pendente')
+    +kpi('k-venc',nf(c.vencido),'Vencidos',pct(c.vencido,R.total)+'% do escopo','st:vencido')
+    +kpi('k-v30',nf(c.v30),'Vencem 30 dias',nf(c.v90)+' em 31 a 90','st:v30')
+    +kpi('k-ok',conf+'%','Conformidade','com arquivo e na validade','st:ok')
+    +kpi('k-venc',nf(R.fornCrit),'Fornec. críticos','vencido ou sem arquivo','crit');
+  h+='<div class="tvk"><div class="tvg"><span class="tvl">Fornecedores</span><div class="tvkk">'+k1+'</div></div><div class="tvg"><span class="tvl">Documentos</span><div class="tvkk">'+k2+'</div></div></div>';
+  /* painéis */
+  const fsP=S.temAval? escopoForn({semBucket:true}) : [];
+  const card=(t,s,b)=>'<div class="card"><div class="ct"><h2>'+t+'</h2><span>'+s+'</span></div><div class="cb">'+b+'</div></div>';
+  h+='<div class="tvr3">'
+    +card('Status de aprovação','última avaliação concluída',S.temAval?painelAprov(fsP):'<div class="empty">Sem dados de avaliação.</div>')
+    +card('Status de avaliação','avaliação mais recente',S.temAval?painelAvalSt(fsP):'<div class="empty">Sem dados de avaliação.</div>')
+    +card('Prazo de reavaliação','próxima avaliação',S.temAval?painelReav(fsP):'<div class="empty">Sem dados de avaliação.</div>')
+    +card('Situação dos documentos',nf(R.total)+' no total',painelStatus(R))
+    +'</div>';
+  h+='<div class="tvr4">'
+    +card('Régua de vencimentos','documentos por mês de vencimento',regua(rows)+legenda())
+    +card('Aprovação × situação documental','pendências por status de aprovação',S.temAval?tabCruz(rows,fsP):'<div class="empty">Sem dados de avaliação.</div>')
+    +card('Fornecedores prioritários','7 com mais vencidos ou sem arquivo',tabForn(rows,7))
+    +'</div></div>';
+  return h;
+}
+function filtrosAtivos(){const f=S.f;return !!(f.etapa||f.seg||f.resp||f.doc||f.q||f.status.size||f.aprov||f.aval||f.reav||f.sit!=='ativo'||f.obrig!=='sim')}
+function escalaTV(){
+  const el=document.getElementById('tv'); if(!el||S.modo!=='tv') return;
+  const s=Math.min(innerWidth/1920,innerHeight/1080);
+  el.style.transform='translate('+Math.max(0,(innerWidth-1920*s)/2)+'px,'+Math.max(0,(innerHeight-1080*s)/2)+'px) scale('+s+')';
+}
+function setModo(m){
+  S.modo=m==='tv'?'tv':'normal';
+  document.body.classList.toggle('tv',S.modo==='tv');
+  try{localStorage.setItem('docreg_modo',S.modo)}catch(e){}
+  if(S.modo==='tv'){try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
+  else{try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
+  render(); escalaTV(); window.scrollTo(0,0);
+}
+
 /* ============================ EVENTOS ============================ */
-function irDetalhe(){S.tab='detalhe';S.page=0;render();window.scrollTo(0,0)}
+function irDetalhe(){S.tab='detalhe';S.det='docs';S.page=0;render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-x]')) return;
   const el=e.target.closest('[data-a]'); if(!el) return;
   const a=el.dataset.a, v=el.dataset.v!=null? decodeURIComponent(el.dataset.v):'', f=S.f;
+  if(a==='modo'){setModo(v);return}
+  if(S.modo==='tv'&&a!=='refresh'){S.modo='normal';document.body.classList.remove('tv');try{localStorage.setItem('docreg_modo','normal');if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
   if(a==='tab'){S.tab=v;S.page=0;render();window.scrollTo(0,0)}
   else if(a==='refresh') atualizar();
   else if(a==='clear'){f.obrig='sim';f.etapa='';f.seg='';f.resp='';f.doc='';f.q='';f.status=new Set();f.bucket='';f.aprov='';f.aval='';f.reav='';f.sit='ativo';S.page=0;S.pageAv=0;document.getElementById('fQ').value='';montarFiltros();render()}
@@ -1129,7 +1262,7 @@ document.addEventListener('click',e=>{
   else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}
   else if(a==='stclear'){f.status=new Set();S.page=0;render()}
   else if(a==='csv') exportarCsv();
-  else if(a==='fa'){aplicarFv(v);S.tab='aval';S.pageAv=0;montarFiltros();render();window.scrollTo(0,0)}
+  else if(a==='fa'){aplicarFv(v);S.tab='detalhe';S.det='aval';S.pageAv=0;montarFiltros();render();window.scrollTo(0,0)}
   else if(a==='fd'){aplicarFv(v);f.status=new Set();f.bucket='';montarFiltros();irDetalhe()}
   else if(a==='aprcrit'){f.aprov='g:aprov';f.status=new Set(['pendente','vencido']);f.bucket='';f.obrig='sim';montarFiltros();irDetalhe()}
   else if(a==='avst'){const i=v.indexOf('='),key=v.slice(0,i),val=v.slice(i+1);f[key]=f[key]===val?'':val;S.pageAv=0;render()}
@@ -1137,6 +1270,7 @@ document.addEventListener('click',e=>{
   else if(a==='pgav'){S.pageAv+=+v;render();window.scrollTo(0,0)}
   else if(a==='avhist'){S.avHist=!S.avHist;S.pageAv=0;render()}
   else if(a==='csvav') exportarCsvAval();
+  else if(a==='det'){S.tab='detalhe';S.det=v;S.page=0;S.pageAv=0;render();window.scrollTo(0,0)}
 });
 montarStatus();
 document.getElementById('fStatusPanel').addEventListener('change',e=>{
@@ -1155,7 +1289,11 @@ let tq;document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(t
 let ultimaCarga=Date.now();
 const _carregar=carregar;
 carregar=function(m){ultimaCarga=Date.now();return _carregar(m)};
+(function(){let m='normal';try{m=new URLSearchParams(location.search).get('modo')||localStorage.getItem('docreg_modo')||'normal'}catch(e){}if(m==='tv'){S.modo='tv';document.body.classList.add('tv')}})();
+window.addEventListener('resize',escalaTV);
+setInterval(()=>{if(S.modo==='tv'&&!document.hidden){render();escalaTV()}},60000);
 carregar(false);
+setTimeout(escalaTV,50);
 /* Atualização automática (só quando há API_URL): relê a planilha a cada REFRESH_MIN minutos */
 if(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0){
   setInterval(()=>{if(!document.hidden&&!atualizando)carregar(false)},CONFIG.REFRESH_MIN*60000);
