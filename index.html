@@ -334,6 +334,10 @@ main{
 .tvp .chk:has(input:checked){background:none}
 .tvst{font-size:12px;color:var(--mute)}.tvst.on{color:#0A6F64;font-weight:600}
 .tvpa{display:flex;gap:6px}.tvpa .b{padding:6px 11px;font-size:12px}
+.emb-pbi{display:flex;gap:14px;align-items:center;margin-top:12px;padding:12px 14px;border:1px solid #F2C811;background:#FFFBEA;border-radius:12px}
+.emb-pbi>div{flex:1;font-size:13px;color:var(--navy)}.emb-pbi small{display:block;color:var(--mute);margin-top:3px;line-height:1.45}
+.emb-pbi .emb-btn{background:#F2C811;color:#1b1b1b;white-space:nowrap}
+@media (max-width:700px){.emb-pbi{flex-direction:column;align-items:stretch}}
 .tvcast{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .tvcast .b{padding:12px 14px;display:flex;align-items:center;justify-content:center;gap:8px}
 .tvcast-st{margin-top:10px;font-size:13px;color:#0A6F64;font-weight:600;display:none}
@@ -1238,6 +1242,7 @@ function embForm() {
       + '<select id="embVel">' + op(20, 'Muito lenta') + op(40, 'Lenta', true) + op(70, 'Normal') + op(120, 'Rápida') + '</select></div></div>'
       + '<label class="fld"><span>Código para colar no site</span><textarea id="embCodigo" readonly rows="4"></textarea></label>'
       + '<div class="emb-btns"><button class="emb-btn" id="embCopiar">Copiar código</button><button class="emb-btn sec" id="embCopiarLink">Copiar só o link</button><a class="emb-btn sec" id="embAbrir" target="_blank" rel="noopener">Abrir em nova aba</a></div>'
+      + '<div class="emb-pbi"><div><b>Colocar no Power BI</b><small>Power BI (online) &gt; abra um <b>Dashboard</b> &gt; <b>Editar &gt; Adicionar um bloco &gt; Conteúdo da Web</b> &gt; cole o código no campo "Código de inserção" &gt; Aplicar. O bloco se ajusta ao tamanho que você arrastar.</small></div><button class="emb-btn" id="embCopiarPbi">Copiar código para Power BI</button></div>'
       + '<div class="emb-prevlbl">Pré-visualização</div>'
       + '<div class="emb-prevarea" id="embArea"><div class="emb-stage" id="embStage"><iframe id="embPrev" title="Pré-visualização"></iframe></div></div>';
   }
@@ -1295,6 +1300,7 @@ $('vEmbed').addEventListener('click', async e => {
     }
     if (id === 'embCopiar') { await copiar(gv('embCodigo')); return; }
     if (id === 'embCopiarLink') { await copiar(emb.url); return; }
+    if (id === 'embCopiarPbi') { await copiar('<iframe src="' + emb.url + '" width="100%" height="100%" frameborder="0" style="border:0" allowfullscreen></iframe>'); return; }
     if (!b) return;
     const t = b.dataset.t, a = b.dataset.emb;
     if (a === 'usar') { emb.modo = t; embForm(); embAtualiza(); $('embBuilder').scrollIntoView({ behavior: 'smooth' }); return; }
