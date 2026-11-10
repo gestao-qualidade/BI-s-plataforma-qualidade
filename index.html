@@ -334,6 +334,19 @@ main{
 .tvp .chk:has(input:checked){background:none}
 .tvst{font-size:12px;color:var(--mute)}.tvst.on{color:#0A6F64;font-weight:600}
 .tvpa{display:flex;gap:6px}.tvpa .b{padding:6px 11px;font-size:12px}
+.tvcast{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tvcast .b{padding:12px 14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.tvcast-st{margin-top:10px;font-size:13px;color:#0A6F64;font-weight:600;display:none}
+.tvaj{display:none;position:fixed;inset:0;z-index:650;background:rgba(3,10,52,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}
+.tvaj.on{display:flex}
+.tvaj-box{background:#fff;border-radius:18px;max-width:720px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 70px -20px rgba(0,5,40,.9)}
+.tvaj-hd{background:linear-gradient(135deg,#071a66,#1747B8 70%,#2F6BFF);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+.tvaj-bd{padding:18px 22px;color:var(--navy);font-size:14px;line-height:1.5}
+.tvaj-bd h4{margin:16px 0 6px;font-size:15px;color:var(--royal)}
+.tvaj-bd h4:first-child{margin-top:0}
+.tvaj-bd ol{margin:0 0 0 18px;padding:0}
+.tvaj-url{display:flex;gap:8px;margin:8px 0}.tvaj-url input{flex:1;font-size:13px}
+@media (max-width:640px){.tvcast{grid-template-columns:1fr}}
 .tvacts{display:flex;gap:10px;align-items:center;margin-top:16px}.tvacts .btn-main{flex:1;margin:0}.tvacts .b{padding:12px 16px}
 .tvf-modal{display:none;position:fixed;inset:0;z-index:600;background:rgba(3,10,52,.7);backdrop-filter:blur(4px);padding:2.5vh 2.5vw}
 .tvf-modal.on{display:block}
@@ -660,7 +673,10 @@ function formSenha(destino, obrigatoria) {
 function entrar() {
   if (!eu) { tela('tLogin'); return; }
   if (eu.trocarSenha) { formSenha($('trocarForm'), true); tela('tTrocar'); return; }
+  const auto = location.hash === '#/tv-auto';
+  if (auto) history.replaceState(null, '', '#/');
   tela('tApp'); renderApp(); initSidebarToggle();
+  if (auto) tvAuto();
 }
 
 /* ---------- Navegação e Rotas ---------- */
@@ -831,6 +847,7 @@ async function tvCfgCarregar() {
   }
 }
 function tvCfgSalvar(avisar) {
+  if (RECEPTOR) return;
   clearTimeout(tvCfgTimer);
   tvCfgTimer = setTimeout(async () => {
     try { localStorage.setItem(TV_CFG_LOCAL, JSON.stringify(tvCfg)); } catch (e) {}
@@ -882,6 +899,9 @@ async function montarTvConfig() {
     + '<div class="sub" style="margin:-4px 0 10px;font-size:12px">Nas velocidades fixas, se o painel for grande e o tempo de permanência for curto, ele passa para o próximo antes de terminar de subir.</div></div>'
     + '<div class="dica" id="tvFmtDica" style="display:none">No Modo TV 1920×1080 cada painel já cabe inteiro na tela, então não há rolagem. Painéis que ainda não têm o Modo TV aparecem no formato normal.</div>'
     + '<div class="tvacts"><button class="b s" id="btnSalvarTv">Salvar configuração</button><button class="btn-main" id="btnStartTv">Iniciar Apresentação em Tela Cheia</button></div>'
+    + '<div class="tvcast"><button class="b s" id="btnCast" title="Enviar a apresentação para uma TV com Chromecast ou Google TV">📡 Transmitir para TV (Chromecast)</button>'
+    + '<button class="b s" id="btnOutrasTv" title="Smart TV com navegador, DLNA, Miracast">📺 Outras TVs (Smart TV, DLNA, Miracast)</button></div>'
+    + '<div class="tvcast-st" id="castSt"></div>'
     + '</div></div>'
     + '<div class="tvf-modal" id="tvfModal"><div class="tvf-box"><div class="tvf-hd"><div><b id="tvfTit">Filtros</b><small>Use os filtros do próprio painel. Quando ele estiver mostrando só o que deve aparecer na TV, clique em <b>Salvar filtros</b>.</small></div>'
     + '<div class="tvf-bt"><button class="b s" id="tvfCancelar">Cancelar</button><button class="b p" id="tvfSalvar">Salvar filtros</button></div></div><iframe id="tvfFrame" title="Escolher filtros"></iframe></div></div>';
@@ -896,6 +916,9 @@ async function montarTvConfig() {
   $('vTvConfig').onchange = e => { if (e.target.closest('#tvFmt')) syncFmt(); tvLerTela(); tvCfgSalvar(false); };
   $('btnSalvarTv').onclick = () => { tvLerTela(); tvCfgSalvar(true); };
   $('btnStartTv').onclick = iniciarApresentacaoTv;
+  $('btnCast').onclick = transmitirCast;
+  $('btnOutrasTv').onclick = () => ajudaTv('');
+  castStatus();
   $('vTvConfig').onclick = async e => {
     const bf = e.target.closest('[data-tvf]'), bl = e.target.closest('[data-tvlimpa]');
     if (bf) tvAbrirFiltros(bf.dataset.tvf);
@@ -939,6 +962,64 @@ function tvLerFiltrosFrame(fr) {
     addEventListener('message', h);
     try { fr.contentWindow.postMessage({ bi: 'filtros-ler', id: id }, '*'); } catch (e) {}
   });
+}
+
+/* ---------- Transmitir para a TV ----------
+   Chromecast / Google TV: o Chrome abre a escolha da TV e mostra a apresentação nela
+   (a página roda no Chrome deste computador e é enviada para a TV).
+   Smart TV com navegador: endereço #/tv-auto abre a apresentação sozinha depois do login.
+   DLNA não transmite páginas da internet; para TVs só com DLNA, use Miracast (espelhar a tela) ou o navegador da TV. */
+let castConexao = null;
+function urlTvAuto() { return location.origin + location.pathname + '#/tv-auto'; }
+function castStatus(txt) {
+  const el = $('castSt'); if (!el) return;
+  const t = txt || (castConexao && castConexao.state === 'connected' ? '📡 Transmitindo para a TV agora.' : '');
+  el.style.display = t ? 'block' : 'none';
+  el.innerHTML = t ? esc(t) + (castConexao && castConexao.state === 'connected' ? ' <button class="b s" id="btnCastParar" style="margin-left:8px;padding:5px 10px">Parar transmissão</button>' : '') : '';
+  const b = $('btnCastParar'); if (b) b.onclick = () => { try { castConexao.terminate(); } catch (e) {} castConexao = null; castStatus(); };
+}
+async function transmitirCast() {
+  tvLerTela(); tvCfgSalvar(false);
+  if (!tvCfg.sel || !tvCfg.sel.length) { toast('Selecione ao menos um painel para apresentar.', true); return; }
+  if (!('PresentationRequest' in window)) { ajudaTv('Este navegador não transmite direto pela página. Use o Google Chrome ou o caminho abaixo.'); return; }
+  try {
+    const req = new PresentationRequest([location.origin + location.pathname + '#/tv-cast']);
+    const con = await req.start();
+    castConexao = con;
+    const enviar = () => { try { con.send(JSON.stringify({ bi: 'tv-cast', sessao: sessao, cfg: tvCfg })); } catch (e) {} };
+    if (con.state === 'connected') enviar();
+    con.onconnect = () => { enviar(); castStatus(); };
+    con.onmessage = ev => { try { const d = JSON.parse(ev.data); if (d.bi === 'tv-cast-ok') castStatus('📡 A TV recebeu a apresentação.'); if (d.bi === 'tv-cast-erro') toast('TV: ' + d.erro, true); } catch (e) {} };
+    con.onclose = con.onterminate = () => { castConexao = null; castStatus(); };
+    castStatus();
+  } catch (e) {
+    if (e && e.name === 'NotFoundError') ajudaTv('Nenhuma TV com Chromecast foi encontrada na rede. Confira se a TV e o computador estão no mesmo Wi-Fi.');
+    else if (e && e.name !== 'AbortError' && e.name !== 'NotAllowedError') ajudaTv('Não foi possível transmitir direto (' + (e.message || e.name) + '). Use o caminho abaixo.');
+  }
+}
+function ajudaTv(aviso) {
+  let m = $('tvAjuda');
+  if (!m) { m = document.createElement('div'); m.id = 'tvAjuda'; m.className = 'tvaj'; document.body.appendChild(m); }
+  m.innerHTML = '<div class="tvaj-box"><div class="tvaj-hd"><b>📺 Transmitir a apresentação para a TV</b><button class="b s" id="tvAjFechar">Fechar</button></div><div class="tvaj-bd">'
+    + (aviso ? '<div class="dica" style="margin:0 0 12px;color:#B42318;font-weight:600">' + esc(aviso) + '</div>' : '')
+    + '<h4>1) Chromecast ou Google TV (pelo Chrome)</h4><ol><li>Clique em <b>Iniciar Apresentação em Tela Cheia</b>.</li><li>No Chrome, abra o menu <b>⋮</b> (canto de cima) &gt; <b>Transmitir…</b>.</li><li>Em <b>Origens</b>, escolha <b>Transmitir guia</b> e clique na sua TV.</li></ol>'
+    + '<h4>2) Smart TV com navegador (Samsung, LG, Android TV…)</h4><ol><li>Abra o navegador da TV e digite o endereço abaixo.</li><li>Entre com um usuário <b>administrador</b>.</li><li>A apresentação começa sozinha, com a configuração salva aqui.</li></ol>'
+    + '<div class="tvaj-url"><input id="tvAjUrl" readonly value="' + esc(urlTvAuto()) + '"><button class="b s" id="tvAjCopiar">Copiar</button></div>'
+    + '<h4>3) TV com DLNA ou espelhamento de tela (Miracast)</h4><ol><li>O DLNA envia só vídeos, fotos e músicas: ele não transmite uma página ao vivo.</li><li>Use o <b>espelhamento</b>: no Windows aperte <b>Windows + K</b>, escolha a TV e depois clique em <b>Iniciar Apresentação</b>.</li><li>Se a TV não aparecer, ative na TV a opção <b>Espelhamento de tela / Screen Mirroring</b>.</li></ol>'
+    + '</div></div>';
+  m.classList.add('on');
+  $('tvAjFechar').onclick = () => m.classList.remove('on');
+  m.onclick = e => { if (e.target === m) m.classList.remove('on'); };
+  $('tvAjCopiar').onclick = async () => { try { await navigator.clipboard.writeText(urlTvAuto()); toast('Endereço copiado.'); } catch (e) { $('tvAjUrl').select(); document.execCommand('copy'); toast('Endereço copiado.'); } };
+}
+/* Smart TV: #/tv-auto inicia a apresentação com a configuração salva */
+async function tvAuto() {
+  if (!eu || eu.papel !== 'admin') { toast('A apresentação automática é só para administradores.', true); return; }
+  history.replaceState(null, '', '#/');
+  tvCfg = await tvCfgCarregar();
+  if (!tvCfg.sel) tvCfg.sel = eu.paineis.map(p => p.id);   // sem seleção salva = todos os painéis
+  tvFormato = tvCfg.formato === 'tv' ? 'tv' : 'normal';
+  iniciarApresentacaoTv();
 }
 
 function iniciarApresentacaoTv() {
@@ -1359,7 +1440,35 @@ async function iniciar() {
   try { const j = await chamar({ acao: 'eu' }); eu = j.usuario; entrar(); }
   catch (e) { if (!eu) { tela('tLogin'); if (e.codigo !== 'sessao') { $('loginMsg').textContent = e.message; } } }
 }
-iniciar();
+/* Página aberta NA TV pelo "Transmitir para TV": recebe o login e a configuração do computador e começa a apresentação */
+const RECEPTOR = !!(navigator.presentation && navigator.presentation.receiver);
+if (RECEPTOR && navigator.presentation && navigator.presentation.receiver) {
+  tela('tCarga');
+  navigator.presentation.receiver.connectionList.then(lista => {
+    const ouvir = con => {
+      con.onmessage = async ev => {
+        let d; try { d = JSON.parse(ev.data); } catch (e) { return; }
+        if (d.bi !== 'tv-cast') return;
+        try {
+          sessao = d.sessao || '';
+          const j = await chamar({ acao: 'eu' }); eu = j.usuario;
+          history.replaceState(null, '', '#/');
+          tela('tApp'); renderApp();
+          tvCfg = Object.assign(tvCfgPadrao(), d.cfg || {});
+          if (!tvCfg.sel) tvCfg.sel = eu.paineis.map(p => p.id);
+          tvFormato = tvCfg.formato === 'tv' ? 'tv' : 'normal';
+          iniciarApresentacaoTv();
+          con.send(JSON.stringify({ bi: 'tv-cast-ok' }));
+        } catch (e) { try { con.send(JSON.stringify({ bi: 'tv-cast-erro', erro: e.message })); } catch (x) {} }
+      };
+    };
+    lista.connections.forEach(ouvir);
+    lista.onconnectionavailable = e => ouvir(e.connection);
+  });
+} else {
+  if (location.hash === '#/tv-cast') history.replaceState(null, '', '#/');
+  iniciar();
+}
 
 setInterval(async () => {
   if (!sessao || !eu || eu.trocarSenha) return;
