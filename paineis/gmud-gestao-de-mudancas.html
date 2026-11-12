@@ -108,6 +108,23 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 .tvw .bl{padding:3px 6px}
 .tvw .ks3{font-size:12.5px;margin:0 0 4px}
 .tvvazio{grid-row:2/5;display:grid;place-items:center;color:#fff;font-size:18px;border:1px dashed rgba(255,255,255,.4);border-radius:14px}
+
+/* ===== listas suspensas com busca (filtros) ===== */
+.cbx{position:relative;display:inline-block;vertical-align:middle}
+.cbx-b{font:inherit;font-size:13px;border:1px solid #CBD7EE;border-radius:99px;padding:6px 30px 6px 12px;background:#fff;color:var(--ink);max-width:230px;min-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;position:relative;cursor:pointer;line-height:1.35}
+.cbx-b::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg)}
+.cbx-b:hover{border-color:var(--royal)}
+.cbx-b.on{background:linear-gradient(135deg,var(--navy),var(--azure));color:#fff;border-color:transparent}
+.cbx-b.on::after{border-color:#fff}
+.cbx-p{position:absolute;top:calc(100% + 6px);left:0;z-index:60;width:300px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:6px;box-shadow:0 22px 44px -16px rgba(2,10,50,.55);text-align:left}
+.cbx-p[hidden]{display:none}
+.fb .cbx-q,.fbi .cbx-q{width:100%;min-width:0;max-width:none;font:inherit;font-size:13px;border:1px solid #CBD7EE;border-radius:99px;padding:6px 12px;background:#fff;color:var(--ink)}
+.cbx-l{max-height:300px;overflow:auto;display:grid;gap:1px}
+.cbx-g{padding:6px 10px 2px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mute)}
+.cbx-i{padding:7px 10px;border-radius:9px;font-size:13px;cursor:pointer;color:var(--ink);font-weight:400;white-space:normal}
+.cbx-i:hover,.cbx-i.at{background:#EEF3FC}
+.cbx-i.sel{font-weight:600;color:var(--royal)}
+.cbx-n{padding:10px;color:var(--mute);font-size:12px}
 </style></head><body>
 <header><div class="hd"><div><h1>Painel de GMUD e Oportunidades de Melhoria</h1><div class="sub">PierServ · Qualidade · planos de ação do Qualiex</div></div>
 <div class="hr"><span id="src"></span><button class="btn sec" data-a="modo" data-v="tv" title="Tela única para TV ou monitor 1920×1080">Modo TV 1920×1080</button>
@@ -394,4 +411,61 @@ addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.sou
 (function(){let t='';try{t=new URLSearchParams(location.search).get('filtros')||''}catch(e){}
   if(t)bifAplicar(t);
   try{if(!t&&window.google&&google.script&&google.script.url)google.script.url.getLocation(l=>{const v=l&&l.parameter&&l.parameter.filtros;if(v)bifAplicar(v)})}catch(e){}})();
+
+/* ===== listas suspensas com busca (filtros) ===== */
+(function(){
+  const nrm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const ec=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function sync(sel){
+    const w=sel._cbx; if(!w) return;
+    const o=sel.options[sel.selectedIndex], b=w.querySelector('.cbx-b');
+    const tx=o?o.text:''; if(b.textContent!==tx) b.textContent=tx;
+    b.classList.toggle('on', sel.options.length>0 && sel.value!==sel.options[0].value);
+  }
+  function criar(sel){
+    const w=document.createElement('span'); w.className='cbx';
+    w.innerHTML='<button type="button" class="cbx-b" aria-haspopup="listbox"></button><div class="cbx-p" hidden><input type="search" class="cbx-q" placeholder="Digite para procurar…" aria-label="Procurar"><div class="cbx-l" role="listbox"></div></div>';
+    sel.parentNode.insertBefore(w, sel.nextSibling); sel.style.display='none'; sel._cbx=w;
+    const b=w.querySelector('.cbx-b'), p=w.querySelector('.cbx-p'), q=w.querySelector('.cbx-q'), l=w.querySelector('.cbx-l');
+    let at=0;
+    const lista=()=>{
+      const t=nrm(q.value).trim(); let i=0, h='', ultG=null;
+      [...sel.options].forEach(o=>{
+        if(t && nrm(o.text).indexOf(t)<0) return;
+        const g=o.parentNode&&o.parentNode.tagName==='OPTGROUP'?o.parentNode.label:'';
+        if(g!==ultG){ if(g) h+='<div class="cbx-g">'+ec(g)+'</div>'; ultG=g; }
+        h+='<div class="cbx-i'+(o.value===sel.value?' sel':'')+(i===at?' at':'')+'" data-cv="'+ec(o.value)+'" role="option">'+ec(o.text)+'</div>'; i++;
+      });
+      if(at>=i) at=Math.max(0,i-1);
+      l.innerHTML=i?h:'<div class="cbx-n">Nada encontrado</div>';
+      const x=l.querySelector('.at'); if(x) x.scrollIntoView({block:'nearest'});
+    };
+    const fechar=()=>{p.hidden=true};
+    const abrir=()=>{document.querySelectorAll('.cbx-p').forEach(x=>{if(x!==p)x.hidden=true}); p.hidden=false; q.value=''; at=Math.max(0,sel.selectedIndex); lista(); q.focus()};
+    const escolher=v=>{fechar(); if(sel.value!==v){sel.value=v; sel.dispatchEvent(new Event('input',{bubbles:true})); sel.dispatchEvent(new Event('change',{bubbles:true}))} sync(sel); b.focus()};
+    b.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); p.hidden?abrir():fechar()});
+    q.addEventListener('input',e=>{e.stopPropagation(); at=0; lista()});
+    q.addEventListener('change',e=>e.stopPropagation());
+    q.addEventListener('keydown',e=>{const n=l.querySelectorAll('.cbx-i').length;
+      if(e.key==='ArrowDown'){at=Math.min(n-1,at+1);lista();e.preventDefault()}
+      else if(e.key==='ArrowUp'){at=Math.max(0,at-1);lista();e.preventDefault()}
+      else if(e.key==='Enter'){const it=l.querySelector('.at'); if(it) escolher(it.dataset.cv); e.preventDefault()}
+      else if(e.key==='Escape'){fechar(); b.focus()}});
+    l.addEventListener('mousedown',e=>{const it=e.target.closest('.cbx-i'); if(it){e.preventDefault(); escolher(it.dataset.cv)}});
+    l.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation()});
+    p.addEventListener('click',e=>e.stopPropagation());
+    sync(sel);
+  }
+  function varrer(){
+    const fb=document.querySelector('.fb'); if(!fb) return;
+    fb.querySelectorAll('select').forEach(s=>{ if(!s._cbx||!s._cbx.isConnected){ s._cbx=null; criar(s) } else sync(s) });
+  }
+  window.cbxVarrer=varrer;
+  if(typeof render==='function'){ const _r=render; render=function(){ const x=_r.apply(this,arguments); try{varrer()}catch(e){} return x } }
+  document.addEventListener('click',e=>{ if(!e.target.closest('.cbx')) document.querySelectorAll('.cbx-p').forEach(p=>p.hidden=true) });
+  document.addEventListener('change',e=>{ if(e.target.tagName==='SELECT'&&e.target._cbx) sync(e.target) },true);
+  try{ const fb=document.querySelector('.fb'); if(fb&&window.MutationObserver){ let t; new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varrer,30)}).observe(fb,{childList:true,subtree:true}) } }catch(e){}
+  setInterval(()=>{ try{ document.querySelectorAll('.fb select').forEach(s=>{ if(s._cbx){ const b=s._cbx.querySelector('.cbx-b'), o=s.options[s.selectedIndex]; if(o&&b.textContent!==o.text) sync(s) } }) }catch(e){} }, 700);
+  varrer();
+})();
 </script></body></html>
