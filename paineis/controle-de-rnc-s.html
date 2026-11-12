@@ -329,6 +329,13 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 .cbx-i:hover,.cbx-i.at{background:#EEF3FC}
 .cbx-i.sel{font-weight:600;color:var(--royal)}
 .cbx-n{padding:10px;color:var(--mute);font-size:12px}
+.cbx-i.mt{display:flex;gap:9px;align-items:flex-start}
+.cbx-i.mt i{flex:none;width:16px;height:16px;margin-top:1px;border:1.6px solid #9AAACB;border-radius:4px;background:#fff;display:grid;place-items:center}
+.cbx-i.mt.sel i{background:linear-gradient(135deg,var(--navy),var(--azure));border-color:transparent}
+.cbx-i.mt.sel i::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.cbx-i.mt.sel{font-weight:500;color:var(--ink)}
+.cbx-f{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:7px 4px 0;font-size:12px;color:var(--mute)}
+.cbx-f button{border:0;background:none;color:var(--royal);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px}
 </style>
 </head>
 <body>
@@ -578,14 +585,14 @@ function custoComp(r,k){return k==='rnc'?r.custoRnc:k==='plano'?r.custoPlanos:k=
 function filtrar(rows,o){
   o=o||{}; const f=S.f,q=norm(f.q);
   return rows.filter(r=>{
-    if(f.ano||f.mesNum){const d=dt(r);if(!d)return false;if(f.ano&&d.getFullYear()!==+f.ano)return false;if(!o.semMes&&f.mesNum&&d.getMonth()+1!==+f.mesNum)return false}
+    if(f.ano||f.mesNum){const d=dt(r);if(!d)return false;if(f.ano&&!mv(f.ano,d.getFullYear()))return false;if(!o.semMes&&f.mesNum&&!mv(f.mesNum,d.getMonth()+1))return false}
     if(!o.semOcorr&&f.ocorr.size&&!f.ocorr.has(r.ocorr)) return false;
     if(f.plano.size&&!planoMatchRnc(r)) return false;
     if(f.respPl.size&&!r.planos.some(p=>f.respPl.has(p.resp))) return false;
-    if(f.tipo&&r.tipo!==f.tipo) return false;
-    if(f.cliente&&r.cliente!==f.cliente) return false;
-    if(f.cat&&r.categoria!==f.cat) return false;
-    if(f.status&&r.status!==f.status) return false;
+    if(f.tipo&&!mv(f.tipo,r.tipo)) return false;
+    if(f.cliente&&!mv(f.cliente,r.cliente)) return false;
+    if(f.cat&&!mv(f.cat,r.categoria)) return false;
+    if(f.status&&!mv(f.status,r.status)) return false;
     if(q&&r.busca.indexOf(q)<0) return false;
     if(f.dim&&r[f.dim.k]!==f.dim.v) return false;
     return true;
@@ -623,7 +630,7 @@ function syncMulti(){
     document.getElementById(a[0]).classList.toggle('on',arr.length>0);
   });
 }
-function mesSel(m){return (!S.f.mesNum||+m.slice(5)===+S.f.mesNum)&&(!S.f.ano||m.slice(0,4)===S.f.ano)}
+function mesSel(m){return (!S.f.mesNum||mv(S.f.mesNum,+m.slice(5)))&&(!S.f.ano||mv(S.f.ano,m.slice(0,4)))}
 function syncPeriodo(){document.getElementById('fAno').value=S.f.ano;document.getElementById('fMes').value=S.f.mesNum}
 function montarFiltros(){
   const fill=(id,arr,cur)=>{const el=document.getElementById(id);const first=el.options[0].outerHTML;el.innerHTML=first+arr.map(v=>'<option value="'+esc(v[0])+'">'+esc(v[1])+'</option>').join('');el.value=cur||''};
@@ -1063,36 +1070,70 @@ addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.sou
   try{if(!t&&window.google&&google.script&&google.script.url)google.script.url.getLocation(l=>{const v=l&&l.parameter&&l.parameter.filtros;if(v)bifAplicar(v)})}catch(e){}})();
 
 /* ===== listas suspensas com busca (filtros) ===== */
+/* Filtro com várias escolhas fica guardado como texto JSON: ["A","B"]. */
+function cbxLista(v){if(v==null||v==='')return null;const s=String(v);if(s.charAt(0)==='['){try{const a=JSON.parse(s);if(Array.isArray(a))return a.map(String)}catch(e){}}return null}
+function mv(fv,v){const L=cbxLista(fv),um=x=>{const a=String(x),b=String(v==null?'':v);return a===b||(a!==''&&b!==''&&!isNaN(a)&&!isNaN(b)&&+a===+b)};return L?L.some(um):um(fv)}
+function temAlgum(set,fv){const L=cbxLista(fv);return L?L.some(x=>set.has(x)):set.has(fv)}
+window.CBX_ESTADO={fAno:()=>S.f.ano,fMes:()=>S.f.mesNum,fTipo:()=>S.f.tipo,fCliente:()=>S.f.cliente,fCat:()=>S.f.cat,fStatus:()=>S.f.status};
 (function(){
   const nrm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
   const ec=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const getter=sel=>{const E=window.CBX_ESTADO||{};const k=sel.id&&E[sel.id]?sel.id:(sel.dataset.f&&E['data-f:'+sel.dataset.f]?'data-f:'+sel.dataset.f:(sel.dataset.f&&E['data-f:*']?'data-f:*':null));return k?(k==='data-f:*'?()=>S.f[sel.dataset.f]:E[k]):null};
+  const multi=sel=>!!getter(sel);
+  const escolhidos=sel=>{const g=getter(sel);let v;try{v=g?g():sel.value}catch(e){v=sel.value}if(v==null||v==='')return [];const L=cbxLista(v);return L||[String(v)]};
+  const txtDe=(sel,v)=>{const o=[...sel.options].find(o=>!o._cbxM&&o.value===v);return o?o.text:v};
+  function sentinela(sel,val){let o=[...sel.options].find(o=>o._cbxM);if(!o){o=document.createElement('option');o._cbxM=true;sel.appendChild(o)}o.value=val;o.textContent='Vários';return o}
   function sync(sel){
     const w=sel._cbx; if(!w) return;
-    const o=sel.options[sel.selectedIndex], b=w.querySelector('.cbx-b');
-    const tx=o?o.text:''; if(b.textContent!==tx) b.textContent=tx;
-    b.classList.toggle('on', sel.options.length>0 && sel.value!==sel.options[0].value);
+    const b=w.querySelector('.cbx-b'); let tx, on;
+    if(multi(sel)){
+      const L=escolhidos(sel);
+      if(L.length>1){const val=JSON.stringify(L);sentinela(sel,val);if(sel.value!==val)sel.value=val}
+      else {const m=[...sel.options].find(o=>o._cbxM);if(m)m.remove();if(L.length===1&&sel.value!==L[0])sel.value=L[0];if(!L.length&&sel.options.length&&sel.value!==sel.options[0].value&&sel.options[0].value==='')sel.value=''}
+      tx=!L.length?(sel.options[0]?sel.options[0].text:''):L.length===1?txtDe(sel,L[0]):L.length===2?L.map(v=>txtDe(sel,v)).join(', '):L.length+' selecionados';
+      on=L.length>0;
+    } else {
+      const o=sel.options[sel.selectedIndex]; tx=o?o.text:'';
+      on=sel.options.length>0 && sel.value!==sel.options[0].value;
+    }
+    if(b.textContent!==tx) b.textContent=tx;
+    b.title=tx; b.classList.toggle('on',on);
   }
   function criar(sel){
     const w=document.createElement('span'); w.className='cbx';
-    w.innerHTML='<button type="button" class="cbx-b" aria-haspopup="listbox"></button><div class="cbx-p" hidden><input type="search" class="cbx-q" placeholder="Digite para procurar…" aria-label="Procurar"><div class="cbx-l" role="listbox"></div></div>';
+    const M=multi(sel);
+    w.innerHTML='<button type="button" class="cbx-b" aria-haspopup="listbox"></button><div class="cbx-p" hidden><input type="search" class="cbx-q" placeholder="Digite para procurar…" aria-label="Procurar"><div class="cbx-l" role="listbox"'+(M?' aria-multiselectable="true"':'')+'></div>'+(M?'<div class="cbx-f"><span class="cbx-c"></span><span><button type="button" data-cbx="limpar">Limpar</button><button type="button" data-cbx="ok">Concluir</button></span></div>':'')+'</div>';
     sel.parentNode.insertBefore(w, sel.nextSibling); sel.style.display='none'; sel._cbx=w;
     const b=w.querySelector('.cbx-b'), p=w.querySelector('.cbx-p'), q=w.querySelector('.cbx-q'), l=w.querySelector('.cbx-l');
     let at=0;
     const lista=()=>{
       const t=nrm(q.value).trim(); let i=0, h='', ultG=null;
+      const L=M?escolhidos(sel):null;
       [...sel.options].forEach(o=>{
+        if(o._cbxM) return;
         if(t && nrm(o.text).indexOf(t)<0) return;
         const g=o.parentNode&&o.parentNode.tagName==='OPTGROUP'?o.parentNode.label:'';
         if(g!==ultG){ if(g) h+='<div class="cbx-g">'+ec(g)+'</div>'; ultG=g; }
-        h+='<div class="cbx-i'+(o.value===sel.value?' sel':'')+(i===at?' at':'')+'" data-cv="'+ec(o.value)+'" role="option">'+ec(o.text)+'</div>'; i++;
+        const marcado=M?(o.value===''?!L.length:L.indexOf(o.value)>=0):o.value===sel.value;
+        h+='<div class="cbx-i'+(M?' mt':'')+(marcado?' sel':'')+(i===at?' at':'')+'" data-cv="'+ec(o.value)+'" role="option" aria-selected="'+marcado+'">'+(M?'<i></i>':'')+'<span>'+ec(o.text)+'</span></div>'; i++;
       });
       if(at>=i) at=Math.max(0,i-1);
       l.innerHTML=i?h:'<div class="cbx-n">Nada encontrado</div>';
+      if(M){const c=w.querySelector('.cbx-c');c.textContent=L.length?L.length+(L.length===1?' selecionado':' selecionados'):'Nenhum selecionado (mostra todos)'}
       const x=l.querySelector('.at'); if(x) x.scrollIntoView({block:'nearest'});
     };
     const fechar=()=>{p.hidden=true};
     const abrir=()=>{document.querySelectorAll('.cbx-p').forEach(x=>{if(x!==p)x.hidden=true}); p.hidden=false; q.value=''; at=Math.max(0,sel.selectedIndex); lista(); q.focus()};
-    const escolher=v=>{fechar(); if(sel.value!==v){sel.value=v; sel.dispatchEvent(new Event('input',{bubbles:true})); sel.dispatchEvent(new Event('change',{bubbles:true}))} sync(sel); b.focus()};
+    const aplicar=v=>{ if(v!==''&&cbxLista(v))sentinela(sel,v); else {const m=[...sel.options].find(o=>o._cbxM);if(m)m.remove()}
+      sel.value=v; sel.dispatchEvent(new Event('input',{bubbles:true})); sel.dispatchEvent(new Event('change',{bubbles:true})); sync(sel) };
+    const escolher=v=>{
+      if(!M){fechar(); if(sel.value!==v) aplicar(v); else sync(sel); b.focus(); return}
+      let L=escolhidos(sel);
+      if(v==='') L=[]; else L=L.indexOf(v)>=0?L.filter(x=>x!==v):L.concat([v]);
+      const ordem=[...sel.options].filter(o=>!o._cbxM).map(o=>o.value); L.sort((a,b)=>ordem.indexOf(a)-ordem.indexOf(b));
+      aplicar(L.length===0?'':L.length===1?L[0]:JSON.stringify(L));
+      lista(); q.focus();
+    };
     b.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); p.hidden?abrir():fechar()});
     q.addEventListener('input',e=>{e.stopPropagation(); at=0; lista()});
     q.addEventListener('change',e=>e.stopPropagation());
@@ -1103,7 +1144,8 @@ addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.sou
       else if(e.key==='Escape'){fechar(); b.focus()}});
     l.addEventListener('mousedown',e=>{const it=e.target.closest('.cbx-i'); if(it){e.preventDefault(); escolher(it.dataset.cv)}});
     l.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation()});
-    p.addEventListener('click',e=>e.stopPropagation());
+    p.addEventListener('click',e=>{e.stopPropagation();const k=e.target.closest('[data-cbx]');if(!k)return;
+      if(k.dataset.cbx==='limpar'){escolher('');}else{fechar();b.focus()}});
     sync(sel);
   }
   function varrer(){
@@ -1113,7 +1155,7 @@ addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.sou
   window.cbxVarrer=varrer;
   if(typeof render==='function'){ const _r=render; render=function(){ const x=_r.apply(this,arguments); try{varrer()}catch(e){} return x } }
   document.addEventListener('click',e=>{ if(!e.target.closest('.cbx')) document.querySelectorAll('.cbx-p').forEach(p=>p.hidden=true) });
-  document.addEventListener('change',e=>{ if(e.target.tagName==='SELECT'&&e.target._cbx) sync(e.target) },true);
+  document.addEventListener('change',e=>{ if(e.target.tagName==='SELECT'&&e.target._cbx) setTimeout(()=>sync(e.target),0) });
   try{ const fb=document.querySelector('.fb'); if(fb&&window.MutationObserver){ let t; new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varrer,30)}).observe(fb,{childList:true,subtree:true}) } }catch(e){}
   setInterval(()=>{ try{ document.querySelectorAll('.fb select').forEach(s=>{ if(s._cbx){ const b=s._cbx.querySelector('.cbx-b'), o=s.options[s.selectedIndex]; if(o&&b.textContent!==o.text) sync(s) } }) }catch(e){} }, 700);
   varrer();
