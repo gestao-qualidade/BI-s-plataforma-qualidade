@@ -378,6 +378,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
     <label class="auo">Aderência <span class="seg" style="margin:0"><button data-a="met" data-v="peso" aria-pressed="true">Por peso</button><button data-a="met" data-v="perg" aria-pressed="false">Por pergunta</button></span></label>
     <label>Categoria <select id="fCat"><option value="">Todas</option></select></label>
     <label>Status <select id="fSt"><option value="">Todos</option></select></label>
+    <label>Resultado <select id="fRes"><option value="">Todos</option></select></label>
     <label>Local <select id="fLocal"><option value="">Todos</option></select></label>
     <label>Item auditado <select id="fItem" style="max-width:240px"><option value="">Todos</option></select></label>
     <label>Auditoria <select id="fAud"><option value="">Todas</option></select></label>
@@ -385,7 +386,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
     <label class="plo" style="display:none">Status do plano <select id="fPSt"><option value="">Todos</option></select></label>
     <label class="plo" style="display:none">Responsável <select id="fResp"><option value="">Todos</option></select></label>
     <label>Documento <select id="fDoc"><option value="">Todos</option><option value="PC">PC</option><option value="PN">PN</option><option value="MANIFESTO">Manifesto</option><option value="MINUTA">Minuta</option><option value="NF">NF</option></select></label>
-    <input type="search" id="fNum" placeholder="Nº do PC, PN, Manifesto, Minuta ou NF" aria-label="Número do documento">
+    <label>Nº do documento <select id="fNum"><option value="">Todos</option></select></label>
     <input type="search" id="fQ" placeholder="Buscar auditoria, local, área, item…" aria-label="Buscar">
     <div class="chips" id="chips"></div>
     <button class="btn sec" data-a="clear" style="margin-left:auto">Limpar filtros</button>
@@ -399,7 +400,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 <script>
 const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbwgX8-8UOZNKdB2OVm8K7ZkdXark7ZYfyPH5zn99DOOfE9afqFNWMoJySJMRp1don7h9g/exec",API_TOKEN:"",REFRESH_MIN:5}, META=70;
 const GP=[{k:'SANCA',l:'Sanca',cor:'#1F4FD8'},{k:'MATRIZ',l:'Matriz',cor:'#E3A008'}], HK=[{k:'HEINEKEN',l:'Heineken',cor:'#0E8A7D'}];
-const CL=[{k:'ok',l:'Conforme',cor:'#0E8A7D'},{k:'par',l:'Parcial',cor:'#E3A008'},{k:'nok',l:'Não conforme',cor:'#C0304F'},{k:'na',l:'Não se aplica',cor:'#A9B4C6'},{k:'sr',l:'Sem resposta',cor:'#D5DBE6'}];
+const CL=[{k:'ok',l:'Conforme',cor:'#0E8A7D'},{k:'par',l:'Parcial',cor:'#E3A008'},{k:'nok',l:'Não conforme',cor:'#C0304F'},{k:'om',l:'Oportunidade de melhoria',cor:'#3B82F6'},{k:'na',l:'Não se aplica',cor:'#A9B4C6'},{k:'sr',l:'Sem resposta',cor:'#D5DBE6'}];
 const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const S={tab:'geral',rows:[],pl:[],pg:'sm',fp:{st:'',resp:'',doc:'',num:''},info:'',demo:false,erro:'',mode:'',met:'peso',page:0,f:{ano:'',mes:'',cat:'',st:'',aud:'',lider:'',local:'',item:'',q:'',dim:null}};
 const norm=v=>String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
@@ -413,7 +414,7 @@ function num(v){if(typeof v==='number')return isFinite(v)?v:0;const s=String(v||
 const fmtData=d=>d?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear():'—';
 const mesKey=d=>d?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'):'', mesLabel=k=>MES[+k.slice(5)-1]+'/'+k.slice(2,4);
 function toast(m,ms){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',ms||3500)}
-function classe(r){const n=norm(r);if(!n)return'sr';if(/nao se aplica|nao aplic|^n\/?a$/.test(n))return'na';if(/parcial/.test(n))return'par';if(/^nao\b|nao conforme|nao atende|reprov|insatisf/.test(n))return'nok';if(/conforme|^sim$|atende|aprov|satisf/.test(n))return'ok';return'sr'}
+function classe(r){const n=norm(r);if(!n)return'sr';if(/nao se aplica|nao aplic|^n\/?a$/.test(n))return'na';if(/oportunidade|melhoria|^om$/.test(n))return'om';if(/parcial/.test(n))return'par';if(/^nao\b|nao conforme|nao atende|reprov|insatisf/.test(n))return'nok';if(/conforme|^sim$|atende|aprov|satisf/.test(n))return'ok';return'sr'}
 function normalizar(t){const h={};(t.cols||[]).forEach((c,i)=>h[norm(c)]=i);const g=(r,n)=>{const i=h[norm(n)];return i==null?'':r[i]};
  return (t.rows||[]).map(r=>{const resp=str(g(r,'Resposta do item')),f=v=>/^(1|sim|true)$/.test(norm(v));
   return{gp:str(g(r,'Galpão')).toUpperCase(),cod:str(g(r,'Código da auditoria')),nome:str(g(r,'Nome da auditoria')),dt:parseData(g(r,'Data de início da auditoria')),cat:str(g(r,'Categoria')),st:str(g(r,'Status da auditoria')),lider:str(g(r,'Auditor líder')),
@@ -422,14 +423,14 @@ function aderencia(l){let a=0,b=0;l.forEach(r=>{if(r.c==='ok'||r.c==='par'||r.c=
 const aval=l=>l.filter(r=>r.c==='ok'||r.c==='par'||r.c==='nok');
 function filtrar(rows,o){o=o||{};const f=S.f,q=norm(f.q);return rows.filter(r=>{
  if((f.ano||(!o.semMes&&f.mes))){if(!r.dt)return false;if(f.ano&&!mv(f.ano,r.dt.getFullYear()))return false;if(!o.semMes&&f.mes&&!mv(f.mes,r.dt.getMonth()+1))return false}
- if(f.cat&&!mv(f.cat,r.cat))return false;if(f.st&&!mv(f.st,r.st))return false;if(f.aud&&!mv(f.aud,r.cod))return false;if(f.local&&!mv(f.local,r.local))return false;if(f.item&&!mv(f.item,r.tit))return false;if(!o.semDoc){const x=S.fp,nm=norm(x.num);if(x.doc&&!(cbxLista(x.doc)||[x.doc]).some(k=>r.cd[k]&&r.cd[k].size))return false;if(nm&&!(x.doc?(cbxLista(x.doc)||[x.doc]):DOCS.map(d=>d[0])).some(k=>[...r.cd[k]].some(v=>v.includes(nm))))return false}if(f.lider&&!mv(f.lider,r.lider))return false;
+ if(f.res&&!mv(f.res,r.c))return false;if(f.cat&&!mv(f.cat,r.cat))return false;if(f.st&&!mv(f.st,r.st))return false;if(f.aud&&!mv(f.aud,r.cod))return false;if(f.local&&!mv(f.local,r.local))return false;if(f.item&&!mv(f.item,r.tit))return false;if(!o.semDoc){const x=S.fp,nm=norm(x.num);if(x.doc&&!(cbxLista(x.doc)||[x.doc]).some(k=>r.cd[k]&&r.cd[k].size))return false;if(x.num&&!numOk(r.cd,x.num,x.doc?(cbxLista(x.doc)||[x.doc]):DOCS.map(d=>d[0])))return false}if(f.lider&&!mv(f.lider,r.lider))return false;
  if(f.dim&&r[f.dim.k]!==f.dim.v)return false;if(q&&norm([r.cod,r.nome,r.local,r.tit,r.obs].join(' ')).indexOf(q)<0)return false;return true})}
 function montarFiltros(){const fill=(id,arr,cur)=>{const el=document.getElementById(id);el.innerHTML=el.options[0].outerHTML+arr.map(v=>'<option value="'+esc(v[0])+'">'+esc(v[1])+'</option>').join('');el.value=cur||''};
  const uq=k=>[...new Set(S.rows.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v]);
  const anos=[...new Set(S.rows.map(r=>r.dt&&r.dt.getFullYear()).filter(Boolean))].sort((a,b)=>b-a);
- fill('fAno',anos.map(a=>[a,a]),S.f.ano);document.getElementById('fMes').value=S.f.mes;fill('fCat',uq('cat'),S.f.cat);fill('fSt',uq('st'),S.f.st);fill('fLider',uq('lider'),S.f.lider);fill('fLocal',uq('local'),S.f.local);fill('fItem',uq('tit'),S.f.item);
+ fill('fAno',anos.map(a=>[a,a]),S.f.ano);document.getElementById('fMes').value=S.f.mes;fill('fCat',uq('cat'),S.f.cat);fill('fSt',uq('st'),S.f.st);fill('fRes',CL.filter(c=>S.rows.some(r=>r.c===c.k)).map(c=>[c.k,c.l]),S.f.res);fill('fLider',uq('lider'),S.f.lider);fill('fLocal',uq('local'),S.f.local);fill('fItem',uq('tit'),S.f.item);
  fill('fAud',[...new Map(S.rows.map(r=>[r.cod,r.cod+' · '+r.nome])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'pt-BR')),S.f.aud);
- fill('fPSt',STP.map(x=>[x.k,x.k]),S.fp.st);fill('fResp',[...new Set(S.pl.map(p=>p.resp))].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v]),S.fp.resp);document.getElementById('fDoc').value=S.fp.doc;
+ fill('fPSt',STP.map(x=>[x.k,x.k]),S.fp.st);fill('fResp',[...new Set(S.pl.map(p=>p.resp))].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(v=>[v,v]),S.fp.resp);document.getElementById('fDoc').value=S.fp.doc;fill('fNum',numOpts(),S.fp.num);
  document.querySelectorAll('[data-a="met"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.met))}
 const kpi=(cls,v,l,s,act,val)=>'<button class="kpi '+cls+'" data-a="'+act+'"'+(val!=null?' data-v="'+val+'"':'')+'><div class="kv">'+v+'</div><div class="kl">'+l+'</div><div class="ks">'+s+'</div></button>';
 const card=(t,sub,body)=>'<div class="card"><div class="ct"><h2>'+t+'</h2><span>'+(sub||'')+'</span></div>'+body+'</div>';
@@ -474,7 +475,7 @@ function vGeral(gps,heine){
  let h='<div class="grid g6">'+k+'</div>';
  const meses=[...new Set(semMes.map(r=>mesKey(r.dt)).filter(Boolean))].sort().slice(-24);
  const gauge=st.map(x=>'<div style="margin:2px 0 4px"><div style="display:flex;justify-content:space-between;font-weight:600"><span><i class="sw" style="background:'+x.g.cor+'"></i> '+x.g.l+'</span><span style="font-family:IBM Plex Sans Condensed,Arial;font-size:22px;color:'+(x.ad==null?'var(--mute)':x.ad>=META?'var(--ok)':'var(--venc)')+'">'+fp(x.ad)+'</span></div><div class="gz"><i style="width:'+(x.ad||0)+'%;background:'+gr(x.g.cor)+'"></i><b style="left:'+META+'%"></b><em style="left:'+META+'%">meta '+META+'%</em></div></div>').join('');
- const stk=st.map(x=>{const t=x.l.length,d=CL.map(c=>({c,n:x.l.filter(r=>r.c===c.k).length}));return'<div style="margin:10px 0 16px"><div style="font-weight:600;margin-bottom:6px"><i class="sw" style="background:'+x.g.cor+'"></i> '+x.g.l+' <span style="color:var(--mute);font-weight:400">· '+nf(t)+' itens</span></div><div class="stk">'+d.map(o=>o.n?'<i style="width:'+o.n/t*100+'%;background:'+gv(o.c.cor)+'" title="'+o.c.l+': '+nf(o.n)+' ('+fp(o.n/t*100)+')"></i>':'').join('')+'</div><div class="leg" style="margin-top:6px">'+d.map(o=>'<span><i style="background:'+o.c.cor+'"></i>'+o.c.l+': <b>'+nf(o.n)+'</b> ('+Math.round(t?o.n/t*100:0)+'%)</span>').join('')+'</div></div>'}).join('');
+ const stk=st.map(x=>{const t=x.l.length,d=CL.filter(c=>c.k!=='par'||base.some(r=>r.c==='par')).map(c=>({c,n:x.l.filter(r=>r.c===c.k).length}));return'<div style="margin:10px 0 16px"><div style="font-weight:600;margin-bottom:6px"><i class="sw" style="background:'+x.g.cor+'"></i> '+x.g.l+' <span style="color:var(--mute);font-weight:400">· '+nf(t)+' itens</span></div><div class="stk">'+d.map(o=>o.n?'<i style="width:'+o.n/t*100+'%;background:'+gv(o.c.cor)+'" title="'+o.c.l+': '+nf(o.n)+' ('+fp(o.n/t*100)+')"></i>':'').join('')+'</div><div class="leg" style="margin-top:6px">'+d.map(o=>'<span><i style="background:'+o.c.cor+'"></i>'+o.c.l+': <b>'+nf(o.n)+'</b> ('+Math.round(t?o.n/t*100:0)+'%)</span>').join('')+'</div></div>'}).join('');
  const ff=[{k:'Pontos fortes',v:{},t:0},{k:'Pontos fracos',v:{},t:0}];base.forEach(r=>{[r.forte,r.fraco].forEach((b,i)=>{if(b){ff[i].v[r.gp]=(ff[i].v[r.gp]||0)+1;ff[i].t++}})});
  const hm=gps.map(g=>card('Mapa de calor · '+g.l,'aderência por local nos últimos 6 meses',heat(semMes,g))).join('');
  h+='<div class="grid g21">'+card('Aderência mês a mês','por data de início da auditoria',linhas(meses,gps,(m,g)=>aderencia(semMes.filter(r=>r.gp===g.k&&mesKey(r.dt)===m)))+legGp(gps))+card('Aderência total × meta',S.met==='peso'?'ponderada pelo peso do item':'por pergunta · cada item vale 1',gauge)+'</div>'
@@ -484,7 +485,7 @@ function vGeral(gps,heine){
   +'<div class="grid g11">'+card('Pontos fortes × pontos fracos','itens marcados na auditoria',rowsGp(ff,gps))+card('Aderência por auditoria','12 mais recentes · clique para filtrar',porAud(base,gps))+'</div>'
   +'<p class="note" style="margin:4px 0 8px">Itens que citam documentos · clique para filtrar</p><div class="grid g6">'+DOCS.map(d=>kpi(S.fp.doc===d[0]?'k-acc':'',nf(semDoc.filter(r=>r.cd[d[0]].size).length),'Itens com '+d[1],S.fp.doc===d[0]?'filtro ativo · clique para remover':'clique para filtrar','doc',d[0])).join('')+'</div>'
   +card('Resultado por status','resposta do item · todos os itens respondidos',stk)
-  +'<p class="note">Aderência = conformes ÷ itens avaliados ('+(S.met==='peso'?'somando o peso de cada item':'contando cada pergunta como 1')+'). Resposta parcial vale 50%; “não se aplica” e itens sem resposta ficam fora do cálculo. '+(heine?'':'Galpão Heineken fica em aba própria.')+'</p>';
+  +'<p class="note">Aderência = conformes ÷ itens avaliados ('+(S.met==='peso'?'somando o peso de cada item':'contando cada pergunta como 1')+'). Resposta parcial vale 50%; “não se aplica”, oportunidade de melhoria e itens sem resposta ficam fora do cálculo. '+(heine?'':'Galpão Heineken fica em aba própria.')+'</p>';
  return h}
 const COLS=[['gp','Galpão'],['cod','Auditoria'],['dt','Data'],['local','Local'],['tit','Item auditado'],['resp','Resposta'],['w','Peso'],['obs','Observação']];
 function detRows(){return filtrar(S.rows).filter(r=>r.c==='nok'||r.c==='par'||r.fraco).sort((a,b)=>b.w-a.w||(b.dt||0)-(a.dt||0))}
@@ -512,6 +513,8 @@ function atualizar(){const b=document.getElementById('btnRefresh');if(S.mode!=='
 /* ---------- PLANOS DE AÇÃO ---------- */
 const DOCS=[['PC','PC',/PC\s*:?\s*(\d{4,})/gi],['PN','PN',/PN\s*:?\s*(\d{4,})/gi],['MANIFESTO','Manifesto',/MANIFESTO\s*:?\s*(\d{4,})/gi],['MINUTA','Minuta',/MINUTA\s*:?\s*(\d{4,})/gi],['NF','NF',/NF\s*(?:nº|n°|:)?\s*(\d{4,})/gi]];
 const STP=[{k:'Aguardando início',l:'Aguardando início',cor:'#A9B4C6'},{k:'Em execução',l:'Em execução',cor:'#1F4FD8'},{k:'Verificação de eficácia',l:'Verif. de eficácia',cor:'#7A5AF8'},{k:'Concluído',l:'Concluído',cor:'#0E8A7D'},{k:'Suspenso',l:'Suspenso',cor:'#E3A008'},{k:'Cancelado',l:'Cancelado',cor:'#6B7A93'}];
+function numOk(cd,num,ks){const l=cbxLista(num)||[String(num)];return l.some(it=>{const i=it.indexOf(':');if(i>0){const k=it.slice(0,i),v=it.slice(i+1);return ks.includes(k)&&cd[k]&&cd[k].has(v)}const n=norm(it);return ks.some(k=>[...(cd[k]||[])].some(v=>v.includes(n)))})}
+function numOpts(){const m=new Map(),add=cd=>DOCS.forEach(d=>(cd&&cd[d[0]]||[]).forEach(v=>m.set(d[0]+':'+v,[d[1],v])));(S.rows||[]).forEach(r=>add(r.cd));(S.pl||[]).forEach(p=>add(p.cd));return [...m.entries()].sort((a,b)=>a[1][0].localeCompare(b[1][0])||a[1][1].localeCompare(b[1][1],'pt-BR',{numeric:true})).map(([k,v])=>[k,v[0]+' '+v[1]])}
 function cdx(t){const o={};DOCS.forEach(d=>o[d[0]]=new Set());extrair(t,o);return o}
 function extrair(txt,out){DOCS.forEach(d=>{for(const m of String(txt||'').matchAll(new RegExp(d[2].source,'gi')))out[d[0]].add(m[1])})}
 function galpao(n){const t=String(n||'').toUpperCase();return t.includes('SANCA')?'SANCA':t.includes('MATRIZ')?'MATRIZ':t.includes('FILIAL')?'FILIAL':t.includes('841')?'MATRIZ':t.includes('HEINEKEN')?'HEINEKEN':'OUTROS'}
@@ -525,7 +528,7 @@ function filtrarP(o){o=o||{};const f=S.f,x=S.fp,q=norm(f.q),nm=norm(x.num);retur
  if(f.ano||f.mes){if(!d)return false;if(f.ano&&!mv(f.ano,d.getFullYear()))return false;if(f.mes&&!mv(f.mes,d.getMonth()+1))return false}
  if(f.cat&&!mv(f.cat,p.cat))return false;if(f.local&&!mv(f.local,p.local))return false;if(f.item&&!mv(f.item,p.item))return false;if(f.st&&!mv(f.st,p.ast))return false;if(f.aud&&!mv(f.aud,p.aud))return false;if(f.lider&&!mv(f.lider,p.lider))return false;
  if(x.st&&!mv(x.st,p.st))return false;if(x.resp&&!mv(x.resp,p.resp))return false;
- if(!o.semDoc){if(x.doc&&!(cbxLista(x.doc)||[x.doc]).some(k=>p.cd[k]&&p.cd[k].size))return false;const ks=x.doc?(cbxLista(x.doc)||[x.doc]):DOCS.map(d=>d[0]);if(nm&&!ks.some(k=>[...p.cd[k]].some(v=>v.includes(nm))))return false}
+ if(!o.semDoc){if(x.doc&&!(cbxLista(x.doc)||[x.doc]).some(k=>p.cd[k]&&p.cd[k].size))return false;const ks=x.doc?(cbxLista(x.doc)||[x.doc]):DOCS.map(d=>d[0]);if(x.num&&!numOk(p.cd,x.num,ks))return false}
  if(q&&norm([p.cod,p.nome,p.resp,p.audNome,p.aud].join(' ')).indexOf(q)<0)return false;return true})}
 function pilha(l,defs,kf){const t=l.length;if(!t)return'<div class="empty">Sem planos.</div>';const d=defs.map(c=>({c,n:l.filter(p=>kf(p)===c.k).length}));
  return'<div class="stk">'+d.map(o=>o.n?'<i style="width:'+o.n/t*100+'%;background:'+gv(o.c.cor)+'" title="'+o.c.l+': '+nf(o.n)+'"></i>':'').join('')+'</div><div class="leg" style="margin-top:6px">'+d.filter(o=>o.n).map(o=>'<span><i style="background:'+o.c.cor+'"></i>'+o.c.l+': <b>'+nf(o.n)+'</b> ('+Math.round(o.n/t*100)+'%)</span>').join('')+'</div>'}
@@ -569,12 +572,12 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(e
  else if(a==='dim'){const i=v.indexOf('|'),k=v.slice(0,i),val=v.slice(i+1);f.dim=(f.dim&&f.dim.k===k&&f.dim.v===val)?null:{k,v:val};S.page=0;render()}
  else if(a==='rm'){f.dim=null;render()}else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}else if(a==='csv')exportarCsv();else if(a==='csvp')exportarCsvP();
  else if(a==='pgs'){S.pg=v;S.page=0;render()}else if(a==='doc'){S.fp.doc=S.fp.doc===v?'':v;document.getElementById('fDoc').value=S.fp.doc;S.page=0;render()}}});
-document.addEventListener('change',e=>{const m={fAno:'ano',fMes:'mes',fCat:'cat',fSt:'st',fAud:'aud',fLider:'lider',fLocal:'local',fItem:'item'};if(m[e.target.id]){S.f[m[e.target.id]]=e.target.value;S.page=0;render()}const p={fPSt:'st',fResp:'resp',fDoc:'doc'};if(p[e.target.id]){S.fp[p[e.target.id]]=e.target.value;S.page=0;render()}});
+document.addEventListener('change',e=>{const m={fRes:'res',fAno:'ano',fMes:'mes',fCat:'cat',fSt:'st',fAud:'aud',fLider:'lider',fLocal:'local',fItem:'item'};if(m[e.target.id]){S.f[m[e.target.id]]=e.target.value;S.page=0;render()}const p={fPSt:'st',fResp:'resp',fDoc:'doc'};if(p[e.target.id]){S.fp[p[e.target.id]]=e.target.value;S.page=0;render()}});
 document.getElementById('fNum').addEventListener('input',e=>{S.fp.num=e.target.value;S.page=0;clearTimeout(tq);tq=setTimeout(render,220)});
 document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(tq);tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220)});
 carregar(false);if(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)setInterval(()=>{if(!document.hidden)carregar(false)},CONFIG.REFRESH_MIN*60000);
 
-function tvFiltros(){const f=S.f,x=S.fp;return !!(f.ano||f.mes||f.cat||f.st||f.aud||f.lider||f.local||f.item||f.q||f.dim||x.st||x.resp||x.doc||x.num)}
+function tvFiltros(){const f=S.f,x=S.fp;return !!(f.ano||f.mes||f.cat||f.st||f.res||f.aud||f.lider||f.local||f.item||f.q||f.dim||x.st||x.resp||x.doc||x.num)}
 function vTV(){
   const head=tvHead('Aderência Sanca × Matriz · Heineken · planos de ação · meta '+META+'%',tvFiltros());
   if(!S.rows.length&&!S.pl.length) return '<div class="tvw">'+head+'<div class="tvvazio">Nenhuma auditoria para exibir.</div></div>';
@@ -696,7 +699,7 @@ addEventListener('message',e=>{const d=e.data||{};if(d.bi==='filtros-ler'&&e.sou
 function cbxLista(v){if(v==null||v==='')return null;const s=String(v);if(s.charAt(0)==='['){try{const a=JSON.parse(s);if(Array.isArray(a))return a.map(String)}catch(e){}}return null}
 function mv(fv,v){const L=cbxLista(fv),um=x=>{const a=String(x),b=String(v==null?'':v);return a===b||(a!==''&&b!==''&&!isNaN(a)&&!isNaN(b)&&+a===+b)};return L?L.some(um):um(fv)}
 function temAlgum(set,fv){const L=cbxLista(fv);return L?L.some(x=>set.has(x)):set.has(fv)}
-window.CBX_ESTADO={fAno:()=>S.f.ano,fMes:()=>S.f.mes,fCat:()=>S.f.cat,fSt:()=>S.f.st,fLocal:()=>S.f.local,fItem:()=>S.f.item,fAud:()=>S.f.aud,fLider:()=>S.f.lider,fPSt:()=>S.fp.st,fResp:()=>S.fp.resp,fDoc:()=>S.fp.doc};
+window.CBX_ESTADO={fAno:()=>S.f.ano,fMes:()=>S.f.mes,fCat:()=>S.f.cat,fSt:()=>S.f.st,fLocal:()=>S.f.local,fItem:()=>S.f.item,fAud:()=>S.f.aud,fLider:()=>S.f.lider,fPSt:()=>S.fp.st,fResp:()=>S.fp.resp,fDoc:()=>S.fp.doc,fNum:()=>S.fp.num,fRes:()=>S.f.res};
 (function(){
   const nrm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
   const ec=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
