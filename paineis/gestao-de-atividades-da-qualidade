@@ -361,7 +361,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 /* ============================ CONFIGURAÇÃO ============================ */
 const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbyoiQIpcz83jhOWf9SSTzM_VL8kEmyWbxBMaviA9JkSYqaAvTpWzcL9MpurLQa50TZxWA/exec",                                   // URL /exec do Web App (JiraAtividades.gs). Dentro do Apps Script, deixe vazio.
-  API_TOKEN: "", // mesmo TOKEN_API do script
+  API_TOKEN: "xW6s08uvUCs-pNs2wxrV1jJGbJjL4JFH", // mesmo TOKEN_API do script
   JIRA_URL: "https://qualidadepierserv.atlassian.net",
   REFRESH_MIN: 5,                                // recarrega os dados a cada X minutos (0 = desliga)
   PARADA_DIAS: 15                                // "sem movimentação" a partir de X dias sem atualização
