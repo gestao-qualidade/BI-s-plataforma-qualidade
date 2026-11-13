@@ -719,7 +719,7 @@ function barras(items,tipo){
   return items.map(i=>{
     const n=i.venc+i.pendente+i.v30, w=v=>(v/mx*100)+'%';
     return '<button class="bl" data-a="'+tipo+'" data-v="'+encodeURIComponent(i.k)+'" title="'+esc(i.name)+'"><span class="bn">'+esc(i.name)+'</span>'
-      +'<span class="bt"><i style="width:'+w(i.venc)+';background:var(--venc)"></i><i class="hatch" style="width:'+w(i.pendente)+'"></i><i style="width:'+w(i.v30)+';background:var(--v30)"></i></span>'
+      +'<span class="bt"><i title="'+esc(i.name)+'\nVencidos: '+i.venc+'" style="width:'+w(i.venc)+';background:var(--venc)"></i><i class="hatch" title="'+esc(i.name)+'\nSem arquivo: '+i.pendente+'" style="width:'+w(i.pendente)+'"></i><i title="'+esc(i.name)+'\nVencem em até 30 dias: '+i.v30+'" style="width:'+w(i.v30)+';background:var(--v30)"></i></span>'
       +'<span class="bv" title="'+i.venc+' vencidos, '+i.pendente+' sem arquivo, '+i.v30+' a vencer em 30 dias">'+n+'</span></button>';
   }).join('');
 }
