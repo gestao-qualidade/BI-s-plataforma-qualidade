@@ -650,7 +650,7 @@ function barras(items,tipo){
   if(!items.length)return '<div class="empty">Sem dados com os filtros atuais.</div>';
   const mx=Math.max(1,...items.map(i=>i.t)),w=v=>(v/mx*100)+'%';
   return items.map(i=>'<button class="bl" data-a="'+tipo+'" data-v="'+encodeURIComponent(i.k)+'" title="'+esc(i.k)+'"><span class="bn">'+esc(i.k)+'</span><span class="bt">'
-    +'<i style="width:'+w(i.vencido)+';background:var(--venc)"></i><i style="width:'+w(i.v30)+';background:var(--v30)"></i><i style="width:'+w(i.v90+i.ok)+';background:var(--ok)"></i><i style="width:'+w(i.semdata)+';background:var(--sem)"></i></span>'
+    +'<i title="'+esc(i.k)+'\nVencidos: '+i.vencido+'" style="width:'+w(i.vencido)+';background:var(--venc)"></i><i title="'+esc(i.k)+'\nVencem em até 30 dias: '+i.v30+'" style="width:'+w(i.v30)+';background:var(--v30)"></i><i title="'+esc(i.k)+'\nEm dia: '+(i.v90+i.ok)+'" style="width:'+w(i.v90+i.ok)+';background:var(--ok)"></i><i title="'+esc(i.k)+'\nSem prazo: '+i.semdata+'" style="width:'+w(i.semdata)+';background:var(--sem)"></i></span>'
     +'<span class="bv" title="'+i.vencido+' vencidos · '+i.v30+' em até 30 dias · '+(i.v90+i.ok)+' em dia · '+i.semdata+' sem prazo">'+nf(i.t)+'</span></button>').join('');
 }
 function idadeBars(rows){
