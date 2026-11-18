@@ -66,6 +66,8 @@ main{max-width:98%;margin:0 auto;padding:18px 28px 40px}
 .g6{grid-template-columns:repeat(6,minmax(0,1fr))}
 .g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
 .g11{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mtx td{white-space:nowrap}.mtx th{white-space:normal;min-width:92px;vertical-align:bottom}.mtx .q{font-weight:700;color:var(--ink,#12203A)}.mtx .v{display:block;font-size:11.5px;color:var(--mute)}
 
 /* kpis */
 .kpi{background:#fff;border:1px solid var(--line);border-left:5px solid var(--sem);border-radius:6px;padding:12px 14px;text-align:left;width:100%}
@@ -177,7 +179,7 @@ tbody tr:hover td{background:#F1F6FF}
 a{color:var(--royal)}
 @media (max-width:640px){.logo{height:64px}.tt{padding-left:14px}h1{font-size:19px}}
 
-@media (max-width:1100px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}.g21,.g11{grid-template-columns:minmax(0,1fr)}.band{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g6{grid-template-columns:repeat(3,minmax(0,1fr))}.g21,.g11{grid-template-columns:minmax(0,1fr)}.band{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.hd,.fbi,main,nav{padding-left:14px;padding-right:14px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
@@ -414,7 +416,7 @@ const S={
   hoje:null, mode:'', info:'', tab:'geral', rnc:[], planos:[], fora:0, demo:false, erro:'',
   f:{ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),respPl:new Set(),status:'',q:'',dim:null},
   base:'emissao', comp:{rnc:true,plano:true,extr:false,frete:false},
-  par:{dim:'ocorr',met:'qtd'}, sort:{k:'dt',dir:-1}, page:0
+  par:{dim:'ocorr',met:'qtd'}, tr:{by:'ocorr',sem:false}, sort:{k:'dt',dir:-1}, page:0
 };
 S.hoje=inicioDia(new Date());
 
@@ -827,6 +829,7 @@ function vCustos(){
   h+='<div class="grid g11">'
     +card('Custo por ocorrência','12 maiores · clique para filtrar',barrasStack(oc,sel,brlc,'ocorr')+legComp())
     +card('Custo por categoria','12 maiores · clique para filtrar',barrasStack(ca,sel,brlc,'cat')+legComp())+'</div>';
+  h+=blocoTransp(rows);
   const detAll=rows.filter(r=>custo(r)>0).sort((a,b)=>custo(b)-custo(a)), PPc=50, pgs=Math.max(1,Math.ceil(detAll.length/PPc));
   if(S.page>=pgs)S.page=pgs-1; if(S.page<0)S.page=0;
   const detSl=detAll.slice(S.page*PPc,S.page*PPc+PPc);
@@ -906,6 +909,55 @@ function exportarCsv(){
   a.download='rnc_'+S.hoje.toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
 }
 
+
+/* ---------- transportadoras ---------- */
+const SEM_TR='(não informado)';
+const COR_SEG=['#0A1F6B','#2F6BFF','#F08A24','#0E8A7D','#C0304F','#7B5CD6','#E0B21B','#5BA4E6'];
+function blocoTransp(rows){
+  const nSem=rows.filter(r=>r.transp===SEM_TR).length;
+  const rr=S.tr.sem?rows:rows.filter(r=>r.transp!==SEM_TR);
+  let series,segOf;
+  if(S.tr.by==='tipo'){series=TIPOS;segOf=r=>r.tipo}
+  else{
+    const cnt=new Map(); rr.forEach(r=>cnt.set(r.ocorr,(cnt.get(r.ocorr)||0)+1));
+    const ord=[...cnt.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt-BR')).map(x=>x[0]);
+    const top=ord.length>COR_SEG.length?ord.slice(0,COR_SEG.length-1):ord, set=new Set(top);
+    series=top.map((k,i)=>({k,l:k,cor:COR_SEG[i]}));
+    if(ord.length>top.length) series.push({k:'__outras',l:'Outras ocorrências ('+(ord.length-top.length)+')',cor:'#A9B4C6'});
+    segOf=r=>set.has(r.ocorr)?r.ocorr:'__outras';
+  }
+  const ctrl='<span class="pc2"><span class="seg" style="margin:0"><button data-a="trby" data-v="ocorr" aria-pressed="'+(S.tr.by==='ocorr')+'">Por ocorrência</button><button data-a="trby" data-v="tipo" aria-pressed="'+(S.tr.by==='tipo')+'">Por tipo (interna × cliente)</button></span>'
+    +'<span class="seg" style="margin:0"><button data-a="trsem" aria-pressed="'+S.tr.sem+'">Incluir sem transportadora'+(nSem?' ('+nf(nSem)+')':'')+'</button></span></span>';
+  const leg='<div class="leg">'+series.map(s=>'<span><i style="background:'+s.cor+'"></i>'+esc(s.l)+'</span>').join('')+'<span>Clique em uma transportadora para filtrar o painel</span></div>';
+  let h='<div class="card" style="margin-bottom:14px"><div class="ct"><h2>Transportadoras</h2><span>'+ctrl+'</span></div>';
+  if(!rr.length) return h+'<div class="empty">Nenhuma RNC com transportadora informada no escopo.</div></div>';
+  const ct=rr.reduce((a,r)=>a+custo(r),0), qtd=agrupar(rr,'transp',series,(r,s)=>segOf(r)===s.k?1:0), val=agrupar(rr,'transp',series,(r,s)=>segOf(r)===s.k?custo(r):0);
+  const topQ=qtd[0], topV=val[0];
+  h+='<div class="grid g4">'
+    +kpi('k-acc',nf(qtd.length),'Transportadoras com RNC',nf(rr.length)+' RNCs no escopo','x')
+    +kpi('k-venc',brlc(ct),'Custo das RNCs de transporte','média '+brl(ct/rr.length)+' por RNC','x')
+    +kpi('',nf(topQ.total),'Mais RNCs',esc(topQ.name)+' · '+pct(topQ.total,rr.length)+'% do total','transp',encodeURIComponent(topQ.k))
+    +kpi('k-v30',topV.total?brlc(topV.total):'—','Maior custo',topV.total?esc(topV.name)+' · '+pct(topV.total,ct)+'% do custo':'sem custo no escopo','transp',encodeURIComponent(topV.k))+'</div>';
+  h+='<div class="grid g11" style="margin-bottom:6px">'
+    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Total de RNCs por transportadora</h2><span>12 maiores</span></div>'+barrasStack(topN(qtd,12,series),series,nf,'transp')+'</div>'
+    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Valor das RNCs por transportadora</h2><span>12 maiores · componentes de custo marcados acima</span></div>'+barrasStack(topN(val,12,series),series,brlc,'transp')+'</div></div>'+leg;
+  // matriz transportadora × ocorrência
+  const vMap=new Map(val.map(g=>[g.k,g])), cols=series.filter(s=>qtd.some(g=>g.vals[s.k]));
+  const cel=(n,v)=>n?'<span class="q">'+nf(n)+'</span><span class="v">'+brl(v)+'</span>':'<span style="color:var(--mute)">—</span>';
+  const totQ=s=>qtd.reduce((a,g)=>a+(g.vals[s.k]||0),0), totV=s=>val.reduce((a,g)=>a+(g.vals[s.k]||0),0);
+  h+='<div class="ct" style="margin:18px 0 6px"><h2 style="font-size:14px">Matriz transportadora × '+(S.tr.by==='tipo'?'tipo':'ocorrência')+'</h2><span>quantidade de RNCs e valor em cada cruzamento</span></div>'
+    +'<div class="tw"><table class="mtx" style="min-width:0"><thead><tr><th>Transportadora</th>'
+    +cols.map(s=>'<th class="num"><i class="sw" style="background:'+s.cor+';display:inline-block;margin-right:5px"></i>'+esc(s.l)+'</th>').join('')
+    +'<th class="num">Total</th></tr></thead><tbody>'
+    +qtd.map(g=>{const v=vMap.get(g.k);return '<tr><td><button class="lnk" data-a="transp" data-v="'+encodeURIComponent(g.k)+'" style="background:none;border:0;padding:0;color:var(--royal);cursor:pointer;text-align:left">'+esc(g.name)+'</button></td>'
+      +cols.map(s=>'<td class="num">'+cel(g.vals[s.k]||0,v.vals[s.k]||0)+'</td>').join('')
+      +'<td class="num"><b>'+cel(g.total,v.total)+'</b></td></tr>'}).join('')
+    +'</tbody><tfoot><tr><td style="font-weight:700;padding-top:10px">Total</td>'
+    +cols.map(s=>'<td class="num" style="padding-top:10px">'+cel(totQ(s),totV(s))+'</td>').join('')
+    +'<td class="num" style="padding-top:10px">'+cel(rr.length,ct)+'</td></tr></tfoot></table></div>';
+  return h+'</div>';
+}
+
 /* ============================ EVENTOS ============================ */
 document.addEventListener('click',e=>{
   if(e.target.closest('a[href]')) return;
@@ -925,6 +977,9 @@ document.addEventListener('click',e=>{
   else if(a==='dim'){f.dim=(f.dim&&f.dim.k===S.par.dim&&f.dim.v===v)?null:{k:S.par.dim,v};S.page=0;render()}
   else if(a==='parmet'){S.par.met=v;render()}
   else if(a==='comp'){S.comp[v]=!S.comp[v];render()}
+  else if(a==='trby'){S.tr.by=v;render()}
+  else if(a==='trsem'){S.tr.sem=!S.tr.sem;render()}
+  else if(a==='transp'){f.dim=(f.dim&&f.dim.k==='transp'&&f.dim.v===v)?null:{k:'transp',v};S.page=0;render()}
   else if(a==='rm'){f.dim=null;S.page=0;render()}
   else if(a==='sort'){S.sort=S.sort.k===v?{k:v,dir:-S.sort.dir}:{k:v,dir:v==='dt'||v==='custo'||v==='pl'?-1:1};render()}
   else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}
