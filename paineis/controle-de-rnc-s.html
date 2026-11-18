@@ -360,6 +360,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-a="tab" data-v="geral" aria-selected="true">Visão geral</button>
     <button role="tab" data-a="tab" data-v="custos" aria-selected="false">Custos da não conformidade</button>
+    <button role="tab" data-a="tab" data-v="transp" aria-selected="false">Transportadoras</button>
     <button role="tab" data-a="tab" data-v="planos" aria-selected="false">Planos de ação</button>
     <button role="tab" data-a="tab" data-v="detalhe" aria-selected="false">Detalhamento</button>
   </nav>
@@ -667,7 +668,7 @@ function render(){
   if(!S.rnc.length){
     el.innerHTML=h+'<div class="card empty">Nenhuma RNC com Tipo “Não conformidade interna” ou “Reclamação do cliente” foi encontrada na aba RNC'+(S.fora?' ('+nf(S.fora)+' RNCs de outros tipos foram ignoradas)':'')+'. Rode a importação e confira o nome do tipo no Qualiex.</div>';return;
   }
-  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='planos'?vPlanos():vDetalhe();
+  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='transp'?vTransp():S.tab==='planos'?vPlanos():vDetalhe();
   el.innerHTML=h;
 }
 function farol(){
@@ -829,7 +830,6 @@ function vCustos(){
   h+='<div class="grid g11">'
     +card('Custo por ocorrência','12 maiores · clique para filtrar',barrasStack(oc,sel,brlc,'ocorr')+legComp())
     +card('Custo por categoria','12 maiores · clique para filtrar',barrasStack(ca,sel,brlc,'cat')+legComp())+'</div>';
-  h+=blocoTransp(rows);
   const detAll=rows.filter(r=>custo(r)>0).sort((a,b)=>custo(b)-custo(a)), PPc=50, pgs=Math.max(1,Math.ceil(detAll.length/PPc));
   if(S.page>=pgs)S.page=pgs-1; if(S.page<0)S.page=0;
   const detSl=detAll.slice(S.page*PPc,S.page*PPc+PPc);
@@ -911,6 +911,12 @@ function exportarCsv(){
 
 
 /* ---------- transportadoras ---------- */
+function vTransp(){
+  const rows=filtrar(S.rnc);
+  return card('Composição do custo considerada','mesma seleção da aba Custos',
+    '<div class="comp">'+COMP.map(c=>'<button data-a="comp" data-v="'+c.k+'" aria-pressed="'+S.comp[c.k]+'"><i class="sw" style="background:'+c.cor+'"></i>'+c.l+'</button>').join('')+'</div>',' style="margin-bottom:14px"')
+    +blocoTransp(rows)+notaFora();
+}
 const SEM_TR='(não informado)';
 const COR_SEG=['#0A1F6B','#2F6BFF','#F08A24','#0E8A7D','#C0304F','#7B5CD6','#E0B21B','#5BA4E6'];
 function blocoTransp(rows){
@@ -940,7 +946,7 @@ function blocoTransp(rows){
     +kpi('k-v30',topV.total?brlc(topV.total):'—','Maior custo',topV.total?esc(topV.name)+' · '+pct(topV.total,ct)+'% do custo':'sem custo no escopo','transp',encodeURIComponent(topV.k))+'</div>';
   h+='<div class="grid g11" style="margin-bottom:6px">'
     +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Total de RNCs por transportadora</h2><span>12 maiores</span></div>'+barrasStack(topN(qtd,12,series),series,nf,'transp')+'</div>'
-    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Valor das RNCs por transportadora</h2><span>12 maiores · componentes de custo marcados acima</span></div>'+barrasStack(topN(val,12,series),series,brlc,'transp')+'</div></div>'+leg;
+    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Valor das RNCs por transportadora</h2><span>12 maiores · componentes marcados acima</span></div>'+barrasStack(topN(val,12,series),series,brlc,'transp')+'</div></div>'+leg;
   // matriz transportadora × ocorrência
   const vMap=new Map(val.map(g=>[g.k,g])), cols=series.filter(s=>qtd.some(g=>g.vals[s.k]));
   const cel=(n,v)=>n?'<span class="q">'+nf(n)+'</span><span class="v">'+brl(v)+'</span>':'<span style="color:var(--mute)">—</span>';
