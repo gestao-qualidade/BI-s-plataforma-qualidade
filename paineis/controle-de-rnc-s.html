@@ -703,33 +703,43 @@ const rgPc=v=>v==null?'—':(Math.round(v*10)/10).toLocaleString('pt-BR')+'%';
 /* ===================== REINCIDÊNCIA (RNC) ===================== */
 const REI_DIAS=60, REI_CLI_DIAS=90;
 function reiFim(q){const pl=q.planos.filter(p=>!p.inativo);if(!pl.length||!pl.every(p=>p.done))return null;const t=Math.max(...pl.map(p=>p.concl?p.concl.getTime():0));return t>0?new Date(t):null}
+function reiPer(d){const f=S.f;if(!d)return false;return (!f.ano||mv(f.ano,d.getFullYear()))&&(!f.mesNum||mv(f.mesNum,d.getMonth()+1))}
 function reiRnc(){
-  const base=filtrar(S.rnc,{semMes:true}).filter(r=>dt(r)), ok=s=>{const n=norm(s);return n&&n.indexOf('nao informado')<0};
+  /* acha os pares no histórico inteiro (respeitando cliente, tipo, ocorrência etc.) e depois aplica o Ano/Mês escolhidos */
+  const sv=[S.f.ano,S.f.mesNum];S.f.ano='';S.f.mesNum='';let todos;try{todos=filtrar(S.rnc).filter(r=>dt(r))}finally{S.f.ano=sv[0];S.f.mesNum=sv[1]}
+  const ok=s=>{const n=norm(s);return n&&n.indexOf('nao informado')<0}, per=!!(S.f.ano||S.f.mesNum);
   const fimPl=q=>{const d=reiFim(q);return d?d.getTime():null};
-  const g=new Map();base.forEach(r=>{if(!ok(r.ocorr))return;const k=norm(r.ocorr);if(!g.has(k))g.set(k,[]);g.get(k).push(r)});
+  const g=new Map();todos.forEach(r=>{if(!ok(r.ocorr))return;const k=norm(r.ocorr);if(!g.has(k))g.set(k,[]);g.get(k).push(r)});
   g.forEach(l=>l.sort((a,b)=>dt(a)-dt(b)));
-  const A=[],fech=[];
-  g.forEach(l=>l.forEach(q=>{const t=fimPl(q);if(!t)return;fech.push(q);const r=l.find(z=>z!==q&&dt(z).getTime()>t&&dt(z).getTime()<=t+REI_DIAS*DIA);if(r)A.push({antes:q,depois:r,fim:new Date(t),dias:Math.round((dt(r).getTime()-t)/DIA)})}));
-  const B=[];g.forEach(l=>{const pc=new Map();l.forEach(r=>{if(!ok(r.cliente))return;const k=norm(r.cliente);if(!pc.has(k))pc.set(k,[]);pc.get(k).push(r)});
-    pc.forEach(rs=>{for(let i=1;i<rs.length;i++){const d=Math.round((dt(rs[i])-dt(rs[i-1]))/DIA);if(d<=REI_CLI_DIAS)B.push({antes:rs[i-1],depois:rs[i],dias:d})}})});
-  return {base,A,B,fech,g};
+  const At=[],fechT=[];
+  g.forEach(l=>l.forEach(q=>{const t=fimPl(q);if(!t)return;fechT.push(q);const r=l.find(z=>z!==q&&dt(z).getTime()>t&&dt(z).getTime()<=t+REI_DIAS*DIA);if(r)At.push({antes:q,depois:r,fim:new Date(t),dias:Math.round((dt(r).getTime()-t)/DIA)})}));
+  const Bt=[];g.forEach(l=>{const pc=new Map();l.forEach(r=>{if(!ok(r.cliente))return;const k=norm(r.cliente);if(!pc.has(k))pc.set(k,[]);pc.get(k).push(r)});
+    pc.forEach(rs=>{for(let i=1;i<rs.length;i++){const d=Math.round((dt(rs[i])-dt(rs[i-1]))/DIA);if(d<=REI_CLI_DIAS)Bt.push({antes:rs[i-1],depois:rs[i],dias:d})}})});
+  const A=per?At.filter(o=>reiPer(dt(o.depois))):At, B=per?Bt.filter(o=>reiPer(dt(o.depois))):Bt;
+  const fech=per?fechT.filter(q=>reiPer(reiFim(q))):fechT, Afim=per?At.filter(o=>reiPer(o.fim)):At;
+  const base=per?todos.filter(r=>reiPer(dt(r))):todos;
+  const gP=new Map();g.forEach((l,k)=>{const x=per?l.filter(r=>reiPer(dt(r))):l;if(x.length||A.some(o=>norm(o.antes.ocorr)===k))gP.set(k,x.length?x:l)});
+  return {base,A,B,fech,Afim,At,g:gP,per};
 }
+function reiPerTxt(){const f=S.f,L=v=>(typeof cbxLista==='function'&&cbxLista(v))||[v];if(!f.ano&&!f.mesNum)return 'todo o período';
+  const M=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];return (f.mesNum?L(f.mesNum).map(m=>M[+m-1]).join(', ')+' de ':'')+(f.ano?L(f.ano).join(', '):'todos os anos')}
 function lkRnc(r){return r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod)}
 function vRei(){
-  const {base,A,B,fech,g}=reiRnc(), tx=fech.length?A.length/fech.length*100:null, ok=s=>{const n=norm(s);return n&&n.indexOf('nao informado')<0};
+  const {base,A,B,fech,Afim,At,g,per}=reiRnc(), tx=fech.length?Afim.length/fech.length*100:null, ok=s=>{const n=norm(s);return n&&n.indexOf('nao informado')<0};
   const oc=new Set(A.map(o=>norm(o.antes.ocorr))).size, md=A.length?Math.round(A.reduce((s,o)=>s+o.dias,0)/A.length):null;
   const ate15=A.filter(o=>o.dias<=15).length;
-  const txT=k=>{const f=fech.filter(q=>q.tipo===k).length,a=A.filter(o=>o.antes.tipo===k).length;return{f,a,t:f?a/f*100:null}}, tI=txT('nci'), tR=txT('rc');
+  const txT=k=>{const f=fech.filter(q=>q.tipo===k).length,a=Afim.filter(o=>o.antes.tipo===k).length;return{f,a,t:f?a/f*100:null}}, tI=txT('nci'), tR=txT('rc');
   const respM=new Map();A.forEach(o=>{[...new Set(o.antes.planos.filter(p=>!p.inativo).map(p=>p.resp))].forEach(r=>{respM.set(r,(respM.get(r)||0)+1)})});
   const cliM=new Map();const cl=r=>ok(r.cliente)?r.cliente:null;
   base.forEach(r=>{const c=cl(r);if(!c)return;let o=cliM.get(c);if(!o){o={c,n:0,f:0,a:0,b:0,ocs:new Map()};cliM.set(c,o)}o.n++});
   fech.forEach(q=>{const o=cliM.get(cl(q));if(o)o.f++});
+  Afim.forEach(x=>{const o=cliM.get(cl(x.antes));if(o)o.af=(o.af||0)+1});
   A.forEach(x=>{const o=cliM.get(cl(x.antes));if(o){o.a++;o.ocs.set(x.antes.ocorr,(o.ocs.get(x.antes.ocorr)||0)+1)}});
   B.forEach(x=>{const o=cliM.get(cl(x.antes));if(o){o.b++;o.ocs.set(x.antes.ocorr,(o.ocs.get(x.antes.ocorr)||0)+1)}});
   const CL=[...cliM.values()].filter(o=>o.a||o.b).sort((x,y)=>(y.a+y.b)-(x.a+x.b)||y.a-x.a);
   const ocM=new Map();A.forEach(o=>ocM.set(o.antes.ocorr,(ocM.get(o.antes.ocorr)||0)+1));const OCR=[...ocM.entries()].sort((a,b)=>b[1]-a[1]);
   const top=OCR[0];
-  let h='<div class="grid g6">'
+  let h='<p class="note" style="margin:0 0 10px;color:#fff;font-size:13px">Período analisado: <b>'+reiPerTxt()+'</b>'+(per?' · reincidências que voltaram neste período':' · use os filtros Ano e Mês para ver um mês')+'</p><div class="grid g6">'
     +kpi(A.length?'k-venc':'k-ok',nf(A.length),'Reincidências','planos concluídos e a mesma ocorrência voltou em até '+REI_DIAS+' dias','x')
     +kpi(tx==null?'':tx>=20?'k-venc':tx>=10?'k-v30':'k-ok',rgPc(tx),'Taxa de reincidência','de '+nf(fech.length)+' RNCs com planos concluídos','x')
     +kpi('k-acc',nf(oc),'Ocorrências que reincidiram',top?'a que mais volta: '+esc(top[0])+' ('+top[1]+')':'nenhuma','x')
@@ -747,10 +757,10 @@ function vRei(){
   /* mês a mês */
   const ms=rgUlt(12), fM={},aM={},vM={};ms.forEach(m=>{fM[m]=0;aM[m]=0;vM[m]=0});
   fech.forEach(q=>{const t=reiFim(q);const m=rgMes(t);if(fM[m]!=null)fM[m]++});
-  A.forEach(o=>{const m=rgMes(o.fim);if(aM[m]!=null)aM[m]++;const m2=mesKey(dt(o.depois));if(vM[m2]!=null)vM[m2]++});
+  At.forEach(o=>{const m=rgMes(o.fim);if(aM[m]!=null)aM[m]++;const m2=mesKey(dt(o.depois));if(vM[m2]!=null)vM[m2]++});
   const txM={},tt={};ms.forEach(m=>{txM[m]=fM[m]?aM[m]/fM[m]*100:null;tt[m]=aM[m]+' de '+fM[m]+' RNCs com planos concluídos no mês'});
   h+='<div class="grid g21">'+card('Reincidências mês a mês','mês em que a ocorrência voltou',colunas(ms,[{k:'a',l:'Reincidências',cor:'#C0304F'}],(m,s)=>vM[m],nf))
-    +card('Como contamos','regra usada nesta aba','<div class="note" style="color:var(--ink2);margin:0;max-width:none">Uma RNC é <b>reincidente</b> quando todos os planos de ação dela (sem os suspensos e cancelados) foram <b>concluídos</b> e, em até <b>'+REI_DIAS+' dias</b> depois da conclusão, abriu outra RNC com a <b>mesma Ocorrência</b>.<br><br>A <b>taxa de reincidência</b> é: reincidências ÷ RNCs com todos os planos concluídos.<br><br><b>Repetição por cliente</b>: o mesmo cliente com a mesma ocorrência de novo em até '+REI_CLI_DIAS+' dias, com ou sem plano.<br><br>Respeita os filtros do painel (o mês é ignorado para olhar o histórico). RNCs com a Ocorrência em branco ficam de fora.</div>')+'</div>';
+    +card('Como contamos','regra usada nesta aba','<div class="note" style="color:var(--ink2);margin:0;max-width:none">Uma RNC é <b>reincidente</b> quando todos os planos de ação dela (sem os suspensos e cancelados) foram <b>concluídos</b> e, em até <b>'+REI_DIAS+' dias</b> depois da conclusão, abriu outra RNC com a <b>mesma Ocorrência</b>.<br><br>A <b>taxa de reincidência</b> é: reincidências ÷ RNCs com todos os planos concluídos.<br><br><b>Repetição por cliente</b>: o mesmo cliente com a mesma ocorrência de novo em até '+REI_CLI_DIAS+' dias, com ou sem plano.<br><br>Respeita todos os filtros do painel: cliente, tipo, ocorrência, ano e mês. Com Ano/Mês escolhidos, mostra as reincidências que <b>voltaram</b> naquele período (a taxa usa os planos <b>concluídos</b> no período). O gráfico mês a mês mostra sempre os últimos 12 meses. RNCs com a Ocorrência em branco ficam de fora.</div>')+'</div>';
   /* tipo · faixas · pareto */
   const fx=[['Até 15 dias',o=>o.dias<=15,'#8E1B35'],['16 a 30 dias',o=>o.dias>15&&o.dias<=30,'#C0304F'],['31 a 60 dias',o=>o.dias>30,'#E3A008']];
   let ac=0;const totA=A.length;
@@ -762,11 +772,11 @@ function vRei(){
     +card('Reincidência por cliente','10 clientes que mais reincidem',rgBarras(CL.slice(0,10).map(o=>({l:o.c,v:o.a+o.b,seg:[{l:'A ocorrência voltou após o plano',v:o.a,cor:'#C0304F'},{l:'Repetição em até '+REI_CLI_DIAS+' dias',v:o.b,cor:'#F08A24'}]})),nf,'Nenhum cliente com reincidência. 🎉')+rgLeg([['Voltou após o plano','#C0304F'],['Repetição em até '+REI_CLI_DIAS+' dias','#F08A24']]))
     +card('Ações que não seguraram por responsável','responsável do plano concluído · 10 maiores',rgBarras([...respM.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10).map(([l,n])=>({l,v:n,cor:'#7A5AF8'})),nf,'Nenhuma ação que não segurou. 🎉'))+'</div>';
   /* tabelas */
-  const R=[...g.entries()].map(([k,l])=>{const a=A.filter(o=>norm(o.antes.ocorr)===k),f=fech.filter(q=>norm(q.ocorr)===k).length;return{nome:l[l.length-1].ocorr,n:l.length,f,a:a.length,tx:f?a.length/f*100:null,md:a.length?Math.round(a.reduce((s,o)=>s+o.dias,0)/a.length):null,ult:a.length?a.map(o=>dt(o.depois)).sort((x,y)=>y-x)[0]:null}}).filter(o=>o.a||o.f).sort((x,y)=>y.a-x.a||(y.tx||0)-(x.tx||0)||y.n-x.n);
+  const R=[...g.entries()].map(([k,l])=>{const a=A.filter(o=>norm(o.antes.ocorr)===k),f=fech.filter(q=>norm(q.ocorr)===k).length,af=Afim.filter(o=>norm(o.antes.ocorr)===k).length;return{nome:l[l.length-1].ocorr,n:per?base.filter(r=>norm(r.ocorr)===k).length:l.length,f,a:a.length,tx:f?af/f*100:null,md:a.length?Math.round(a.reduce((s,o)=>s+o.dias,0)/a.length):null,ult:a.length?a.map(o=>dt(o.depois)).sort((x,y)=>y-x)[0]:null}}).filter(o=>o.a||o.f).sort((x,y)=>y.a-x.a||(y.tx||0)-(x.tx||0)||y.n-x.n);
   h+='<div class="grid g11">'+card('Reincidência por ocorrência','mais reincidências primeiro',rgTb([['Ocorrência'],['RNCs',1],['Planos concluídos',1],['Voltou',1],['Taxa',1],['Dias',1],['Última volta']],
       R.map(o=>'<tr><td><div class="trunc" style="max-width:200px" title="'+esc(o.nome)+'"><b>'+esc(o.nome)+'</b></div></td><td class="num">'+nf(o.n)+'</td><td class="num">'+nf(o.f)+'</td><td class="num" style="'+(o.a?'color:var(--venc);font-weight:700':'')+'">'+nf(o.a)+'</td><td class="num">'+rgPc(o.tx)+'</td><td class="num">'+(o.md==null?'—':nf(o.md))+'</td><td class="nw">'+(o.ult?fmtData(o.ult):'—')+'</td></tr>'),'Nenhuma ocorrência com planos concluídos.',15))
     +card('Reincidência por cliente','clientes com reincidência ou repetição',rgTb([['Cliente'],['RNCs',1],['Voltou após plano',1],['Taxa',1],['Repetições',1],['Ocorrência que mais volta']],
-      CL.map(o=>{const t=[...o.ocs.entries()].sort((a,b)=>b[1]-a[1])[0];return '<tr><td><div class="trunc" style="max-width:170px" title="'+esc(o.c)+'"><b>'+esc(o.c)+'</b></div></td><td class="num">'+nf(o.n)+'</td><td class="num" style="'+(o.a?'color:var(--venc);font-weight:700':'')+'">'+nf(o.a)+'</td><td class="num">'+rgPc(o.f?o.a/o.f*100:null)+'</td><td class="num" style="'+(o.b?'color:#B86400;font-weight:700':'')+'">'+nf(o.b)+'</td><td><div class="trunc" style="max-width:170px" title="'+esc(t?t[0]:'')+'">'+esc(t?t[0]+' ('+t[1]+')':'—')+'</div></td></tr>'}),'Nenhum cliente com reincidência. 🎉',15))+'</div>';
+      CL.map(o=>{const t=[...o.ocs.entries()].sort((a,b)=>b[1]-a[1])[0];return '<tr><td><div class="trunc" style="max-width:170px" title="'+esc(o.c)+'"><b>'+esc(o.c)+'</b></div></td><td class="num">'+nf(o.n)+'</td><td class="num" style="'+(o.a?'color:var(--venc);font-weight:700':'')+'">'+nf(o.a)+'</td><td class="num">'+rgPc(o.f?(o.af||0)/o.f*100:null)+'</td><td class="num" style="'+(o.b?'color:#B86400;font-weight:700':'')+'">'+nf(o.b)+'</td><td><div class="trunc" style="max-width:170px" title="'+esc(t?t[0]:'')+'">'+esc(t?t[0]+' ('+t[1]+')':'—')+'</div></td></tr>'}),'Nenhum cliente com reincidência. 🎉',15))+'</div>';
   h+='<div class="grid g11">'
     +card('A ocorrência voltou','RNC antes · conclusão do plano · RNC que voltou',rgTb([['Ocorrência'],['Antes'],['Plano concluído'],['Voltou'],['Dias',1],['Cliente']],
       A.slice().sort((x,y)=>dt(y.depois)-dt(x.depois)).map(o=>'<tr><td><div class="trunc" style="max-width:180px" title="'+esc(o.antes.ocorr)+'"><b>'+esc(o.antes.ocorr)+'</b></div></td><td class="nw">'+lkRnc(o.antes)+'</td><td class="nw">'+fmtData(o.fim)+'</td><td class="nw">'+lkRnc(o.depois)+' <span style="color:var(--mute)">'+fmtData(dt(o.depois))+'</span></td><td class="num">'+nf(o.dias)+'</td><td><div class="trunc" style="max-width:140px">'+esc(o.depois.cliente)+'</div></td></tr>'),'Nenhuma ocorrência voltou depois de planos concluídos. 🎉'))
