@@ -359,6 +359,7 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
     <button role="tab" data-a="tab" data-v="geral" aria-selected="true">Visão geral</button>
     <button role="tab" data-a="tab" data-v="custos" aria-selected="false">Custos da não conformidade</button>
     <button role="tab" data-a="tab" data-v="planos" aria-selected="false">Planos de ação</button>
+    <button role="tab" data-a="tab" data-v="rei" aria-selected="false">Reincidência</button>
     <button role="tab" data-a="tab" data-v="detalhe" aria-selected="false">Detalhamento</button>
   </nav>
   <div class="farol" id="farol" aria-hidden="true"></div>
@@ -656,6 +657,46 @@ function chips(){
 }
 
 /* ============================ RENDER ============================ */
+/* ===================== REINCIDÊNCIA (RNC) ===================== */
+const REI_DIAS=60, REI_CLI_DIAS=90;
+function reiRnc(){
+  const base=filtrar(S.rnc,{semMes:true}).filter(r=>dt(r)), ok=s=>{const n=norm(s);return n&&n.indexOf('nao informado')<0};
+  const fimPl=q=>{const pl=q.planos.filter(p=>!p.inativo);if(!pl.length||!pl.every(p=>p.done))return null;const t=Math.max(...pl.map(p=>p.concl?p.concl.getTime():0));return t>0?t:null};
+  const g=new Map();base.forEach(r=>{if(!ok(r.ocorr))return;const k=norm(r.ocorr);if(!g.has(k))g.set(k,[]);g.get(k).push(r)});
+  g.forEach(l=>l.sort((a,b)=>dt(a)-dt(b)));
+  const A=[],fech=[];
+  g.forEach(l=>l.forEach(q=>{const t=fimPl(q);if(!t)return;fech.push(q);const r=l.find(z=>z!==q&&dt(z).getTime()>t&&dt(z).getTime()<=t+REI_DIAS*DIA);if(r)A.push({antes:q,depois:r,fim:new Date(t),dias:Math.round((dt(r).getTime()-t)/DIA)})}));
+  const B=[];g.forEach(l=>{const pc=new Map();l.forEach(r=>{if(!ok(r.cliente))return;const k=norm(r.cliente);if(!pc.has(k))pc.set(k,[]);pc.get(k).push(r)});
+    pc.forEach(rs=>{for(let i=1;i<rs.length;i++){const d=Math.round((dt(rs[i])-dt(rs[i-1]))/DIA);if(d<=REI_CLI_DIAS)B.push({antes:rs[i-1],depois:rs[i],dias:d})}})});
+  return {base,A,B,fech,g};
+}
+function lkRnc(r){return r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod)}
+function vRei(){
+  const {base,A,B,fech,g}=reiRnc(), tx=fech.length?Math.round(A.length/fech.length*1000)/10:null;
+  const oc=new Set(A.map(o=>norm(o.antes.ocorr))).size, md=A.length?Math.round(A.reduce((s,o)=>s+o.dias,0)/A.length):null, cli=new Set(B.map(o=>norm(o.antes.cliente))).size;
+  let h='<div class="grid g6">'
+    +kpi(A.length?'k-venc':'k-ok',nf(A.length),'Reincidências','planos concluídos e a mesma ocorrência voltou em até '+REI_DIAS+' dias','x')
+    +kpi(tx==null?'':tx>=20?'k-venc':tx>=10?'k-v30':'k-ok',tx==null?'—':tx.toLocaleString('pt-BR')+'%','Taxa de reincidência','de '+nf(fech.length)+' RNCs com planos concluídos','x')
+    +kpi('k-acc',nf(oc),'Ocorrências que reincidiram','tipos de ocorrência diferentes','x')
+    +kpi('',md==null?'—':nf(md)+' dias','Tempo até voltar','média entre a conclusão do plano e a nova RNC','x')
+    +kpi(cli?'k-v30':'k-ok',nf(cli),'Clientes com reclamação repetida','mesma ocorrência em até '+REI_CLI_DIAS+' dias','x')
+    +kpi(B.length?'k-v30':'k-ok',nf(B.length),'RNCs repetidas por cliente','mesmo cliente e mesma ocorrência','x')
+    +'</div>';
+  const meses=mesesDe(base).slice(-12), S1=[{k:'a',l:'Reincidências',cor:'#C0304F'}];
+  const R=[...g.entries()].map(([k,l])=>{const a=A.filter(o=>norm(o.antes.ocorr)===k),f=fech.filter(q=>norm(q.ocorr)===k).length;return{nome:l[l.length-1].ocorr,n:l.length,f,a:a.length,tx:f?a.length/f*100:null,md:a.length?Math.round(a.reduce((s,o)=>s+o.dias,0)/a.length):null,ult:a.length?a.map(o=>dt(o.depois)).sort((x,y)=>y-x)[0]:null}}).filter(o=>o.a||o.f).sort((x,y)=>y.a-x.a||(y.tx||0)-(x.tx||0)||y.n-x.n);
+  h+='<div class="grid g21">'+card('Reincidências mês a mês','mês em que a ocorrência voltou',colunas(meses,S1,(m,s)=>A.filter(o=>mesKey(dt(o.depois))===m).length,nf))
+    +card('Como contamos','regra usada nesta aba','<div class="note" style="color:var(--ink2);margin:0;max-width:none">Uma RNC é <b>reincidente</b> quando todos os planos de ação dela (sem os suspensos e cancelados) foram <b>concluídos</b> e, em até <b>'+REI_DIAS+' dias</b> depois da conclusão, abriu outra RNC com a <b>mesma Ocorrência</b>.<br><br>A <b>taxa de reincidência</b> é: reincidências ÷ RNCs com todos os planos concluídos.<br><br><b>Reclamação repetida por cliente</b>: o mesmo cliente com a mesma ocorrência de novo em até '+REI_CLI_DIAS+' dias, com ou sem plano.<br><br>Respeita os filtros do painel (o mês é ignorado para olhar o histórico). RNCs com a Ocorrência em branco ficam de fora.</div>')+'</div>';
+  const tb=(cols,rows,vazio,n)=>rows.length?'<div class="tw"><table><thead><tr>'+cols.map(c=>'<th'+(c[1]?' class="num"':'')+'>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,n||20).join('')+'</tbody></table></div>'+(rows.length>(n||20)?'<p class="note" style="color:var(--mute)">mostrando '+(n||20)+' de '+nf(rows.length)+'</p>':''):'<div class="empty">'+vazio+'</div>';
+  h+=card('Reincidência por ocorrência','ocorrências com mais reincidências primeiro',tb([['Ocorrência'],['RNCs',1],['Com planos concluídos',1],['Voltou',1],['Taxa',1],['Dias até voltar',1],['Última volta']],
+    R.map(o=>'<tr><td><b>'+esc(o.nome)+'</b></td><td class="num">'+nf(o.n)+'</td><td class="num">'+nf(o.f)+'</td><td class="num" style="'+(o.a?'color:var(--venc);font-weight:700':'')+'">'+nf(o.a)+'</td><td class="num">'+(o.tx==null?'—':Math.round(o.tx)+'%')+'</td><td class="num">'+(o.md==null?'—':nf(o.md))+'</td><td class="nw">'+(o.ult?fmtData(o.ult):'—')+'</td></tr>'),'Nenhuma ocorrência com planos concluídos no escopo.',30),' style="margin-bottom:14px"');
+  h+='<div class="grid g11">'
+    +card('A ocorrência voltou','RNC antes · conclusão do plano · RNC que voltou',tb([['Ocorrência'],['Antes'],['Plano concluído'],['Voltou'],['Dias',1],['Cliente']],
+      A.slice().sort((x,y)=>dt(y.depois)-dt(x.depois)).map(o=>'<tr><td><div class="trunc" style="max-width:180px" title="'+esc(o.antes.ocorr)+'"><b>'+esc(o.antes.ocorr)+'</b></div></td><td class="nw">'+lkRnc(o.antes)+'</td><td class="nw">'+fmtData(o.fim)+'</td><td class="nw">'+lkRnc(o.depois)+' <span style="color:var(--mute)">'+fmtData(dt(o.depois))+'</span></td><td class="num">'+nf(o.dias)+'</td><td><div class="trunc" style="max-width:140px">'+esc(o.depois.cliente)+'</div></td></tr>'),'Nenhuma ocorrência voltou depois de planos concluídos. 🎉'))
+    +card('Reclamação repetida por cliente','mesmo cliente e mesma ocorrência em até '+REI_CLI_DIAS+' dias',tb([['Cliente'],['Ocorrência'],['Antes'],['De novo'],['Dias',1]],
+      B.slice().sort((x,y)=>dt(y.depois)-dt(x.depois)).map(o=>'<tr><td><div class="trunc" style="max-width:150px" title="'+esc(o.antes.cliente)+'"><b>'+esc(o.antes.cliente)+'</b></div></td><td><div class="trunc" style="max-width:160px">'+esc(o.antes.ocorr)+'</div></td><td class="nw">'+lkRnc(o.antes)+'</td><td class="nw">'+lkRnc(o.depois)+' <span style="color:var(--mute)">'+fmtData(dt(o.depois))+'</span></td><td class="num">'+nf(o.dias)+'</td></tr>'),'Nenhum cliente com a mesma ocorrência repetida. 🎉'))+'</div>';
+  return h;
+}
+
 function render(){
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.tab));
   chips(); farol();
@@ -665,7 +706,7 @@ function render(){
   if(!S.rnc.length){
     el.innerHTML=h+'<div class="card empty">Nenhuma RNC com Tipo “Não conformidade interna” ou “Reclamação do cliente” foi encontrada na aba RNC'+(S.fora?' ('+nf(S.fora)+' RNCs de outros tipos foram ignoradas)':'')+'. Rode a importação e confira o nome do tipo no Qualiex.</div>';return;
   }
-  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='planos'?vPlanos():vDetalhe();
+  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='planos'?vPlanos():S.tab==='rei'?vRei():vDetalhe();
   el.innerHTML=h;
 }
 function farol(){
