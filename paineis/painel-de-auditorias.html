@@ -321,6 +321,18 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 .tvw .bl{padding:3px 6px}
 .tvw .ks3{font-size:12.5px;margin:0 0 4px}
 .tvvazio{grid-row:2/5;display:grid;place-items:center;color:#fff;font-size:18px;border:1px dashed rgba(255,255,255,.4);border-radius:14px}
+/* abas de reincidência */
+.rg3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rgb{display:grid;gap:7px}
+.rgr{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.6fr) 84px;gap:10px;align-items:center;font-size:13px}
+.rgn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rgt{display:flex;height:14px;background:#EEF1F6;border-radius:4px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(10,31,107,.12)}
+.rgt i{display:block;height:100%}
+.rgv{text-align:right;font-family:var(--num);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rgv small{font-family:'IBM Plex Sans',Arial,sans-serif;font-weight:400;color:var(--mute);font-size:11px;margin-left:4px}
+.rgh{font-size:12.5px}.rgh th{white-space:nowrap}.rgh tbody th{text-align:left;max-width:190px;overflow:hidden;text-overflow:ellipsis;font-weight:600;background:transparent;position:static}
+.rgh td{text-align:center;min-width:46px;border-left:2px solid #fff}
+@media (max-width:1100px){.rg3{grid-template-columns:minmax(0,1fr)}}
 .dq-g{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;align-items:start}
 .dq-c{display:grid;gap:14px;max-height:440px;overflow:auto;padding-right:4px}
 .dq-h{font-size:13px;margin-bottom:6px;color:var(--navy)}.dq-h span{color:var(--mute);font-size:12px}
@@ -522,6 +534,37 @@ function carregar(manual){const ok=d=>{if(d&&d.erro){falha(d.erro);return}S.demo
 function falha(m){S.erro=m;if(!S.rows.length){S.demo=true;S.mode='demo';setData(gerarDemo())}fonte();render()}
 function atualizar(){const b=document.getElementById('btnRefresh');if(S.mode!=='api'){carregar(true);return}b.disabled=true;toast('Importando do Qualiex… pode levar alguns minutos.',9000);
  fetch(CONFIG.API_URL+(CONFIG.API_URL.includes('?')?'&':'?')+'acao=atualizar&token='+encodeURIComponent(CONFIG.API_TOKEN)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{b.disabled=false;if(d.erro){toast(d.erro,8000);return}S.demo=false;setData(d);fonte();toast('Dados atualizados.')}).catch(e=>{b.disabled=false;toast('Falha ao atualizar: '+e.message,8000)})}
+/* ---------- gráficos simples das abas de reincidência ---------- */
+function rgLab(m){return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][+m.slice(5)-1]+'/'+m.slice(2,4)}
+function rgUlt(n){const o=[],d=new Date();for(let i=n-1;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);o.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'))}return o}
+const rgMes=d=>d?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'):'';
+function rgLinha(meses,series,fmt,pct){
+  if(!meses.length||!series.length) return '<div class="empty">Sem dados no período.</div>';
+  const W=860,H=230,pl=44,pb=30,pt=16,pr=14;let mx=0;series.forEach(s=>meses.forEach(m=>{const v=s.v[m];if(v!=null&&v>mx)mx=v}));
+  mx=pct?Math.max(10,Math.ceil(mx/10)*10):Math.max(1,Math.ceil(mx));
+  const X=i=>pl+(W-pl-pr)*(meses.length===1?.5:i/(meses.length-1)),Y=v=>H-pb-(H-pb-pt)*v/mx;let g='';
+  for(let i=0;i<=4;i++){const v=mx*i/4,y=Y(v);g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="#E3EAF7"/><text x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#6B7A93">'+fmt(v)+'</text>'}
+  meses.forEach((m,i)=>{g+='<text x="'+X(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="10.5" fill="#6B7A93">'+rgLab(m)+'</text>'});
+  series.forEach(s=>{const P=meses.map((m,i)=>s.v[m]==null?null:[X(i),Y(s.v[m]),m]);let d='';P.forEach((p,i)=>{if(!p)return;d+=(d&&P[i-1]?' L':' M')+p[0].toFixed(1)+' '+p[1].toFixed(1)});
+    g+='<path d="'+d+'" fill="none" stroke="'+s.cor+'" stroke-width="2.5" stroke-linejoin="round"/>'+P.filter(Boolean).map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.5" fill="#fff" stroke="'+s.cor+'" stroke-width="2.2"><title>'+s.l+' · '+rgLab(p[2])+'\n'+fmt(s.v[p[2]])+(s.t&&s.t[p[2]]?'\n'+s.t[p[2]]:'')+'</title></circle>').join('')});
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img">'+g+'</svg><div class="leg">'+series.map(s=>'<span><i style="background:'+s.cor+'"></i>'+s.l+'</span>').join('')+'</div>';
+}
+function rgBarras(it,fmt,vazio){
+  if(!it.length) return '<div class="empty">'+(vazio||'Nada para mostrar.')+'</div>';
+  const mx=Math.max(1e-9,...it.map(o=>o.v));
+  return '<div class="rgb">'+it.map(o=>'<div class="rgr"'+(o.tip?' title="'+esc(o.tip)+'"':'')+'><span class="rgn" title="'+esc(o.l)+'">'+esc(o.l)+'</span><span class="rgt">'
+    +(o.seg?o.seg.filter(s=>s.v).map(s=>'<i title="'+esc(o.l+'\n'+s.l+': '+fmt(s.v))+'" style="width:'+s.v/mx*100+'%;background:'+s.cor+'"></i>').join(''):'<i title="'+esc(o.tip||o.l+': '+fmt(o.v))+'" style="width:'+o.v/mx*100+'%;background:'+(o.cor||'#C0304F')+'"></i>')
+    +'</span><b class="rgv">'+fmt(o.v)+(o.extra?'<small>'+o.extra+'</small>':'')+'</b></div>').join('')+'</div>';
+}
+function rgLeg(l){return '<div class="leg">'+l.map(x=>'<span><i style="background:'+x[1]+'"></i>'+x[0]+'</span>').join('')+'</div>'}
+function rgHeat(linhas,meses,val,tip){
+  if(!linhas.length) return '<div class="empty">Nada para mostrar.</div>';
+  let mx=1;linhas.forEach(l=>meses.forEach(m=>{mx=Math.max(mx,val(l,m))}));
+  return '<div class="tw"><table class="rgh"><thead><tr><th></th>'+meses.map(m=>'<th>'+rgLab(m)+'</th>').join('')+'</tr></thead><tbody>'
+    +linhas.map(l=>'<tr><th title="'+esc(l.l)+'">'+esc(l.l)+'</th>'+meses.map(m=>{const v=val(l,m),a=v?Math.min(1,.2+.8*v/mx):0;return '<td title="'+esc(tip(l,m,v))+'" style="'+(v?'background:rgba(192,48,79,'+a.toFixed(2)+');color:'+(a>.55?'#fff':'#5B1426')+';font-weight:600':'color:#B9C3D3')+'">'+(v||'·')+'</td>'}).join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+const rgTb=(cols,rows,vazio,n)=>rows.length?'<div class="tw"><table><thead><tr>'+cols.map(c=>'<th'+(c[1]?' class="num"':'')+'>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,n||20).join('')+'</tbody></table></div>'+(rows.length>(n||20)?'<p class="note" style="color:var(--mute);margin:6px 2px 0">mostrando '+(n||20)+' de '+nf(rows.length)+'</p>':''):'<div class="empty">'+vazio+'</div>';
+const rgPc=v=>v==null?'—':(Math.round(v*10)/10).toLocaleString('pt-BR')+'%';
 /* ===================== REINCIDÊNCIA (AUDITORIA) ===================== */
 const REI_PL_DIAS=120;
 function reiAud(){
@@ -549,6 +592,14 @@ function reiAud(){
 function lkA(o){return o.link?'<a href="'+esc(o.link)+'" target="_blank" rel="noopener">'+esc(o.cod)+'</a>':esc(o.cod)}
 function vReiA(){
   const R=reiAud(), seg=R.rep.filter(o=>o.seg>=2), tx=R.ncs.length?R.ncRe.length/R.ncs.length*100:null;
+  const keyR=new Set(R.rep.map(o=>norm(o.tit)+'|'+norm(o.local)+'|'+o.gp));
+  const rowsR=R.base.filter(r=>keyR.has(norm(r.tit)+'|'+norm(r.local)+'|'+r.gp)), av=rowsR.filter(r=>r.c==='ok'||r.c==='par'||r.c==='nok');
+  const adR=av.length?av.reduce((s,r)=>s+(r.c==='ok'?1:r.c==='par'?.5:0),0)/av.length*100:null;
+  const gaps=[];R.rep.forEach(o=>{for(let j=1;j<o.auds.length;j++)gaps.push((o.auds[j].dt-o.auds[j-1].dt)/864e5)});
+  const md=gaps.length?Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length):null;
+  const respM=new Map();R.pls.forEach(o=>respM.set(o.p.resp,(respM.get(o.p.resp)||0)+1));
+  const porG=R.GA.map(g=>{const n=R.ncs.filter(r=>r.gp===g.k),re=R.ncRe.filter(r=>r.gp===g.k);return{g,n:n.length,re:re.length,tx:n.length?re.length/n.length*100:null,it:R.rep.filter(o=>o.gp===g.k).length,pl:R.pls.filter(o=>o.a.gp===g.k).length,aud:(R.audG.get(g.k)||[]).length}}).filter(o=>o.aud);
+  const pior=porG.filter(o=>o.tx!=null).sort((a,b)=>b.tx-a.tx)[0];
   let h='<div class="grid g6">'
     +kpi(R.rep.length?'k-venc':'k-ok',nf(R.rep.length),'Itens reincidentes','mesmo item reprovado em 2+ auditorias do galpão','x')
     +kpi(seg.length?'k-venc':'k-ok',nf(seg.length),'Reprovados em auditorias seguidas','o item não passou em auditorias consecutivas','x')
@@ -556,19 +607,39 @@ function vReiA(){
     +kpi(R.pls.length?'k-venc':'k-ok',nf(R.pls.length),'Planos que não seguraram','plano concluído e o item reprovou de novo','x')
     +kpi(R.locais.length?'k-v30':'k-ok',nf(R.locais.length),'Locais reincidentes','local com NC em auditorias seguidas','x')
     +kpi('k-v30',nf(R.rep.filter(o=>o.w>=4).length),'Reincidentes de peso alto','itens de peso 4 ou 5','x')
+    +'</div><div class="grid g6">'
+    +kpi(adR==null?'':adR>=META?'k-ok':'k-venc',fp(adR),'Aderência dos itens reincidentes','por pergunta · meta '+META+'%','x')
+    +kpi('',md==null?'—':nf(md)+' dias','Tempo até reprovar de novo','média entre auditorias com o item NC','x')
+    +kpi(respM.size?'k-v30':'k-ok',nf(respM.size),'Responsáveis com plano que não segurou','pessoas','x')
+    +kpi(pior&&pior.tx>0?'k-venc':'k-ok',pior?pior.g.l:'—','Galpão com mais reincidência',pior?fp(pior.tx)+' das NCs voltaram':'sem dados','x')
+    +kpi('',nf(R.ncRe.length),'NCs reincidentes','de '+nf(R.ncs.length)+' NCs no escopo','x')
+    +kpi('',nf([...R.audG.values()].reduce((a,l)=>a+l.length,0)),'Auditorias analisadas','todos os galpões no escopo','x')
     +'</div>';
-  const porG=R.GA.map(g=>{const n=R.ncs.filter(r=>r.gp===g.k),re=R.ncRe.filter(r=>r.gp===g.k);return{g,n:n.length,re:re.length,it:R.rep.filter(o=>o.gp===g.k).length,pl:R.pls.filter(o=>o.a.gp===g.k).length,aud:(R.audG.get(g.k)||[]).length}}).filter(o=>o.aud);
-  const tb=(cols,rows,vazio,n)=>rows.length?'<div class="tw"><table><thead><tr>'+cols.map(c=>'<th'+(c[1]?' class="num"':'')+'>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,n||20).join('')+'</tbody></table></div>'+(rows.length>(n||20)?'<p class="note" style="color:var(--mute)">mostrando '+(n||20)+' de '+nf(rows.length)+'</p>':''):'<div class="card empty" style="box-shadow:none">'+vazio+'</div>';
-  h+='<div class="grid g21">'+card('Reincidência por galpão','auditorias no escopo do filtro',tb([['Galpão'],['Auditorias',1],['NCs',1],['NCs reincidentes',1],['Taxa',1],['Itens reincidentes',1],['Planos que não seguraram',1]],
-      porG.map(o=>'<tr><td><b><i class="sw" style="background:'+o.g.cor+'"></i> '+o.g.l+'</b></td><td class="num">'+nf(o.aud)+'</td><td class="num">'+nf(o.n)+'</td><td class="num" style="'+(o.re?'color:var(--venc);font-weight:700':'')+'">'+nf(o.re)+'</td><td class="num">'+fp(o.n?o.re/o.n*100:null)+'</td><td class="num">'+nf(o.it)+'</td><td class="num">'+nf(o.pl)+'</td></tr>'),'Nenhuma auditoria no escopo.'))
-    +card('Como contamos','regra usada nesta aba','<div class="note" style="color:var(--ink2);margin:0;max-width:none"><b>Item reincidente</b>: o mesmo item (título e local) reprovado (não conforme) em 2 ou mais auditorias do <b>mesmo galpão</b>. “Seguidas” = em auditorias consecutivas do galpão.<br><br><b>Taxa de reincidência</b>: NCs que também estavam NC na auditoria anterior do galpão ÷ total de NCs.<br><br><b>Plano que não segurou</b>: plano concluído (data de término) e o mesmo item reprovou em até '+REI_PL_DIAS+' dias.<br><br>Respeita os filtros do painel (o mês é ignorado para olhar o histórico).</div>')+'</div>';
-  h+=card('Itens reincidentes','seguidas primeiro · clique na auditoria para abrir no Qualiex',tb([['Item auditado'],['Local'],['Galpão'],['Peso',1],['Vezes',1],['Seguidas',1],['Auditorias']],
-    R.rep.map(o=>'<tr><td><div class="trunc" style="max-width:300px" title="'+esc(o.tit)+'"><b>'+esc(o.tit)+'</b></div></td><td><div class="trunc" style="max-width:150px">'+esc(o.local)+'</div></td><td class="nw">'+esc(o.gp)+'</td><td class="num">'+nf(o.w)+'</td><td class="num" style="color:var(--venc);font-weight:700">'+o.auds.length+'</td><td class="num" style="'+(o.seg>=2?'color:var(--venc);font-weight:700':'')+'">'+o.seg+'</td><td style="white-space:normal">'+o.auds.slice(-4).map(a=>lkA(a)+' <span style="color:var(--mute)">'+fmtData(a.dt)+'</span>').join(' · ')+'</td></tr>'),'Nenhum item reprovado em mais de uma auditoria. 🎉',30),' style="margin-bottom:14px"');
+  /* taxa mês a mês por galpão */
+  const ms=rgUlt(12), ser=R.GA.map(g=>{const v={},t={};ms.forEach(m=>{const n=R.ncs.filter(r=>r.gp===g.k&&rgMes(r.dt)===m).length,re=R.ncRe.filter(r=>r.gp===g.k&&rgMes(r.dt)===m).length;v[m]=n?re/n*100:null;t[m]=re+' de '+n+' NCs já estavam NC na auditoria anterior'});return{l:g.l,cor:g.cor,v,t}}).filter(s=>ms.some(m=>s.v[m]!=null));
+  h+='<div class="grid g21">'+card('Taxa de reincidência mês a mês','por galpão · % das NCs que repetiram a auditoria anterior',rgLinha(ms,ser,fp,true))
+    +card('Reincidência por galpão','auditorias no escopo do filtro',rgTb([['Galpão'],['Auditorias',1],['NCs',1],['Reincid.',1],['Taxa',1],['Itens',1],['Planos',1]],
+      porG.map(o=>'<tr><td><b><i class="sw" style="background:'+o.g.cor+'"></i> '+o.g.l+'</b></td><td class="num">'+nf(o.aud)+'</td><td class="num">'+nf(o.n)+'</td><td class="num" style="'+(o.re?'color:var(--venc);font-weight:700':'')+'">'+nf(o.re)+'</td><td class="num">'+fp(o.tx)+'</td><td class="num">'+nf(o.it)+'</td><td class="num">'+nf(o.pl)+'</td></tr>'),'Nenhuma auditoria no escopo.'))+'</div>';
+  /* mapa de calor local × mês */
+  const ms8=rgUlt(8), lm=new Map();R.ncRe.forEach(r=>{const k=r.local||'(sem local)';lm.set(k,(lm.get(k)||0)+1)});
+  const LL=[...lm.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12).map(([l])=>({l}));
+  h+=card('Mapa de calor · NCs reincidentes por local','últimos 8 meses · cor mais forte = mais NCs que repetiram',rgHeat(LL,ms8,(l,m)=>R.ncRe.filter(r=>(r.local||'(sem local)')===l.l&&rgMes(r.dt)===m).length,(l,m,v)=>l.l+' · '+rgLab(m)+'\nNCs reincidentes: '+v),' style="margin-bottom:14px"');
+  /* por local (galpões) · por peso · por responsável */
+  const locG=new Map();R.rep.forEach(o=>{const k=o.local||'(sem local)';let x=locG.get(k);if(!x){x={l:k,v:0,s:{}};locG.set(k,x)}x.v++;x.s[o.gp]=(x.s[o.gp]||0)+1});
+  const pesos=[1,2,3,4,5].map(w=>{const n=R.ncs.filter(r=>Math.min(5,Math.max(1,Math.round(r.w)))===w).length,re=R.ncRe.filter(r=>Math.min(5,Math.max(1,Math.round(r.w)))===w).length;return{l:'Peso '+w+(w===5?'+':''),v:n?re/n*100:0,cor:w>=4?'#C0304F':w===3?'#E3A008':'#7FA6FF',extra:re+'/'+n,tip:'Peso '+w+'\n'+re+' de '+n+' NCs repetiram a auditoria anterior'}}).filter(o=>o.extra.split('/')[1]!=='0');
+  h+='<div class="grid rg3">'
+    +card('Itens reincidentes por local','quantos itens voltaram a reprovar · por galpão',rgBarras([...locG.values()].sort((a,b)=>b.v-a.v).slice(0,10).map(x=>({l:x.l,v:x.v,seg:R.GA.map(g=>({l:g.l,v:x.s[g.k]||0,cor:g.cor}))})),nf,'Nenhum item reincidente. 🎉')+rgLeg(R.GA.map(g=>[g.l,g.cor])))
+    +card('Reincidência por peso do item','% das NCs de cada peso que repetiram',rgBarras(pesos,fp,'Sem NCs no escopo.'))
+    +card('Planos que não seguraram por responsável','10 maiores',rgBarras([...respM.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10).map(([l,n])=>({l,v:n,cor:'#7A5AF8'})),nf,'Nenhum plano que não segurou. 🎉'))+'</div>';
+  /* tabelas */
+  h+=card('Itens reincidentes','seguidas primeiro · clique na auditoria para abrir no Qualiex',rgTb([['Item auditado'],['Local'],['Galpão'],['Peso',1],['Vezes',1],['Seguidas',1],['Auditorias']],
+    R.rep.map(o=>'<tr><td><div class="trunc" style="max-width:300px" title="'+esc(o.tit)+'"><b>'+esc(o.tit)+'</b></div></td><td><div class="trunc" style="max-width:150px">'+esc(o.local)+'</div></td><td class="nw">'+esc(o.gp)+'</td><td class="num">'+nf(o.w)+'</td><td class="num" style="color:var(--venc);font-weight:700">'+o.auds.length+'</td><td class="num" style="'+(o.seg>=2?'color:var(--venc);font-weight:700':'')+'">'+o.seg+'</td><td style="white-space:normal">'+o.auds.slice(-4).map(a=>lkA(a)+' <span style="color:var(--mute)">'+fmtData(a.dt)+'</span>').join(' · ')+'</td></tr>'),'Nenhum item reprovado em mais de uma auditoria. 🎉',25),' style="margin-bottom:14px"');
   h+='<div class="grid g11">'
-    +card('Planos que não seguraram','plano concluído e o mesmo item reprovou de novo',tb([['Plano'],['Responsável'],['Item'],['Concluído'],['Reprovou de novo'],['Dias',1]],
+    +card('Planos que não seguraram','plano concluído e o mesmo item reprovou de novo em até '+REI_PL_DIAS+' dias',rgTb([['Plano'],['Responsável'],['Item'],['Concluído'],['Reprovou de novo'],['Dias',1]],
       R.pls.map(o=>'<tr><td class="nw">'+esc(o.p.cod)+'</td><td><div class="trunc" style="max-width:130px">'+esc(o.p.resp)+'</div></td><td><div class="trunc" style="max-width:200px" title="'+esc(o.a.tit)+'">'+esc(o.a.tit)+'</div></td><td class="nw">'+fmtData(o.p.fim)+'</td><td class="nw">'+lkA(o.a)+' <span style="color:var(--mute)">'+esc(o.a.gp)+'</span></td><td class="num">'+nf(o.dias)+'</td></tr>'),'Nenhum plano concluído voltou a reprovar. 🎉'))
-    +card('Locais reincidentes','local com NC em auditorias seguidas do galpão',tb([['Local'],['Galpão'],['Auditorias com NC',1],['Seguidas',1],['NCs',1]],
+    +card('Locais reincidentes','local com NC em auditorias seguidas do galpão',rgTb([['Local'],['Galpão'],['Auditorias com NC',1],['Seguidas',1],['NCs',1]],
       R.locais.map(o=>'<tr><td><b>'+esc(o.local)+'</b></td><td class="nw">'+esc(o.gp)+'</td><td class="num">'+nf(o.na)+'</td><td class="num" style="color:var(--venc);font-weight:700">'+o.seg+'</td><td class="num">'+nf(o.n)+'</td></tr>'),'Nenhum local com NC em auditorias seguidas. 🎉'))+'</div>';
+  h+='<p class="note">Como contamos: item reincidente = o mesmo item (título e local) reprovado em 2 ou mais auditorias do mesmo galpão; “seguidas” = em auditorias consecutivas do galpão. Taxa de reincidência = NCs que também estavam NC na auditoria anterior do galpão ÷ total de NCs. Plano que não segurou = plano concluído (data de término) e o mesmo item reprovou em até '+REI_PL_DIAS+' dias. Respeita os filtros do painel (o mês é ignorado para olhar o histórico).</p>';
   return h;
 }
 
