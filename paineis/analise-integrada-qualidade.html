@@ -290,6 +290,7 @@ tbody tr:hover td{background:#E8F0FF}
 /* ===== análise integrada ===== */
 .g2a{grid-template-columns:repeat(2,minmax(0,1fr))}
 .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .al{display:block;width:100%;text-align:left;background:linear-gradient(180deg,#fff,#F4F7FE);border:1px solid rgba(255,255,255,.7);border-left:6px solid var(--venc);border-radius:14px;padding:14px 16px;box-shadow:0 18px 40px -20px rgba(2,10,50,.85);color:var(--ink)}
 .al:hover{transform:translateY(-2px);transition:transform .15s}
 .al-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}.al-h b{font-size:16px;color:var(--navy)}
@@ -396,8 +397,9 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
     <button role="tab" data-a="tab" data-v="geral" aria-selected="true">1 · Visão executiva</button>
     <button role="tab" data-a="tab" data-v="proc" aria-selected="false">2 · Processo a processo</button>
     <button role="tab" data-a="tab" data-v="corr" aria-selected="false">3 · Cruzamentos</button>
-    <button role="tab" data-a="tab" data-v="rec" aria-selected="false">4 · Plano de ação sugerido</button>
-    <button role="tab" data-a="tab" data-v="como" aria-selected="false">5 · Como cruzamos</button>
+    <button role="tab" data-a="tab" data-v="rei" aria-selected="false">4 · Reincidências</button>
+    <button role="tab" data-a="tab" data-v="rec" aria-selected="false">5 · Plano de ação sugerido</button>
+    <button role="tab" data-a="tab" data-v="como" aria-selected="false">6 · Como cruzamos</button>
   </nav>
   <div class="farol" id="farol" aria-hidden="true"></div>
 </header>
@@ -431,12 +433,12 @@ const CONFIG = {
   /* Como cada registro vira um PROCESSO: palavras procuradas no texto (sem acento, minúsculas).
      Pode acrescentar palavras ou processos aqui. A ordem não importa: um registro pode cair em mais de um processo. */
   PROCESSOS: [
-    ['Separação e conferência', 'separa|picking|\\bfalta|sobra|invers|troca de (produto|item|sku|mercadoria)|confer|pedido (errado|trocado)'],
+    ['Separação e conferência', 'separa|picking|\\bfalta(?! de material)|sobra|invers|troca de (produto|item|sku|mercadoria)|confer|pedido (errado|trocado)'],
     ['Guarda e armazenagem',    'guarda|armazen|endereca|porta.?palete|estocag|empilhament|avaria|quebra|amass|danific|movimenta'],
     ['Recebimento',             'receb|descarg|devolu'],
     ['Expedição e carregamento','expedi|carreg|embarq|lacre|retira|doca'],
-    ['Transporte e entrega',    'transport|entreg|frete|motorista|\\brota|extravi|veiculo|caminh'],
-    ['Inventário e estoque',    'invent|contage|acurac|divergen|saldo|ajuste de estoque'],
+    ['Transporte e entrega',    'transport|entreg|frete|motorista|\\brotas?\\b|extravio(?! interno)|veiculo|caminh'],
+    ['Armazém, estoque e inventário', 'invent|contage|acurac|divergen|saldo|ajuste de estoque|falta de material|extravio interno|\\bestoque'],
     ['Validade e lote',         'validade|\\blote|fefo|fifo|shelf|vencid[oa] no estoque|produto vencido'],
     ['Limpeza, organização e pragas','limpez|higien|praga|organiza|\\b5s|residu|lixo|sanitiz'],
     ['Segurança do trabalho',   'seguranca do trabalho|\\bepi|acident|empilhadeira|incidente|\\bnr.?\\d|ergonom|incendio|brigada'],
@@ -593,14 +595,38 @@ function calc(){
   S.tr.forEach(t=>t.procs.forEach(k=>{const x=P[k];if(!x)return;x.tr.push(t);if(t.sit==='venc')x.trV.push(t)}));
   S.rpl.concat(S.apl,S.gpl).forEach(p=>{if(!p.atr)return;(p.procs||[]).forEach(k=>{const x=P[k];if(x)x.pl.push(p)})});
   S.gm.forEach(o=>{if(!o.aberta)return;o.procs.forEach(k=>{const x=P[k];if(x)x.gm.push(o)})});
-  /* reincidência: ação concluída e o mesmo problema voltou no mesmo processo */
+  /* reincidência: a RNC teve todos os planos concluídos e outra RNC com a MESMA OCORRÊNCIA voltou em até 60 dias */
   const ini6=new Date(+m6[0].slice(0,4),+m6[0].slice(5)-1,1);
+  const fimPl=q=>{if(!q.planos.length||!q.planos.every(pl=>pl.done))return null;const t=Math.max(...q.planos.map(pl=>pl.concl?pl.concl.getTime():0));return t>0?t:null};
+  const ocK=r=>{const o=norm(r.ocorr);return o&&o.indexOf('nao informado')<0?o:''};
+  const porOc=new Map();S.rnc.forEach(r=>{const k=ocK(r);if(!k||!r.dt)return;if(!porOc.has(k))porOc.set(k,[]);porOc.get(k).push(r)});
+  porOc.forEach(l=>l.sort((a,b)=>a.dt-b.dt));
+  const REI=[];
+  porOc.forEach(l=>l.forEach(q=>{const t=fimPl(q);if(!t||t<ini6.getTime()||t>fimRef.getTime())return;
+    const r=l.find(z=>z!==q&&z.dt.getTime()>t&&z.dt.getTime()<=t+60*DIA);if(r)REI.push({antes:q,depois:r,dias:Math.round((r.dt.getTime()-t)/DIA)})}));
+  REI.forEach(o=>o.antes.procs.forEach(k=>{if(P[k])P[k].reinc.push(o)}));
+  /* AUDITORIA: o mesmo item reprovou em 2+ auditorias do mesmo galpão (6 meses) */
+  const ncs=S.aud.filter(a=>a.c==='nok'&&a.dt&&a.dt>=ini6&&a.dt<=fimRef);
+  const gA=new Map();ncs.forEach(a=>{const k=norm(a.tit)+'|'+a.gp;let o=gA.get(k);if(!o){o={tit:a.tit,local:a.local,gp:a.gp,procs:a.procs,m:new Map()};gA.set(k,o)}if(!o.m.has(a.cod))o.m.set(a.cod,{cod:a.cod,dt:a.dt,link:a.link})});
+  const AREP=[...gA.values()].map(o=>{o.auds=[...o.m.values()].sort((x,y)=>x.dt-y.dt);return o}).filter(o=>o.auds.length>=2).sort((x,y)=>y.auds.length-x.auds.length||y.auds[y.auds.length-1].dt-x.auds[x.auds.length-1].dt);
+  /* AUDITORIA: plano concluído e o item reprovou de novo em auditoria posterior (até 120 dias) */
+  const APL=[];S.apl.forEach(pl=>{if(!pl.done||!pl.item||!pl.fim)return;const t=pl.fim.getTime();if(t<ini6.getTime()-60*DIA||t>fimRef.getTime())return;
+    const it=norm(pl.item),a=S.aud.filter(z=>z.c==='nok'&&z.dt&&norm(z.tit)===it&&z.dt.getTime()>t&&z.dt.getTime()<=t+120*DIA&&z.dt<=fimRef).sort((x,y)=>x.dt-y.dt)[0];
+    if(a)APL.push({pl,a,dias:Math.round((a.dt.getTime()-t)/DIA),procs:a.procs})});
+  /* AUDITORIA × RNC: item reprovado na auditoria e, em até 60 dias, RNCs no mesmo processo */
+  const AXR=[];const vistoAX=new Set();
+  ncs.slice().sort((x,y)=>x.dt-y.dt).forEach(a=>{if(!a.procs.length)return;const k=norm(a.tit)+'|'+a.gp+'|'+a.cod;if(vistoAX.has(k))return;vistoAX.add(k);
+    const t=a.dt.getTime(),rs=S.rnc.filter(r=>r.dt&&r.dt.getTime()>=t&&r.dt.getTime()<=t+60*DIA&&r.procs.some(q=>a.procs.indexOf(q)>=0));
+    if(rs.length)AXR.push({a,rs,ocs:[...new Set(rs.map(r=>r.ocorr||r.cat).filter(Boolean))]})});
+  AXR.sort((x,y)=>y.rs.length-x.rs.length);
+  PROC.forEach(p=>{const x=P[p.k];x.arep=AREP.filter(o=>o.procs.indexOf(p.k)>=0);x.apl=APL.filter(o=>o.procs.indexOf(p.k)>=0);x.axr=AXR.filter(o=>o.a.procs.indexOf(p.k)>=0)});
+  /* RNCs por ocorrência (campo Ocorrência da RNC) */
+  const OC=[];porOc.forEach((l,k)=>{const s={};m12.forEach(mm=>s[mm]=0);l.forEach(r=>{const mm=mkD(r.dt);if(s[mm]!=null)s[mm]++});
+    const mes=s[ref]||0,ant=m3ant.reduce((a,mm)=>a+(l.filter(r=>mkD(r.dt)===mm).length),0)/3;
+    const pl=l.flatMap(r=>r.planos).filter(p=>p.atr).length, sp=l.flatMap(r=>r.planos.filter(p=>!p.done&&!p.ina)).length;
+    OC.push({nome:l[l.length-1].ocorr,mes,ant,s,n12:m12.reduce((a,mm)=>a+s[mm],0),pl,ab:sp,rei:REI.filter(o=>ocK(o.antes)===k).length,procs:[...new Set(l.flatMap(r=>r.procs))],semPlano:l.filter(r=>mkD(r.dt)===ref&&!r.planos.length).length})});
+  const semOc=S.rnc.filter(r=>!ocK(r));
   PROC.forEach(p=>{const x=P[p.k];
-    const L=S.rnc.filter(r=>r.dt&&r.procs.indexOf(p.k)>=0).sort((a,b)=>a.dt-b.dt);
-    const fimPl=q=>{if(!q.planos.length||!q.planos.every(pl=>pl.done))return null;const t=Math.max(...q.planos.map(pl=>pl.concl?pl.concl.getTime():0));return t>0?t:null};
-    L.forEach(q=>{const t=fimPl(q);if(!t||t<ini6.getTime()||t>fimRef.getTime())return;const oc=norm(q.ocorr||q.cat);if(!oc||oc.indexOf('nao informado')>=0)return;
-      const r=L.find(z=>z!==q&&z.dt.getTime()>t&&z.dt.getTime()<=t+60*DIA&&norm(z.ocorr||z.cat)===oc);
-      if(r)x.reinc.push({antes:q,depois:r})});
     /* itens reprovados em mais de uma auditoria (últimos 6 meses) */
     const g=new Map();S.aud.forEach(a=>{if(a.c!=='nok'||a.procs.indexOf(p.k)<0||m6.indexOf(mkD(a.dt))<0)return;const k=norm(a.tit);let o=g.get(k);if(!o){o={tit:a.tit,local:a.local,auds:new Set(),ult:a.dt};g.set(k,o)}o.auds.add(a.cod);if(a.dt>o.ult)o.ult=a.dt});
     x.ncRep=[...g.values()].filter(o=>o.auds.size>=2).sort((a,b)=>b.auds.size-a.auds.size);
@@ -624,7 +650,7 @@ function calc(){
     x.rec=recomendar(x);
   });
   const L=PROC.map(p=>P[p.k]).sort((a,b)=>b.score-a.score||b.sinais-a.sinais);
-  S.R={ref,m12,m3,m6,P,L};
+  S.R={ref,m12,m3,m6,P,L,REI,AREP,APL,AXR,OC:OC.sort((a,b)=>b.mes-a.mes||b.n12-a.n12),semOc:semOc.length,semOcM:semOc.filter(r=>mkD(r.dt)===ref).length};
 }
 function frase(x){
   const e=[];
@@ -647,7 +673,9 @@ function recomendar(x){
     add(falhas?1:2,'Treinamento',(falhas?'Retreinar a equipe: ':'Regularizar ')+nf(x.trV.length)+' treinamentos vencidos de '+nf(x.pess)+(x.pess===1?' pessoa':' pessoas')+' ('+top.join('; ')+')',falhas?'falhas no processo + treinamento vencido':'aderência de treinamento '+fp(x.trAd))}
   if(falhas>=3&&x.trAd!=null&&x.trAd>=CONFIG.META_TREIN&&!x.popV.length) add(1,'Processo','A equipe está treinada ('+fp(x.trAd)+') e mesmo assim houve '+nf(falhas)+' falhas: revisar o método do processo e o POP','treinamento em dia, falhas continuam');
   x.ncRep.slice(0,2).forEach(o=>add(1,'Auditoria','Item “'+o.tit+'” reprovado em '+nf(o.auds.size)+' auditorias seguidas: tratar a causa raiz','reprovação repetida nos últimos 6 meses'));
-  x.reinc.slice(0,2).forEach(o=>add(1,'Eficácia','A ação da '+o.antes.cod+' foi concluída, mas o problema voltou ('+o.depois.cod+', '+(o.depois.ocorr||o.depois.cat)+'): reavaliar a causa e a eficácia','reincidência após plano concluído'));
+  x.reinc.slice(0,2).forEach(o=>add(1,'Eficácia','“'+o.antes.ocorr+'”: a ação da '+o.antes.cod+' foi concluída e a ocorrência voltou '+nf(o.dias)+' dias depois ('+o.depois.cod+'): reavaliar a causa e a eficácia','mesma ocorrência voltou após plano concluído'));
+  (x.apl||[]).slice(0,2).forEach(o=>add(1,'Eficácia','O plano '+o.pl.cod+' da auditoria foi concluído, mas o item “'+o.a.tit+'” reprovou de novo '+nf(o.dias)+' dias depois ('+o.a.cod+'): reavaliar a ação','ação da auditoria não segurou'));
+  (x.axr||[]).filter(o=>o.rs.length>=2).slice(0,1).forEach(o=>add(2,'Auditoria × RNC','A auditoria '+o.a.cod+' apontou “'+o.a.tit+'” em '+fmtD(o.a.dt)+' e depois vieram '+nf(o.rs.length)+' RNCs no processo ('+o.ocs.slice(0,2).join(', ')+'): tratar o item da auditoria como causa','a auditoria avisou antes da RNC'));
   if(x.subiu) add(1,'RNC','RNCs subiram de '+(Math.round(x.rncMed*10)/10).toLocaleString('pt-BR')+' por mês para '+nf(x.rncM.length)+' no mês: investigar o que mudou','aumento acima de 20% sobre a média de 3 meses');
   if(x.pl.length){const mx=x.pl.slice().sort((a,b)=>b.dias-a.dias)[0];add(x.pl.length>=3?1:2,'Planos','Cobrar '+nf(x.pl.length)+(x.pl.length===1?' plano atrasado':' planos atrasados')+' (maior atraso: '+nf(mx.dias)+' dias · '+mx.resp+')','ações em atraso no processo')}
   if(x.gm.length&&falhas) add(3,'GMUD','Acompanhar o efeito da mudança em andamento ('+x.gm.slice(0,2).map(o=>o.cod).join(', ')+') nas falhas do processo','há GMUD aberta e falhas no mês');
@@ -738,7 +766,7 @@ function totais(){
   const aM=S.aud.filter(a=>mkD(a.dt)===ref), av=aM.filter(a=>a.c==='ok'||a.c==='par'||a.c==='nok');
   const ad=av.length?av.reduce((s,a)=>s+(a.c==='ok'?1:a.c==='par'?.5:0),0)/av.length*100:null;
   const pl=S.rpl.concat(S.apl,S.gpl).filter(p=>p.atr);
-  const reinc=new Set();R.L.forEach(x=>x.reinc.forEach(o=>reinc.add(o.antes.cod)));
+  const reinc=new Set(R.REI.map(o=>o.antes.cod));
   const pess=new Set(S.tr.filter(t=>t.sit==='venc').map(t=>t.col)).size;
   return {rM:rM.length,rAnt,nc:aM.filter(a=>a.c==='nok').length,ad,audN:new Set(aM.map(a=>a.cod)).size,popV:S.pop.filter(d=>d.st==='vencido').length,popV30:S.pop.filter(d=>d.st==='v30').length,
     pess,trV:S.tr.filter(t=>t.sit==='venc').length,pl:pl.length,reinc:reinc.size,crit:R.L.filter(x=>x.nivel==='critico').length,aten:R.L.filter(x=>x.nivel==='atencao').length};
@@ -791,13 +819,14 @@ function vProc(){
   h+='<div class="grid g11">'
     +card('Planos de ação atrasados',nf(x.pl.length)+' planos',tb([['Origem'],['Plano'],['Responsável'],['Atraso',1]],x.pl.slice().sort((a,b)=>b.dias-a.dias).slice(0,15).map(p=>'<tr><td class="nw">'+esc(p.orig)+' '+lk(p.link,p.occ||'')+'</td><td><div class="trunc" style="max-width:240px" title="'+esc(p.nome)+'">'+esc(p.cod+' · '+p.nome)+'</div></td><td><div class="trunc" style="max-width:150px">'+esc(p.resp)+'</div></td><td class="num nw" style="color:var(--venc);font-weight:600">'+nf(p.dias)+' d</td></tr>'),'Nenhum plano atrasado no processo. 🎉'))
     +card('Ações que não seguraram e GMUDs','plano concluído e o problema voltou · mudanças em andamento',
-      tb([['Antes'],['Voltou em'],['Ocorrência']],x.reinc.slice().sort((p,q)=>q.depois.dt-p.depois.dt).slice(0,12).map(o=>'<tr><td class="nw">'+lk(o.antes.link,o.antes.cod)+' <span class="mut">'+fmtD(o.antes.dt)+'</span></td><td class="nw">'+lk(o.depois.link,o.depois.cod)+' <span class="mut">'+fmtD(o.depois.dt)+'</span></td><td><div class="trunc" style="max-width:200px">'+esc(o.depois.ocorr||o.depois.cat)+'</div></td></tr>'),'Nenhuma reincidência nos últimos 6 meses.')+(x.reinc.length>12?'<div class="mut" style="margin-top:6px;font-size:12px">mostrando as 12 mais recentes de '+nf(x.reinc.length)+'</div>':'')
+      tb([['Antes'],['Voltou em'],['Ocorrência']],x.reinc.slice().sort((p,q)=>q.depois.dt-p.depois.dt).slice(0,12).map(o=>'<tr><td class="nw">'+lk(o.antes.link,o.antes.cod)+' <span class="mut">'+fmtD(o.antes.dt)+'</span></td><td class="nw">'+lk(o.depois.link,o.depois.cod)+' <span class="mut">'+o.dias+' d depois</span></td><td><div class="trunc" style="max-width:200px">'+esc(o.antes.ocorr)+'</div></td></tr>'),'Nenhuma reincidência nos últimos 6 meses.')+(x.reinc.length>12?'<div class="mut" style="margin-top:6px;font-size:12px">mostrando as 12 mais recentes de '+nf(x.reinc.length)+'</div>':'')
       +'<div style="height:10px"></div>'+tb([['GMUD'],['Título'],['Planos',1]],x.gm.map(o=>'<tr><td class="nw">'+lk(o.link,o.cod)+'</td><td><div class="trunc" style="max-width:260px" title="'+esc(o.tit)+'">'+esc(o.tit)+'</div></td><td class="num">'+nf(o.n)+(o.atr?' <span style="color:var(--venc)">('+o.atr+' atras.)</span>':'')+'</td></tr>'),'Nenhuma GMUD aberta no processo.'))+'</div>';
   return h;
 }
 function vCorr(){
   const R=S.R, L=processosVis(), m6=R.m6;
   let h=secT('3','Cruzamentos','onde uma fonte confirma a outra');
+  h+=tabOcorr(R,L);
   /* auditoria confirma RNC: mês × processo */
   const cel=(x,m)=>{const r=x.serR[m]||0,n=x.serN[m]||0;const both=r&&n;return '<td class="num hc" title="'+esc(x.l)+' · '+lab(m)+'\nRNCs: '+r+'\nNCs de auditoria: '+n+'" style="'+(both?'background:rgba(192,48,79,'+Math.min(.9,.25+(r+n)/20)+');color:#fff;font-weight:600':r||n?'background:#FDF3D9;color:#7A5300':'color:#A9B4C6')+'">'+(r||n?r+' · '+n:'—')+'</td>'};
   h+=card('A auditoria confirma a RNC?','RNCs · NCs de auditoria por mês · vermelho = as duas fontes acusaram o processo no mesmo mês',
@@ -811,17 +840,61 @@ function vCorr(){
     +card('Treinamento × falhas','cada bolha é um processo',dispersao(L))+'</div>';
   /* repetidos e reincidência */
   const rep=[];L.forEach(x=>x.ncRep.forEach(o=>rep.push({x,o})));rep.sort((a,b)=>b.o.auds.size-a.o.auds.size);
-  const rei=[];L.forEach(x=>x.reinc.forEach(o=>rei.push({x,o})));rei.sort((a,b)=>b.o.depois.dt-a.o.depois.dt);
+  const ks=new Set(L.map(x=>x.k)),rei=R.REI.filter(o=>!o.antes.procs.length||o.antes.procs.some(k=>ks.has(k))).map(o=>({o})).sort((a,b)=>b.o.depois.dt-a.o.depois.dt);
   h+='<div class="grid g11">'+card('Itens reprovados em várias auditorias','mesmo item não conforme em 2 ou mais auditorias · 6 meses',
     rep.length?'<div class="tw"><table><thead><tr><th>Processo</th><th>Item</th><th>Local</th><th class="num">Auditorias</th><th>Última</th></tr></thead><tbody>'+rep.slice(0,14).map(({x,o})=>'<tr><td><div class="trunc" style="max-width:140px">'+esc(x.l)+'</div></td><td><div class="trunc" style="max-width:260px" title="'+esc(o.tit)+'">'+esc(o.tit)+'</div></td><td><div class="trunc" style="max-width:130px">'+esc(o.local)+'</div></td><td class="num" style="color:var(--venc);font-weight:600">'+o.auds.size+'</td><td class="nw">'+fmtD(o.ult)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhum item reprovado em mais de uma auditoria. 🎉</div>')
-    +card('Reincidência: a ação não segurou','plano da RNC concluído e o mesmo problema voltou no processo em até 60 dias · conclusões dos últimos 6 meses',
-    rei.length?'<div class="tw"><table><thead><tr><th>Processo</th><th>Ocorrência</th><th>Antes</th><th>Voltou</th><th class="num">Dias depois</th></tr></thead><tbody>'+rei.slice(0,14).map(({x,o})=>{const fim=Math.max(...o.antes.planos.map(p=>p.concl?p.concl.getTime():0));return '<tr><td><div class="trunc" style="max-width:140px">'+esc(x.l)+'</div></td><td><div class="trunc" style="max-width:170px">'+esc(o.depois.ocorr||o.depois.cat)+'</div></td><td class="nw">'+lk(o.antes.link,o.antes.cod)+'</td><td class="nw">'+lk(o.depois.link,o.depois.cod)+'</td><td class="num">'+nf(Math.round((o.depois.dt-fim)/DIA))+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">Nenhuma reincidência encontrada. 🎉</div>')+'</div>';
+    +card('Reincidência: a ação não segurou','planos da RNC concluídos e outra RNC com a mesma ocorrência em até 60 dias · '+nf(rei.length)+' casos em 6 meses',
+    rei.length?'<div class="tw"><table><thead><tr><th>Ocorrência</th><th>Processo</th><th>Antes</th><th>Voltou</th><th class="num">Dias depois</th></tr></thead><tbody>'+rei.slice(0,14).map(({o})=>'<tr><td><div class="trunc" style="max-width:200px" title="'+esc(o.antes.ocorr)+'">'+esc(o.antes.ocorr)+'</div></td><td><div class="trunc" style="max-width:130px">'+esc(o.antes.procs.map(PL).join(', ')||'—')+'</div></td><td class="nw">'+lk(o.antes.link,o.antes.cod)+'</td><td class="nw">'+lk(o.depois.link,o.depois.cod)+'</td><td class="num">'+nf(o.dias)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhuma reincidência encontrada. 🎉</div>')+'</div>';
+  return h;
+}
+function tabOcorr(R,L){
+  const ks=new Set(L.map(x=>x.k)), O=R.OC.filter(o=>!o.procs.length||o.procs.some(k=>ks.has(k)));
+  if(!O.length) return card('RNCs por ocorrência','campo Ocorrência da RNC','<div class="empty">Nenhuma RNC com o campo Ocorrência preenchido.</div>','margin-bottom:14px');
+  const ms=R.m12.slice(-6), mx=Math.max(1,...O.map(o=>Math.max(...ms.map(m=>o.s[m]))));
+  return card('RNCs por ocorrência','campo Ocorrência da RNC · '+labL(R.ref)+' · '+nf(R.semOc)+' RNCs sem ocorrência preenchida ('+nf(R.semOcM)+' no mês) ficam fora desta tabela',
+    '<div class="tw"><table class="mr"><thead><tr><th>Ocorrência</th><th>Processo ligado</th>'+ms.map(m=>'<th class="num">'+lab(m)+'</th>').join('')+'<th class="num">Média 3 meses</th><th class="num">12 meses</th><th class="num">Planos atrasados</th><th class="num">Ações que não seguraram</th><th class="num">Sem plano no mês</th></tr></thead><tbody>'
+    +O.slice(0,25).map(o=>'<tr><td><b>'+esc(o.nome)+'</b></td><td><div class="trunc" style="max-width:170px" title="'+esc(o.procs.map(PL).join(', '))+'">'+esc(o.procs.map(PL).join(', ')||'— sem processo —')+'</div></td>'
+      +ms.map(m=>heatTd(o.s[m],mx,nf(o.s[m])+(m===R.ref?' '+seta(o.mes,o.ant||null):''),o.nome+' · '+lab(m)+'\nRNCs: '+o.s[m],'47,107,255')).join('')
+      +'<td class="num">'+(Math.round(o.ant*10)/10).toLocaleString('pt-BR')+'</td><td class="num">'+nf(o.n12)+'</td><td class="num" style="'+(o.pl?'color:var(--venc);font-weight:600':'')+'">'+nf(o.pl)+'</td><td class="num" style="'+(o.rei?'color:var(--venc);font-weight:700':'')+'">'+nf(o.rei)+'</td><td class="num" style="'+(o.semPlano?'color:#7A5300;font-weight:600':'')+'">'+nf(o.semPlano)+'</td></tr>').join('')
+    +'</tbody></table></div>'+(O.length>25?'<div class="mut" style="margin-top:6px;font-size:12px">mostrando as 25 ocorrências com mais RNCs de '+nf(O.length)+'</div>':''),'margin-bottom:14px');
+}
+function vRei(){
+  const R=S.R, L=processosVis(), ks=new Set(L.map(x=>x.k)), em=pr=>!pr.length||pr.some(k=>ks.has(k));
+  const REI=R.REI.filter(o=>em(o.antes.procs)), AREP=R.AREP.filter(o=>em(o.procs)), APL=R.APL.filter(o=>em(o.procs)), AXR=R.AXR.filter(o=>em(o.a.procs));
+  let h=secT('4','Reincidências · auditoria × RNC','o problema voltou? · últimos 6 meses até '+labL(R.ref));
+  h+='<div class="grid g5">'
+    +kpi(REI.length?'k-venc':'k-ok',nf(REI.length),'RNC: a ocorrência voltou','planos concluídos e a mesma ocorrência em até 60 dias','x','')
+    +kpi('',nf(new Set(REI.map(o=>norm(o.antes.ocorr))).size),'Ocorrências que reincidiram','tipos de ocorrência diferentes','x','')
+    +kpi(AREP.length?'k-venc':'k-ok',nf(AREP.length),'Auditoria: item reprovou de novo','mesmo item em 2+ auditorias do galpão','x','')
+    +kpi(APL.length?'k-venc':'k-ok',nf(APL.length),'Ação da auditoria não segurou','plano concluído e o item reprovou de novo','x','')
+    +kpi(AXR.length?'k-v30':'k-ok',nf(AXR.length),'Auditoria avisou, RNC veio','item reprovado e RNC no processo em até 60 dias','x','')
+    +'</div>';
+  const G=L.map(x=>({x,a:x.reinc.length,b:(x.arep||[]).length,c:(x.apl||[]).length,d:(x.axr||[]).length})).map(o=>(o.t=o.a+o.b+o.c+o.d,o.duas=o.a>0&&(o.b+o.c)>0,o)).filter(o=>o.t).sort((p,q)=>q.duas-p.duas||q.t-p.t);
+  const mx=k=>Math.max(1,...G.map(o=>o[k]));
+  h+=card('Reincidência por processo','processos em que o problema voltou · ★ = voltou na RNC e na auditoria · clique para abrir o processo',
+    G.length?'<div class="tw"><table class="mr"><thead><tr><th>Processo</th><th>Nível</th><th class="num">RNC: ocorrência voltou</th><th class="num">Auditoria: item reprovou de novo</th><th class="num">Ação da auditoria não segurou</th><th class="num">Auditoria avisou → RNC</th><th class="num">Total</th></tr></thead><tbody>'
+    +G.map(o=>'<tr class="clk" data-a="proc" data-v="'+o.x.k+'"><td><b>'+(o.duas?'★ ':'')+esc(o.x.l)+'</b></td><td>'+pNiv(o.x.nivel)+'</td>'
+      +heatTd(o.a,mx('a'),nf(o.a),o.x.l+'\nRNCs em que a mesma ocorrência voltou: '+o.a)+heatTd(o.b,mx('b'),nf(o.b),o.x.l+'\nItens reprovados em 2+ auditorias: '+o.b)+heatTd(o.c,mx('c'),nf(o.c),o.x.l+'\nPlanos de auditoria concluídos que não seguraram: '+o.c)+heatTd(o.d,mx('d'),nf(o.d),o.x.l+'\nItens reprovados seguidos de RNC em 60 dias: '+o.d,'227,160,8')
+      +'<td class="num"><b>'+nf(o.t)+'</b></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Nenhuma reincidência nos últimos 6 meses. 🎉</div>','margin-bottom:14px');
+  const tb=(cols,rows,vazio,n)=>rows.length?'<div class="tw"><table><thead><tr>'+cols.map(c=>'<th'+(c[1]?' class="num"':'')+'>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,n||15).join('')+'</tbody></table></div>'+(rows.length>(n||15)?'<div class="mut" style="margin-top:6px;font-size:12px">mostrando '+(n||15)+' de '+nf(rows.length)+'</div>':''):'<div class="empty">'+vazio+'</div>';
+  const procTxt=pr=>esc(pr.map(PL).join(', ')||'—');
+  h+='<div class="grid g11">'
+    +card('RNC: a ocorrência voltou','RNC com todos os planos concluídos e a mesma Ocorrência em até 60 dias',
+      tb([['Ocorrência'],['Antes'],['Voltou'],['Dias',1],['Processo']],REI.slice().sort((p,q)=>q.depois.dt-p.depois.dt).map(o=>'<tr><td><div class="trunc" style="max-width:190px" title="'+esc(o.antes.ocorr)+'"><b>'+esc(o.antes.ocorr)+'</b></div></td><td class="nw">'+lk(o.antes.link,o.antes.cod)+'</td><td class="nw">'+lk(o.depois.link,o.depois.cod)+' <span class="mut">'+fmtD(o.depois.dt)+'</span></td><td class="num">'+nf(o.dias)+'</td><td><div class="trunc" style="max-width:140px">'+procTxt(o.antes.procs)+'</div></td></tr>'),'Nenhuma ocorrência voltou depois de ação concluída. 🎉'))
+    +card('Auditoria: o item reprovou de novo','mesmo item não conforme em 2 ou mais auditorias do mesmo galpão',
+      tb([['Item auditado'],['Galpão'],['Vezes',1],['Auditorias']],AREP.map(o=>'<tr><td><div class="trunc" style="max-width:230px" title="'+esc(o.tit)+'"><b>'+esc(o.tit)+'</b></div><small class="mut">'+esc(o.local)+'</small></td><td class="nw">'+esc(o.gp)+'</td><td class="num" style="color:var(--venc);font-weight:700">'+o.auds.length+'</td><td style="white-space:normal">'+o.auds.slice(-4).map(z=>lk(z.link,z.cod)+' <span class="mut">'+fmtD(z.dt)+'</span>').join(' · ')+'</td></tr>'),'Nenhum item reprovado em mais de uma auditoria. 🎉'))+'</div>';
+  h+='<div class="grid g11">'
+    +card('Ação da auditoria não segurou','plano da auditoria concluído e o mesmo item reprovou na auditoria seguinte (até 120 dias)',
+      tb([['Plano'],['Responsável'],['Item'],['Reprovou de novo'],['Dias',1]],APL.map(o=>'<tr><td class="nw">'+lk(o.pl.link,o.pl.cod)+'</td><td><div class="trunc" style="max-width:130px">'+esc(o.pl.resp)+'</div></td><td><div class="trunc" style="max-width:210px" title="'+esc(o.a.tit)+'">'+esc(o.a.tit)+'</div></td><td class="nw">'+lk(o.a.link,o.a.cod)+' <span class="mut">'+fmtD(o.a.dt)+'</span></td><td class="num">'+nf(o.dias)+'</td></tr>'),'Nenhum plano de auditoria concluído voltou a reprovar. 🎉'))
+    +card('A auditoria avisou e a RNC aconteceu','item reprovado na auditoria e RNCs no mesmo processo nos 60 dias seguintes',
+      tb([['Auditoria'],['Item reprovado'],['RNCs depois',1],['Ocorrências']],AXR.map(o=>'<tr><td class="nw">'+lk(o.a.link,o.a.cod)+' <span class="mut">'+fmtD(o.a.dt)+'</span><small class="mut" style="display:block">'+esc(o.a.gp)+'</small></td><td><div class="trunc" style="max-width:220px" title="'+esc(o.a.tit)+'"><b>'+esc(o.a.tit)+'</b></div><small class="mut">'+procTxt(o.a.procs)+'</small></td><td class="num" style="color:#7A5300;font-weight:700" title="'+esc(o.rs.slice(0,10).map(r=>r.cod+' · '+(r.ocorr||r.cat)).join('\n'))+'">'+nf(o.rs.length)+'</td><td><div class="trunc" style="max-width:200px" title="'+esc(o.ocs.join(', '))+'">'+esc(o.ocs.slice(0,3).join(', '))+'</div></td></tr>'),'Nenhum item de auditoria seguido de RNC no mesmo processo. 🎉'))+'</div>';
+  h+='<p class="note">Reincidência na RNC compara exatamente o campo Ocorrência (RNCs com Ocorrência em branco ficam de fora). Na auditoria compara o título do item no mesmo galpão. “Ação da auditoria não segurou” usa a data de término do plano concluído. “Auditoria avisou, RNC veio” liga o item reprovado às RNCs do mesmo processo nos 60 dias seguintes.</p>';
   return h;
 }
 function todasRec(){const o=[];processosVis().forEach(x=>x.rec.forEach(r=>o.push(Object.assign({nivel:x.nivel,score:x.score},r))));return o.sort((a,b)=>a.prio-b.prio||b.score-a.score)}
 function vRec(){
   const L=todasRec();
-  let h=secT('4','Plano de ação sugerido','o que fazer, em ordem de prioridade · pronto para a reunião e para a Ata de Análise Crítica');
+  let h=secT('5','Plano de ação sugerido','o que fazer, em ordem de prioridade · pronto para a reunião e para a Ata de Análise Crítica');
   const PR={1:['Alta','#C0304F','#FBE9ED','#8E1B35'],2:['Média','#E3A008','#FDF3D9','#7A5300'],3:['Baixa','#2F6BFF','#E3ECFF','#17409E']};
   h+='<div class="card"><div class="sc">'+[1,2,3].map(p=>'<span class="pill" style="background:'+PR[p][2]+';color:'+PR[p][3]+'">Prioridade '+PR[p][0].toLowerCase()+': <b>'+L.filter(r=>r.prio===p).length+'</b></span>').join(' ')
     +'<button class="btn sec" data-a="csv" style="margin-left:auto">Exportar CSV ('+nf(L.length)+')</button></div>';
@@ -832,7 +905,7 @@ function vRec(){
 }
 function vComo(){
   const C=S.cov;
-  let h=secT('5','Como cruzamos','de onde vêm os dados e como cada registro vira um processo');
+  let h=secT('6','Como cruzamos','de onde vêm os dados e como cada registro vira um processo');
   h+=card('Fontes de dados','lidas direto dos mesmos Web Apps dos outros painéis',
     '<div class="tw"><table><thead><tr><th>Fonte</th><th>Situação</th><th class="num">Registros</th><th class="num">Ligados a um processo</th><th>Atualizado em</th></tr></thead><tbody>'
     +Object.keys(CONFIG.FONTES).map(k=>{const f=S.fontes[k],c=C[k]||{n:0,t:0};return '<tr><td><b>'+esc(CONFIG.FONTES[k].nome)+'</b></td><td>'+(f.st==='ok'?'<span class="pill p-ok">Conectada</span>':f.st==='erro'?'<span class="pill p-vencido" title="'+esc(f.msg)+'">Erro</span>':f.st==='demo'?'<span class="pill p-v30">Exemplo</span>':f.st==='off'?'<span class="pill p-semdata">Sem endereço</span>':'<span class="pill p-semdata">Carregando…</span>')+(f.msg?'<small class="mut" style="display:block">'+esc(f.msg)+'</small>':'')+'</td><td class="num">'+nf(c.t)+'</td><td class="num">'+(c.t?fp(c.n/c.t*100):'—')+'</td><td class="nw">'+esc(f.info||'—')+'</td></tr>'}).join('')
@@ -853,7 +926,7 @@ function render(){
   $('farol').innerHTML=t?['critico','atencao','estavel','sem'].map(n=>{const c=L.filter(x=>x.nivel===n).length;return c?'<i title="'+NIV[n].l+': '+c+' processos" style="width:'+c/t*100+'%;background:'+NIV[n].c+'"></i>':''}).join(''):'';
   let h=S.erro?'<div class="err">'+esc(S.erro)+'</div>':'';
   if(S.mode==='demo') h+='<div class="demo-b"><b>Dados de exemplo.</b> As fontes não puderam ser lidas, então o painel mostra dados fictícios só para exibir o layout. Confira os endereços em CONFIG.FONTES.</div>';
-  h+= S.tab==='proc'? vProc() : S.tab==='corr'? vCorr() : S.tab==='rec'? vRec() : S.tab==='como'? vComo() : vGeral();
+  h+= S.tab==='proc'? vProc() : S.tab==='corr'? vCorr() : S.tab==='rei'? vRei() : S.tab==='rec'? vRec() : S.tab==='como'? vComo() : vGeral();
   $('main').innerHTML=h;
 }
 
@@ -908,13 +981,13 @@ function demo(){
   const iso=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
   const dAgo=n=>new Date(HOJE.getTime()-n*DIA);
   /* processos com "problema" simulado: Separação forte, Guarda médio */
-  const ocs=[['Falta de material',.30],['Inversão de produto',.12],['Avaria no armazém',.16],['Atraso na entrega',.12],['Divergência de inventário',.08],['Erro de etiqueta',.07],['Produto vencido no estoque',.05],['Extravio no transporte',.05],['Lacre violado',.05]];
+  const ocs=[['Falta de material',.26],['Inversão de produto',.12],['Avaria no armazém',.16],['Atraso na entrega',.12],['Divergência de inventário',.08],['Erro de etiqueta',.07],['Produto vencido no estoque',.05],['Extravio De Material - Total',.05],['Extravio De Material - Parcial',.04],['Lacre violado',.05]];
   const pickOc=()=>{let x=rnd(),a=0;for(const [o,p] of ocs){a+=p;if(x<a)return o}return ocs[0][0]};
   const rc=['Código','Status','Data de emissão','Data da Ocorrência','Categoria','Tipo','Local','Cliente','Nome','Descrição','Link','Ocorrência'];
   const rr=[],pr=[];
   for(let i=0;i<520;i++){const age=Math.floor(Math.pow(rnd(),1.15)*360),oc=pickOc(),d=dAgo(age);
     const boost=oc==='Falta de material'&&age<30?1:0;
-    rr.push(['26-'+String(10000+i).slice(1),age<20?'Aberta':'Fechada',iso(d),iso(d),pick(['Operacional','Logística','Armazém']),rnd()<.6?'Não Conformidade Interna':'Reclamação do Cliente',pick(['Matriz','Sanca']),pick(['Cliente A','Cliente B','Cliente C']),oc+' – pedido '+(5000+i),'Ocorrência registrada pela operação','https://exemplo/rnc/'+i,oc]);
+    rr.push(['26-'+String(10000+i).slice(1),age<20?'Aberta':'Fechada',iso(d),iso(d),pick(['Operacional','Logística','Armazém']),rnd()<.6?'Não Conformidade Interna':'Reclamação do Cliente',pick(['Matriz','Sanca']),pick(['Cliente A','Cliente B','Cliente C']),oc+' – pedido '+(5000+i),'Ocorrência registrada pela operação','https://exemplo/rnc/'+i,rnd()<.25?'':oc]);
     if(boost) for(let j=0;j<1;j++){const d2=dAgo(Math.floor(rnd()*25));rr.push(['26-9'+String(100+i),'Aberta',iso(d2),iso(d2),'Operacional','Não Conformidade Interna','Matriz','Cliente A','Falta de material – pedido '+(9000+i),'Falta na separação do pedido','https://exemplo/rnc/x'+i,'Falta de material'])}
     if(rnd()<.55){const fim=new Date(d.getTime()+(15+Math.floor(rnd()*40))*DIA),done=fim<HOJE&&rnd()<.75;
       pr.push(['PA-'+(3000+i),'Ação para '+oc,pick(['Ana Souza','Bruno Lima','Carla Mendes','Diego Rocha']),'Corretiva',iso(d),iso(fim),done?'Concluído':'Em execução',done?iso(new Date(fim.getTime()-3*DIA)):'',rr[rr.length-1][0]])}
