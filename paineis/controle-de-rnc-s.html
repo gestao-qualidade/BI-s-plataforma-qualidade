@@ -66,8 +66,6 @@ main{max-width:98%;margin:0 auto;padding:18px 28px 40px}
 .g6{grid-template-columns:repeat(6,minmax(0,1fr))}
 .g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
 .g11{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.mtx td{white-space:nowrap}.mtx th{white-space:normal;min-width:92px;vertical-align:bottom}.mtx .q{font-weight:700;color:var(--ink,#12203A)}.mtx .v{display:block;font-size:11.5px;color:var(--mute)}
 
 /* kpis */
 .kpi{background:#fff;border:1px solid var(--line);border-left:5px solid var(--sem);border-radius:6px;padding:12px 14px;text-align:left;width:100%}
@@ -179,7 +177,7 @@ tbody tr:hover td{background:#F1F6FF}
 a{color:var(--royal)}
 @media (max-width:640px){.logo{height:64px}.tt{padding-left:14px}h1{font-size:19px}}
 
-@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g6{grid-template-columns:repeat(3,minmax(0,1fr))}.g21,.g11{grid-template-columns:minmax(0,1fr)}.band{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1100px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}.g21,.g11{grid-template-columns:minmax(0,1fr)}.band{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.hd,.fbi,main,nav{padding-left:14px;padding-right:14px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
@@ -360,7 +358,6 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-a="tab" data-v="geral" aria-selected="true">Visão geral</button>
     <button role="tab" data-a="tab" data-v="custos" aria-selected="false">Custos da não conformidade</button>
-    <button role="tab" data-a="tab" data-v="transp" aria-selected="false">Transportadoras</button>
     <button role="tab" data-a="tab" data-v="planos" aria-selected="false">Planos de ação</button>
     <button role="tab" data-a="tab" data-v="detalhe" aria-selected="false">Detalhamento</button>
   </nav>
@@ -417,7 +414,7 @@ const S={
   hoje:null, mode:'', info:'', tab:'geral', rnc:[], planos:[], fora:0, demo:false, erro:'',
   f:{ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),respPl:new Set(),status:'',q:'',dim:null},
   base:'emissao', comp:{rnc:true,plano:true,extr:false,frete:false},
-  par:{dim:'ocorr',met:'qtd'}, tr:{by:'ocorr',sem:false}, sort:{k:'dt',dir:-1}, page:0
+  par:{dim:'ocorr',met:'qtd'}, sort:{k:'dt',dir:-1}, page:0
 };
 S.hoje=inicioDia(new Date());
 
@@ -668,7 +665,7 @@ function render(){
   if(!S.rnc.length){
     el.innerHTML=h+'<div class="card empty">Nenhuma RNC com Tipo “Não conformidade interna” ou “Reclamação do cliente” foi encontrada na aba RNC'+(S.fora?' ('+nf(S.fora)+' RNCs de outros tipos foram ignoradas)':'')+'. Rode a importação e confira o nome do tipo no Qualiex.</div>';return;
   }
-  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='transp'?vTransp():S.tab==='planos'?vPlanos():vDetalhe();
+  h+=S.tab==='geral'?vGeral():S.tab==='custos'?vCustos():S.tab==='planos'?vPlanos():vDetalhe();
   el.innerHTML=h;
 }
 function farol(){
@@ -878,7 +875,7 @@ function vPlanos(){
 }
 
 /* ---------- detalhamento ---------- */
-const COLS=[['cod','Código RNC'],['nome','Nome da RNC'],['plcod','Código do plano de ação'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['ocorr','Ocorrência'],['transp','Transportadora'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
+const COLS=[['cod','Código RNC'],['nome','Nome da RNC'],['plcod','Código do plano de ação'],['dt','Data'],['tipo','Tipo'],['cliente','Cliente'],['ocorr','Ocorrência'],['categoria','Categoria'],['status','Status'],['resp','Responsável'],['custo','Custo'],['pl','Planos']];
 function valSort(r,k){
   if(k==='dt'){const d=dt(r);return d?d.getTime():0}
   if(k==='custo')return custo(r); if(k==='pl')return r.nPlAtr*1000+r.nPl;
@@ -890,84 +887,23 @@ function vDetalhe(){
   rows=rows.map(r=>[valSort(r,k),r]).sort((a,b)=>(a[0]<b[0]?-1:a[0]>b[0]?1:0)*d).map(x=>x[1]);
   const PP=100,pages=Math.max(1,Math.ceil(rows.length/PP)); if(S.page>=pages)S.page=pages-1;
   const sl=rows.slice(S.page*PP,S.page*PP+PP), ct=rows.reduce((a,r)=>a+custo(r),0);
-  let h='';
-  if(S.voltar==='transp'&&S.f.dim&&S.f.dim.k==='transp'){
-    const oc=S.f.ocorr.size===1?[...S.f.ocorr][0]:'', tp=S.f.tipo?tipoInfo(S.f.tipo).l:'';
-    h+='<div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span>RNCs da transportadora <b>'+esc(S.f.dim.v)+'</b>'+(oc?' · ocorrência <b>'+esc(oc)+'</b>':'')+(tp?' · <b>'+esc(tp)+'</b>':'')+' — ordenadas do maior para o menor custo</span>'
-      +'<button class="btn sec" data-a="trvoltar" style="margin-left:auto;border-radius:99px">← Voltar para Transportadoras</button></div>';
-  }
-  h+='<div class="card"><div class="sc"><span class="ks3" style="margin:0"><b>'+nf(rows.length)+'</b> RNCs · custo total <b>'+brl(ct)+'</b></span><button class="btn sec" data-a="csv" style="margin-left:auto;border-radius:99px">Exportar CSV ('+nf(rows.length)+')</button></div>';
+  let h='<div class="card"><div class="sc"><span class="ks3" style="margin:0"><b>'+nf(rows.length)+'</b> RNCs · custo total <b>'+brl(ct)+'</b></span><button class="btn sec" data-a="csv" style="margin-left:auto;border-radius:99px">Exportar CSV ('+nf(rows.length)+')</button></div>';
   if(!rows.length) return h+'<div class="empty">Nenhuma RNC com os filtros atuais.</div></div>';
-  h+='<div class="tw"><table class="tbd" style="min-width:2050px"><colgroup><col style="width:6%"><col style="width:16%"><col style="width:9%"><col style="width:6%"><col style="width:5%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:6%"><col style="width:8%"></colgroup><thead><tr>'
+  h+='<div class="tw"><table class="tbd" style="min-width:1900px"><colgroup><col style="width:6%"><col style="width:17%"><col style="width:10%"><col style="width:6%"><col style="width:5%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:6%"><col style="width:8%"></colgroup><thead><tr>'
     +COLS.map(c=>'<th'+(c[0]==='custo'?' class="num"':'')+'><button data-a="sort" data-v="'+c[0]+'">'+c[1]+(S.sort.k===c[0]?(S.sort.dir>0?' ▲':' ▼'):'')+'</button></th>').join('')+'</tr></thead><tbody>'
     +sl.map(r=>{const sc=norm(r.status);const cls=sc==='aberta'?'aberta':sc==='concluida'?'concluida':sc==='cancelada'?'cancelada':'reprovada';
       return '<tr><td class="nw">'+(r.link?'<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+esc(r.cod)+'</a>':esc(r.cod))+'</td><td><div class="trunc" title="'+esc(r.nome)+'">'+(r.nome?esc(r.nome):'<span style="color:var(--mute)">—</span>')+'</div></td><td>'+(r.planos.length?r.planos.map(p=>'<span class="nw">'+esc(p.cod)+'</span>').join(', '):'<span style="color:var(--mute)">—</span>')+'</td><td class="nw">'+fmtData(dt(r))+'</td><td><span class="pill p-'+r.tipo+'">'+(r.tipo==='nci'?'Interna':'Cliente')+'</span></td>'
-      +'<td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><div class="trunc" title="'+esc(r.ocorr)+'">'+esc(r.ocorr)+'</div></td><td><div class="trunc" title="'+esc(r.transp)+'">'+esc(r.transp)+'</div></td><td><div class="trunc" title="'+esc(r.categoria)+'">'+esc(r.categoria)+'</div></td><td><span class="pill p-'+cls+'">'+esc(r.status||'—')+'</span></td>'
+      +'<td><div class="trunc" title="'+esc(r.cliente)+'">'+esc(r.cliente)+'</div></td><td><div class="trunc" title="'+esc(r.ocorr)+'">'+esc(r.ocorr)+'</div></td><td><div class="trunc" title="'+esc(r.categoria)+'">'+esc(r.categoria)+'</div></td><td><span class="pill p-'+cls+'">'+esc(r.status||'—')+'</span></td>'
       +'<td><div class="trunc" title="'+esc(r.resp)+'">'+esc(r.resp)+'</div></td><td class="num nw">'+(custo(r)?brl(custo(r)):'—')+'</td><td class="nw">'+(r.nPl?r.nPl+' · '+(r.nPlAtr?'<b style="color:var(--venc)">'+r.nPlAtr+' atras.</b>':'em dia'):'<span style="color:var(--mute)">sem plano</span>')+'</td></tr>'}).join('')
     +'</tbody></table></div><div class="pg"><span>'+nf(S.page*PP+1)+'–'+nf(Math.min(rows.length,S.page*PP+PP))+' de '+nf(rows.length)+'</span><button data-a="pg" data-v="-1" '+(S.page===0?'disabled':'')+'>Anterior</button><button data-a="pg" data-v="1" '+(S.page>=pages-1?'disabled':'')+'>Próxima</button></div></div>';
   return h+notaFora();
 }
 function exportarCsv(){
   const rows=filtrar(S.rnc),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Código','Nome da RNC','Códigos dos planos de ação','Data','Tipo','Cliente','Ocorrência','Transportadora','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
-  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,r.nome,r.planos.map(p=>p.cod).join(' | '),fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.ocorr,r.transp,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
+  const head=['Código','Nome da RNC','Códigos dos planos de ação','Data','Tipo','Cliente','Ocorrência','Categoria','Status','Responsável','Local','Custo RNC','Custo planos','Extravio/NF','Frete','Custo considerado','Planos','Planos atrasados','Link'];
+  const out=[head.map(q).join(';')].concat(rows.map(r=>[r.cod,r.nome,r.planos.map(p=>p.cod).join(' | '),fmtData(dt(r)),tipoInfo(r.tipo).l,r.cliente,r.ocorr,r.categoria,r.status,r.resp,r.local,r.custoRnc,r.custoPlanos,r.extr,r.frete,custo(r),r.nPl,r.nPlAtr,r.link].map(q).join(';')));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out.join('\r\n')],{type:'text/csv;charset=utf-8'}));
   a.download='rnc_'+S.hoje.toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
-}
-
-
-/* ---------- transportadoras ---------- */
-function vTransp(){
-  const rows=filtrar(S.rnc);
-  return card('Composição do custo considerada','mesma seleção da aba Custos',
-    '<div class="comp">'+COMP.map(c=>'<button data-a="comp" data-v="'+c.k+'" aria-pressed="'+S.comp[c.k]+'"><i class="sw" style="background:'+c.cor+'"></i>'+c.l+'</button>').join('')+'</div>',' style="margin-bottom:14px"')
-    +blocoTransp(rows)+notaFora();
-}
-const SEM_TR='(não informado)';
-const COR_SEG=['#0A1F6B','#2F6BFF','#F08A24','#0E8A7D','#C0304F','#7B5CD6','#E0B21B','#5BA4E6'];
-function blocoTransp(rows){
-  const nSem=rows.filter(r=>r.transp===SEM_TR).length;
-  const rr=S.tr.sem?rows:rows.filter(r=>r.transp!==SEM_TR);
-  let series,segOf;
-  if(S.tr.by==='tipo'){series=TIPOS;segOf=r=>r.tipo}
-  else{
-    const cnt=new Map(); rr.forEach(r=>cnt.set(r.ocorr,(cnt.get(r.ocorr)||0)+1));
-    const ord=[...cnt.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt-BR')).map(x=>x[0]);
-    const top=ord.length>COR_SEG.length?ord.slice(0,COR_SEG.length-1):ord, set=new Set(top);
-    series=top.map((k,i)=>({k,l:k,cor:COR_SEG[i]}));
-    if(ord.length>top.length) series.push({k:'__outras',l:'Outras ocorrências ('+(ord.length-top.length)+')',cor:'#A9B4C6'});
-    segOf=r=>set.has(r.ocorr)?r.ocorr:'__outras';
-  }
-  const ctrl='<span class="pc2"><span class="seg" style="margin:0"><button data-a="trby" data-v="ocorr" aria-pressed="'+(S.tr.by==='ocorr')+'">Por ocorrência</button><button data-a="trby" data-v="tipo" aria-pressed="'+(S.tr.by==='tipo')+'">Por tipo (interna × cliente)</button></span>'
-    +'<span class="seg" style="margin:0"><button data-a="trsem" aria-pressed="'+S.tr.sem+'">Incluir sem transportadora'+(nSem?' ('+nf(nSem)+')':'')+'</button></span></span>';
-  const leg='<div class="leg">'+series.map(s=>'<span><i style="background:'+s.cor+'"></i>'+esc(s.l)+'</span>').join('')+'<span>Clique em uma transportadora ou em um número da matriz para ver as RNCs no Detalhamento</span></div>';
-  let h='<div class="card" style="margin-bottom:14px"><div class="ct"><h2>Transportadoras</h2><span>'+ctrl+'</span></div>';
-  if(!rr.length) return h+'<div class="empty">Nenhuma RNC com transportadora informada no escopo.</div></div>';
-  const ct=rr.reduce((a,r)=>a+custo(r),0), qtd=agrupar(rr,'transp',series,(r,s)=>segOf(r)===s.k?1:0), val=agrupar(rr,'transp',series,(r,s)=>segOf(r)===s.k?custo(r):0);
-  const topQ=qtd[0], topV=val[0];
-  h+='<div class="grid g4">'
-    +kpi('k-acc',nf(qtd.length),'Transportadoras com RNC',nf(rr.length)+' RNCs no escopo','x')
-    +kpi('k-venc',brlc(ct),'Custo das RNCs de transporte','média '+brl(ct/rr.length)+' por RNC','x')
-    +kpi('',nf(topQ.total),'Mais RNCs',esc(topQ.name)+' · '+pct(topQ.total,rr.length)+'% do total','transp',encodeURIComponent(topQ.k))
-    +kpi('k-v30',topV.total?brlc(topV.total):'—','Maior custo',topV.total?esc(topV.name)+' · '+pct(topV.total,ct)+'% do custo':'sem custo no escopo','transp',encodeURIComponent(topV.k))+'</div>';
-  h+='<div class="grid g11" style="margin-bottom:6px">'
-    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Total de RNCs por transportadora</h2><span>12 maiores</span></div>'+barrasStack(topN(qtd,12,series),series,nf,'transp')+'</div>'
-    +'<div><div class="ct" style="margin-bottom:6px"><h2 style="font-size:14px">Valor das RNCs por transportadora</h2><span>12 maiores · componentes marcados acima</span></div>'+barrasStack(topN(val,12,series),series,brlc,'transp')+'</div></div>'+leg;
-  // matriz transportadora × ocorrência
-  const vMap=new Map(val.map(g=>[g.k,g])), cols=series.filter(s=>qtd.some(g=>g.vals[s.k]));
-  const cel=(n,v,t,sk)=>!n?'<span style="color:var(--mute)">—</span>':(t!=null?'<button data-a="trcel" data-v="'+encodeURIComponent(t+'\u0001'+(sk||''))+'" title="Ver estas RNCs no Detalhamento" style="background:none;border:0;padding:0;cursor:pointer;text-align:right;font:inherit;color:inherit">':'')+'<span class="q">'+nf(n)+'</span><span class="v">'+brl(v)+'</span>'+(t!=null?'</button>':'');
-  const totQ=s=>qtd.reduce((a,g)=>a+(g.vals[s.k]||0),0), totV=s=>val.reduce((a,g)=>a+(g.vals[s.k]||0),0);
-  h+='<div class="ct" style="margin:18px 0 6px"><h2 style="font-size:14px">Matriz transportadora × '+(S.tr.by==='tipo'?'tipo':'ocorrência')+'</h2><span>quantidade e valor · clique para ver as RNCs</span></div>'
-    +'<div class="tw"><table class="mtx" style="min-width:0"><thead><tr><th>Transportadora</th>'
-    +cols.map(s=>'<th class="num"><i class="sw" style="background:'+s.cor+';display:inline-block;margin-right:5px"></i>'+esc(s.l)+'</th>').join('')
-    +'<th class="num">Total</th></tr></thead><tbody>'
-    +qtd.map(g=>{const v=vMap.get(g.k);return '<tr><td><button class="lnk" data-a="transp" data-v="'+encodeURIComponent(g.k)+'" style="background:none;border:0;padding:0;color:var(--royal);cursor:pointer;text-align:left">'+esc(g.name)+'</button></td>'
-      +cols.map(s=>'<td class="num">'+cel(g.vals[s.k]||0,v.vals[s.k]||0,g.k,s.k)+'</td>').join('')
-      +'<td class="num"><b>'+cel(g.total,v.total,g.k,'')+'</b></td></tr>'}).join('')
-    +'</tbody><tfoot><tr><td style="font-weight:700;padding-top:10px">Total</td>'
-    +cols.map(s=>'<td class="num" style="padding-top:10px">'+cel(totQ(s),totV(s))+'</td>').join('')
-    +'<td class="num" style="padding-top:10px">'+cel(rr.length,ct)+'</td></tr></tfoot></table></div>';
-  return h+'</div>';
 }
 
 /* ============================ EVENTOS ============================ */
@@ -975,7 +911,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('a[href]')) return;
   const el=e.target.closest('[data-a]'); if(!el) return;
   const a=el.dataset.a,v=el.dataset.v!=null?decodeURIComponent(el.dataset.v):'',f=S.f;
-  if(a==='tab'){S.tab=v;S.voltar='';S.page=0;render();window.scrollTo(0,0)}
+  if(a==='tab'){S.tab=v;S.page=0;render();window.scrollTo(0,0)}
   else if(a==='refresh')atualizar();
   else if(a==='clear'){S.f={ano:'',mesNum:'',tipo:'',cliente:'',cat:'',ocorr:new Set(),plano:new Set(),respPl:new Set(),status:'',q:'',dim:null};S.page=0;montarFiltros();render()}
   else if(a==='base'){S.base=v;montarFiltros();render()}
@@ -989,15 +925,6 @@ document.addEventListener('click',e=>{
   else if(a==='dim'){f.dim=(f.dim&&f.dim.k===S.par.dim&&f.dim.v===v)?null:{k:S.par.dim,v};S.page=0;render()}
   else if(a==='parmet'){S.par.met=v;render()}
   else if(a==='comp'){S.comp[v]=!S.comp[v];render()}
-  else if(a==='trby'){S.tr.by=v;render()}
-  else if(a==='trsem'){S.tr.sem=!S.tr.sem;render()}
-  else if(a==='transp'||a==='trcel'){
-    const [t,sk]=a==='trcel'?v.split('\u0001'):[v,''];
-    f.dim={k:'transp',v:t};
-    if(S.tr.by==='tipo'){f.tipo=sk||'';document.getElementById('fTipo').value=f.tipo}
-    else{f.ocorr=(sk&&sk!=='__outras')?new Set([sk]):new Set();syncMulti()}
-    S.voltar='transp';S.sort={k:'custo',dir:-1};S.page=0;S.tab='detalhe';render();window.scrollTo(0,0)}
-  else if(a==='trvoltar'){f.dim=null;f.ocorr=new Set();f.tipo='';document.getElementById('fTipo').value='';syncMulti();S.voltar='';S.page=0;S.tab='transp';render();window.scrollTo(0,0)}
   else if(a==='rm'){f.dim=null;S.page=0;render()}
   else if(a==='sort'){S.sort=S.sort.k===v?{k:v,dir:-S.sort.dir}:{k:v,dir:v==='dt'||v==='custo'||v==='pl'?-1:1};render()}
   else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}
@@ -1116,7 +1043,7 @@ document.addEventListener('click',e=>{
 },true);
 addEventListener('resize',tvEscala);
 setInterval(()=>{if(S.modo==='tv'&&!document.hidden)tvRender()},60000);
-if(!(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)) setInterval(()=>{if(S.modo==='tv'&&!document.hidden&&!atualizando)carregar(false)},5*60000);
+if(!(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)) setInterval(()=>{if(S.modo==='tv'&&!document.hidden&&!atualizando)carregar(false)},60*60000);
 (function(){
   /* ?modo=tv ou ?modo=normal no endereço mandam no modo (o portal de BI usa isso); sem parâmetro, vale o último modo escolhido no botão */
   let pm='',m=''; try{pm=new URLSearchParams(location.search).get('modo')||''; m=pm||localStorage.getItem(TVK)||''}catch(e){}
