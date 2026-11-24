@@ -445,7 +445,18 @@ const CONFIG = {
     ['Documentação e sistema',  'documenta|registro|formulario|sistema|\\bwms|cadastr|etiqueta|nota fiscal|\\bnf\\b|rastreab'],
     ['Food Defense e fraude',   'food ?defense|food ?fraud|fraude|violac|sabotag|acesso restrito']
   ],
-  META_TREIN: 90   /* aderência de treinamento esperada (%) */
+  /* RNC: ocorrência → processo (vale antes das palavras acima). Use [] para deixar a ocorrência fora dos processos. */
+  OCORRENCIAS: {
+    'Extravio De Material - Total':   'Transporte e entrega',
+    'Extravio De Material - Parcial': 'Transporte e entrega',
+    'Extravio interno':               'Armazém, estoque e inventário',
+    'Falta De Material No Estoque':   'Armazém, estoque e inventário',
+    'Falta de material':              'Armazém, estoque e inventário',
+    'Gestão de Clientes':             [],
+    'Desvio de Processo':             [],
+    'Auditoria interna':              []
+  },
+    META_TREIN: 90   /* aderência de treinamento esperada (%) */
 };
 
 /* ============================ BASE ============================ */
@@ -482,6 +493,8 @@ function bate(fv,v){if(fv==null||fv==='')return true;const l=lista(fv);return l?
 /* ---------- processos ---------- */
 const PROC=CONFIG.PROCESSOS.map(([l,re],i)=>({k:'p'+i,l,re:new RegExp(re,'i')}));
 const PL=k=>(PROC.find(p=>p.k===k)||{l:k}).l;
+/* RNC: o processo vem SÓ da coluna Ocorrência. Primeiro a lista fixa (CONFIG.OCORRENCIAS), depois as palavras. */
+function procOcorr(oc){const n=norm(oc);if(!n)return [];const M=CONFIG.OCORRENCIAS||{};for(const k in M){if(norm(k)===n){const v=[].concat(M[k]).map(l=>(PROC.find(p=>norm(p.l)===norm(l))||{}).k).filter(Boolean);return v}}return tag(oc)}
 function tag(prim,sec){const a=norm(prim);let r=PROC.filter(p=>p.re.test(a)).map(p=>p.k);if(!r.length&&sec){const b=norm(sec);r=PROC.filter(p=>p.re.test(b)).map(p=>p.k)}return r}
 
 /* ============================ ESTADO ============================ */
@@ -498,7 +511,7 @@ function lerRnc(d){
     const o={cod:str(g(r,'Código')),nome:str(g(r,'Nome')||g(r,'Nome da RNC')||g(r,'Título')),desc:str(g(r,'Descrição')),ocorr:str(g(r,'Ocorrência')),cat:str(g(r,'Categoria')),
       local:str(g(r,'Local')),status:str(g(r,'Status')),link:str(g(r,'Link')),cliente:str(g(r,'Cliente')),tipo,
       dt:pdata(g(r,'Data da Ocorrência'))||pdata(g(r,'Data de emissão')),planos:[]};
-    o.procs=tag([o.ocorr,o.cat,o.nome].join(' '),o.desc+' '+o.local);
+    o.procs=procOcorr(o.ocorr);
     return o;
   }).filter(o=>o.cod&&o.tipo);
   const m=new Map();rnc.forEach(r=>m.set(norm(r.cod),r));
@@ -853,10 +866,10 @@ function tabOcorr(R,L){
   const ms=R.m12.slice(-6), mx=Math.max(1,...O.map(o=>Math.max(...ms.map(m=>o.s[m]))));
   return card('RNCs por ocorrência','campo Ocorrência da RNC · '+labL(R.ref)+' · '+nf(R.semOc)+' RNCs sem ocorrência preenchida ('+nf(R.semOcM)+' no mês) ficam fora desta tabela',
     '<div class="tw"><table class="mr"><thead><tr><th>Ocorrência</th><th>Processo ligado</th>'+ms.map(m=>'<th class="num">'+lab(m)+'</th>').join('')+'<th class="num">Média 3 meses</th><th class="num">12 meses</th><th class="num">Planos atrasados</th><th class="num">Ações que não seguraram</th><th class="num">Sem plano no mês</th></tr></thead><tbody>'
-    +O.slice(0,25).map(o=>'<tr><td><b>'+esc(o.nome)+'</b></td><td><div class="trunc" style="max-width:170px" title="'+esc(o.procs.map(PL).join(', '))+'">'+esc(o.procs.map(PL).join(', ')||'— sem processo —')+'</div></td>'
+    +O.map(o=>'<tr><td><b>'+esc(o.nome)+'</b></td><td><div class="trunc" style="max-width:170px" title="'+esc(o.procs.map(PL).join(', '))+'">'+(o.procs.length?esc(o.procs.map(PL).join(', ')):'<span class="pill p-v30">sem processo</span>')+'</div></td>'
       +ms.map(m=>heatTd(o.s[m],mx,nf(o.s[m])+(m===R.ref?' '+seta(o.mes,o.ant||null):''),o.nome+' · '+lab(m)+'\nRNCs: '+o.s[m],'47,107,255')).join('')
       +'<td class="num">'+(Math.round(o.ant*10)/10).toLocaleString('pt-BR')+'</td><td class="num">'+nf(o.n12)+'</td><td class="num" style="'+(o.pl?'color:var(--venc);font-weight:600':'')+'">'+nf(o.pl)+'</td><td class="num" style="'+(o.rei?'color:var(--venc);font-weight:700':'')+'">'+nf(o.rei)+'</td><td class="num" style="'+(o.semPlano?'color:#7A5300;font-weight:600':'')+'">'+nf(o.semPlano)+'</td></tr>').join('')
-    +'</tbody></table></div>'+(O.length>25?'<div class="mut" style="margin-top:6px;font-size:12px">mostrando as 25 ocorrências com mais RNCs de '+nf(O.length)+'</div>':''),'margin-bottom:14px');
+    +'</tbody></table></div>'+'<div class="mut" style="margin-top:6px;font-size:12px">'+nf(O.length)+' ocorrências · as marcadas “sem processo” não entram no mapa de risco: me diga o processo delas para incluir em CONFIG.OCORRENCIAS</div>','margin-bottom:14px');
 }
 function vRei(){
   const R=S.R, L=processosVis(), ks=new Set(L.map(x=>x.k)), em=pr=>!pr.length||pr.some(k=>ks.has(k));
@@ -910,7 +923,7 @@ function vComo(){
     '<div class="tw"><table><thead><tr><th>Fonte</th><th>Situação</th><th class="num">Registros</th><th class="num">Ligados a um processo</th><th>Atualizado em</th></tr></thead><tbody>'
     +Object.keys(CONFIG.FONTES).map(k=>{const f=S.fontes[k],c=C[k]||{n:0,t:0};return '<tr><td><b>'+esc(CONFIG.FONTES[k].nome)+'</b></td><td>'+(f.st==='ok'?'<span class="pill p-ok">Conectada</span>':f.st==='erro'?'<span class="pill p-vencido" title="'+esc(f.msg)+'">Erro</span>':f.st==='demo'?'<span class="pill p-v30">Exemplo</span>':f.st==='off'?'<span class="pill p-semdata">Sem endereço</span>':'<span class="pill p-semdata">Carregando…</span>')+(f.msg?'<small class="mut" style="display:block">'+esc(f.msg)+'</small>':'')+'</td><td class="num">'+nf(c.t)+'</td><td class="num">'+(c.t?fp(c.n/c.t*100):'—')+'</td><td class="nw">'+esc(f.info||'—')+'</td></tr>'}).join('')
     +'</tbody></table></div>','margin-bottom:14px');
-  h+=card('Palavras que ligam cada registro a um processo','procuradas em: RNC (ocorrência, categoria, nome; se nada bater, descrição e local) · auditoria (local e item) · documentos (nome e pasta) · treinamentos (requisito e o código do POP) · GMUD (título, plano e local)',
+  h+=card('Palavras que ligam cada registro a um processo','procuradas em: RNC (somente a coluna Ocorrência) · auditoria (local e item) · documentos (nome e pasta) · treinamentos (requisito e o código do POP) · GMUD (título, plano e local)',
     '<div class="tw"><table><thead><tr><th>Processo</th><th>Palavras procuradas</th><th class="num">RNC</th><th class="num">Itens de auditoria</th><th class="num">Documentos</th><th class="num">Treinamentos</th><th class="num">GMUD</th></tr></thead><tbody>'
     +PROC.map(p=>{const n=a=>a.filter(o=>o.procs.indexOf(p.k)>=0).length;return '<tr><td><b>'+esc(p.l)+'</b></td><td style="white-space:normal"><code>'+esc(p.re.source.replace(/\\b/g,'').replace(/\|/g,' · '))+'</code></td><td class="num">'+nf(n(S.rnc))+'</td><td class="num">'+nf(n(S.aud))+'</td><td class="num">'+nf(n(S.pop))+'</td><td class="num">'+nf(n(S.tr))+'</td><td class="num">'+nf(n(S.gm))+'</td></tr>'}).join('')
     +'</tbody></table></div><p class="mut" style="margin:10px 2px 0;font-size:12.5px">Registros que não citam nenhuma dessas palavras ficam fora do mapa (veja a coluna “Ligados a um processo” acima). Para incluir palavras ou processos, edite <b>CONFIG.PROCESSOS</b> no começo do arquivo.</p>');
