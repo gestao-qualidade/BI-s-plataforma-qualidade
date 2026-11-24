@@ -749,13 +749,12 @@ function vRei(){
   fech.forEach(q=>{const t=reiFim(q);const m=rgMes(t);if(fM[m]!=null)fM[m]++});
   A.forEach(o=>{const m=rgMes(o.fim);if(aM[m]!=null)aM[m]++;const m2=mesKey(dt(o.depois));if(vM[m2]!=null)vM[m2]++});
   const txM={},tt={};ms.forEach(m=>{txM[m]=fM[m]?aM[m]/fM[m]*100:null;tt[m]=aM[m]+' de '+fM[m]+' RNCs com planos concluídos no mês'});
-  h+='<div class="grid g11">'+card('Taxa de reincidência mês a mês','mês em que o plano foi concluído · os 2 últimos meses ainda podem subir',rgLinha(ms,[{l:'Taxa de reincidência',cor:'#C0304F',v:txM,t:tt}],rgPc,true))
-    +card('Reincidências mês a mês','mês em que a ocorrência voltou',colunas(ms,[{k:'a',l:'Reincidências',cor:'#C0304F'}],(m,s)=>vM[m],nf))+'</div>';
+  h+='<div class="grid g21">'+card('Reincidências mês a mês','mês em que a ocorrência voltou',colunas(ms,[{k:'a',l:'Reincidências',cor:'#C0304F'}],(m,s)=>vM[m],nf))
+    +card('Como contamos','regra usada nesta aba','<div class="note" style="color:var(--ink2);margin:0;max-width:none">Uma RNC é <b>reincidente</b> quando todos os planos de ação dela (sem os suspensos e cancelados) foram <b>concluídos</b> e, em até <b>'+REI_DIAS+' dias</b> depois da conclusão, abriu outra RNC com a <b>mesma Ocorrência</b>.<br><br>A <b>taxa de reincidência</b> é: reincidências ÷ RNCs com todos os planos concluídos.<br><br><b>Repetição por cliente</b>: o mesmo cliente com a mesma ocorrência de novo em até '+REI_CLI_DIAS+' dias, com ou sem plano.<br><br>Respeita os filtros do painel (o mês é ignorado para olhar o histórico). RNCs com a Ocorrência em branco ficam de fora.</div>')+'</div>';
   /* tipo · faixas · pareto */
   const fx=[['Até 15 dias',o=>o.dias<=15,'#8E1B35'],['16 a 30 dias',o=>o.dias>15&&o.dias<=30,'#C0304F'],['31 a 60 dias',o=>o.dias>30,'#E3A008']];
   let ac=0;const totA=A.length;
-  h+='<div class="grid rg3">'
-    +card('Interna × reclamação do cliente','taxa de reincidência por tipo',rgBarras([{l:'Não conformidade interna',v:tI.t||0,cor:'#2F6BFF',extra:nf(tI.a)+'/'+nf(tI.f),tip:'Interna: '+tI.a+' voltaram de '+tI.f},{l:'Reclamação do cliente',v:tR.t||0,cor:'#F08A24',extra:nf(tR.a)+'/'+nf(tR.f),tip:'Reclamação: '+tR.a+' voltaram de '+tR.f}],rgPc))
+  h+='<div class="grid g11">'
     +card('Tempo até voltar','dias entre a conclusão do plano e a nova RNC',rgBarras(fx.map(([l,fn,c])=>{const n=A.filter(fn).length;return{l,v:n,cor:c,extra:pct(n,totA)+'%'}}),nf,'Nenhuma reincidência.'))
     +card('Pareto das ocorrências que reincidem','ocorrências que mais voltam · % acumulado',rgBarras(OCR.slice(0,8).map(([l,n])=>{ac+=n;return{l,v:n,cor:'#C0304F',extra:pct(ac,totA)+'%',tip:l+'\n'+n+' reincidências · acumulado '+pct(ac,totA)+'%'}}),nf,'Nenhuma reincidência.'))+'</div>';
   /* cliente · responsável */
@@ -773,7 +772,7 @@ function vRei(){
       A.slice().sort((x,y)=>dt(y.depois)-dt(x.depois)).map(o=>'<tr><td><div class="trunc" style="max-width:180px" title="'+esc(o.antes.ocorr)+'"><b>'+esc(o.antes.ocorr)+'</b></div></td><td class="nw">'+lkRnc(o.antes)+'</td><td class="nw">'+fmtData(o.fim)+'</td><td class="nw">'+lkRnc(o.depois)+' <span style="color:var(--mute)">'+fmtData(dt(o.depois))+'</span></td><td class="num">'+nf(o.dias)+'</td><td><div class="trunc" style="max-width:140px">'+esc(o.depois.cliente)+'</div></td></tr>'),'Nenhuma ocorrência voltou depois de planos concluídos. 🎉'))
     +card('Repetição por cliente','mesmo cliente e mesma ocorrência em até '+REI_CLI_DIAS+' dias',rgTb([['Cliente'],['Ocorrência'],['Antes'],['De novo'],['Dias',1]],
       B.slice().sort((x,y)=>dt(y.depois)-dt(x.depois)).map(o=>'<tr><td><div class="trunc" style="max-width:150px" title="'+esc(o.antes.cliente)+'"><b>'+esc(o.antes.cliente)+'</b></div></td><td><div class="trunc" style="max-width:160px">'+esc(o.antes.ocorr)+'</div></td><td class="nw">'+lkRnc(o.antes)+'</td><td class="nw">'+lkRnc(o.depois)+' <span style="color:var(--mute)">'+fmtData(dt(o.depois))+'</span></td><td class="num">'+nf(o.dias)+'</td></tr>'),'Nenhum cliente com a mesma ocorrência repetida. 🎉'))+'</div>';
-  h+='<p class="note">Como contamos: uma RNC é reincidente quando todos os planos de ação dela (sem suspensos e cancelados) foram concluídos e, em até '+REI_DIAS+' dias, abriu outra RNC com a mesma Ocorrência. Taxa = reincidências ÷ RNCs com planos concluídos. Repetição por cliente = mesmo cliente e mesma ocorrência em até '+REI_CLI_DIAS+' dias, com ou sem plano. Respeita os filtros do painel (o mês é ignorado para olhar o histórico); RNCs com Ocorrência em branco ficam de fora.</p>';
+
   return h;
 }
 
