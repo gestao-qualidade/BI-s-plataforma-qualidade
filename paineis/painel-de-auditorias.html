@@ -321,6 +321,15 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
 .tvw .bl{padding:3px 6px}
 .tvw .ks3{font-size:12.5px;margin:0 0 4px}
 .tvvazio{grid-row:2/5;display:grid;place-items:center;color:#fff;font-size:18px;border:1px dashed rgba(255,255,255,.4);border-radius:14px}
+.dq-g{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;align-items:start}
+.dq-c{display:grid;gap:14px;max-height:440px;overflow:auto;padding-right:4px}
+.dq-h{font-size:13px;margin-bottom:6px;color:var(--navy)}.dq-h span{color:var(--mute);font-size:12px}
+.dq-l{display:flex;flex-wrap:wrap;gap:5px}
+.dq-n{font:inherit;font-size:12.5px;font-variant-numeric:tabular-nums;border:1px solid #C9D6F0;background:#F3F7FF;color:var(--navy);border-radius:7px;padding:2px 8px;cursor:pointer}
+.dq-n:hover{background:#E3ECFC}.dq-n.on{background:linear-gradient(135deg,var(--navy),var(--azure));color:#fff;border-color:transparent}
+.dq-leg{border:1px solid #C9D6F0;border-radius:12px;padding:12px 14px;background:linear-gradient(180deg,#F5F8FF,#E9F0FF);font-size:12.5px;display:grid;gap:4px}
+.dq-leg>b{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--navy);margin-bottom:2px}
+@media (max-width:900px){.dq-g{grid-template-columns:1fr}}
 
 /* ===== listas suspensas com busca (filtros) ===== */
 .cbx{position:relative;display:inline-block;vertical-align:middle}
@@ -387,8 +396,8 @@ body.tv #tv{display:block;position:fixed;left:0;top:0;width:1920px;height:1080px
     <label>Auditor líder <select id="fLider"><option value="">Todos</option></select></label>
     <label class="plo" style="display:none">Status do plano <select id="fPSt"><option value="">Todos</option></select></label>
     <label class="plo" style="display:none">Responsável <select id="fResp"><option value="">Todos</option></select></label>
-    <label>Documento <select id="fDoc"><option value="">Todos</option><option value="PC">PC</option><option value="PN">PN</option><option value="MANIFESTO">Manifesto</option><option value="MINUTA">Minuta</option><option value="NF">NF</option></select></label>
-    <label>Nº do documento <select id="fNum"><option value="">Todos</option></select></label>
+    <label style="display:none">Documento <select id="fDoc"><option value="">Todos</option><option value="PC">PC</option><option value="PN">PN</option><option value="MANIFESTO">Manifesto</option><option value="MINUTA">Minuta</option><option value="NF">NF</option></select></label>
+    <label style="display:none">Nº do documento <select id="fNum"><option value="">Todos</option></select></label>
     <input type="search" id="fQ" placeholder="Buscar auditoria, local, área, item…" aria-label="Buscar">
     <div class="chips" id="chips"></div>
     <button class="btn sec" data-a="clear" style="margin-left:auto">Limpar filtros</button>
@@ -485,7 +494,7 @@ function vGeral(gps,heine){
   +'<div class="grid'+(gps.length>1?' g11':'')+'">'+hm+'</div>'
   +'<div class="grid g11">'+card('Não conformidades por local','10 locais com mais ocorrências',contagem(nokL,gps,r=>r.local))+card('Não conformidades por peso do item','peso 5 ou mais agrupado',contagem(nokL,gps,r=>'Peso '+(r.w>=5?'5+':Math.round(r.w)),{asc:1,lim:6}))+'</div>'
   +'<div class="grid g11">'+card('Pontos fortes × pontos fracos','itens marcados na auditoria',rowsGp(ff,gps))+card('Aderência por auditoria','12 mais recentes · clique para filtrar',porAud(base,gps))+'</div>'
-  +'<p class="note" style="margin:4px 0 8px">Itens que citam documentos · clique para filtrar</p><div class="grid g6">'+DOCS.map(d=>kpi(S.fp.doc===d[0]?'k-acc':'',nf(semDoc.filter(r=>r.cd[d[0]].size).length),'Itens com '+d[1],S.fp.doc===d[0]?'filtro ativo · clique para remover':'clique para filtrar','doc',d[0])).join('')+'</div>'
+  +(heine?docsHK(semDoc):'')
   +card('Resultado por status','resposta do item · todos os itens respondidos',stk)
   +'<p class="note">Aderência = conformes ÷ itens avaliados ('+(S.met==='peso'?'somando o peso de cada item':'contando cada pergunta como 1')+'). Resposta parcial vale 50%; “não se aplica”, oportunidade de melhoria e itens sem resposta ficam fora do cálculo. '+(heine?'':'Galpão Heineken fica em aba própria.')+'</p>';
  return h}
@@ -498,7 +507,7 @@ function vDet(){const all=detRows(),PP=50,pgs=Math.max(1,Math.ceil(all.length/PP
 function exportarCsv(){const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const t=[COLS.map(c=>c[1]).join(';')].concat(detRows().map(r=>[r.gp,r.cod,fmtData(r.dt),r.local,r.tit,r.resp,r.w,r.obs].map(q).join(';'))).join('\r\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv;charset=utf-8'}));a.download='auditorias_itens.csv';a.click()}
 function render(){document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===S.tab));
- const f=S.f;document.getElementById('chips').innerHTML=f.dim?'<span class="chip">'+esc((f.dim.k==='tit'?'Item':'Local')+': '+f.dim.v)+'<button data-a="rm" aria-label="Remover filtro">×</button></span>':'';
+ const f=S.f;document.getElementById('chips').innerHTML=docChips()+(f.dim?'<span class="chip">'+esc((f.dim.k==='tit'?'Item':'Local')+': '+f.dim.v)+'<button data-a="rm" aria-label="Remover filtro">×</button></span>':'');
  let h=S.erro?'<div class="err"><b>Não foi possível carregar os dados ao vivo.</b> '+esc(S.erro)+'</div>':'';
  if(S.demo)h+='<div class="demo-b"><b>Dados de exemplo.</b> Este painel mostra auditorias fictícias só para exibir o layout. Publique o Web App no Apps Script e preencha CONFIG.API_URL para ver os dados reais.</div>';
  document.querySelectorAll('.plo').forEach(e=>e.style.display=S.tab==='plano'?'':'none');document.querySelectorAll('.auo').forEach(e=>e.style.display=S.tab==='plano'?'none':'');
@@ -512,6 +521,24 @@ function carregar(manual){const ok=d=>{if(d&&d.erro){falha(d.erro);return}S.demo
 function falha(m){S.erro=m;if(!S.rows.length){S.demo=true;S.mode='demo';setData(gerarDemo())}fonte();render()}
 function atualizar(){const b=document.getElementById('btnRefresh');if(S.mode!=='api'){carregar(true);return}b.disabled=true;toast('Importando do Qualiex… pode levar alguns minutos.',9000);
  fetch(CONFIG.API_URL+(CONFIG.API_URL.includes('?')?'&':'?')+'acao=atualizar&token='+encodeURIComponent(CONFIG.API_TOKEN)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{b.disabled=false;if(d.erro){toast(d.erro,8000);return}S.demo=false;setData(d);fonte();toast('Dados atualizados.')}).catch(e=>{b.disabled=false;toast('Falha ao atualizar: '+e.message,8000)})}
+/* ---------- DOCUMENTOS AUDITADOS (aba Heineken) ---------- */
+const LEG_DOC={NF:'Nota Fiscal',PC:'Picking Consolidado',PN:'Pré-nota',MANIFESTO:'Manifesto de carga',MINUTA:'Minuta de transporte'};
+const ICO_DOC={NF:'📄',PC:'📦',PN:'🧾',MANIFESTO:'🚚',MINUTA:'📝'};
+const ORD_DOC=['NF','PC','PN','MINUTA','MANIFESTO'],DOCS_V=()=>ORD_DOC.map(k=>DOCS.find(d=>d[0]===k)).filter(Boolean).concat(DOCS.filter(d=>ORD_DOC.indexOf(d[0])<0));
+function perDoc(){const f=S.f,L=v=>(typeof cbxLista==='function'&&cbxLista(v))||[v];if(!f.ano&&!f.mes)return 'todo o período';
+ const ms=f.mes?L(f.mes).map(m=>MES[+m-1]).join(', '):'', an=f.ano?L(f.ano).join(', '):'todos os anos';return 'referência: '+(ms?ms+' de ':'')+an}
+function rotDoc(k){const i=String(k).indexOf(':');if(i<0)return k;const d=DOCS.find(x=>x[0]===k.slice(0,i));return (d?d[1]:k.slice(0,i))+' '+k.slice(i+1)}
+function docChips(){const x=S.fp,c=[];if(x.doc)c.push('<span class="chip">Documento: <b>'+esc((cbxLista(x.doc)||[x.doc]).map(k=>{const d=DOCS.find(y=>y[0]===k);return d?d[1]:k}).join(', '))+'</b><button data-a="rmdoc" aria-label="Remover filtro">×</button></span>');
+ if(x.num)c.push('<span class="chip">Nº: <b>'+esc((cbxLista(x.num)||[x.num]).map(rotDoc).join(', '))+'</b><button data-a="rmnum" aria-label="Remover filtro">×</button></span>');return c.join('')}
+function docsHK(semDoc){
+ let h='<p class="note" style="margin:4px 0 8px">Itens que citam documentos · clique para filtrar</p><div class="grid g6">'+DOCS.map(d=>kpi(S.fp.doc===d[0]?'k-acc':'',nf(semDoc.filter(r=>r.cd[d[0]].size).length),'Itens com '+d[1],S.fp.doc===d[0]?'filtro ativo · clique para remover':'clique para filtrar','doc',d[0])).join('')+'</div>';
+ const bl=DOCS_V().map(d=>{const m=new Map();semDoc.forEach(r=>r.cd[d[0]].forEach(n=>{let o=m.get(n);if(!o){o={n:0,a:new Set()};m.set(n,o)}o.n++;o.a.add(r.cod)}));
+  if(!m.size)return '';const ns=[...m.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  return '<div><div class="dq-h">'+ICO_DOC[d[0]]+' <b>'+d[1]+'</b> <span>· '+nf(ns.length)+(ns.length===1?' número':' números')+'</span></div><div class="dq-l">'+ns.map(n=>{const o=m.get(n),k=d[0]+':'+n,au=[...o.a];
+   return '<button class="dq-n'+(S.fp.num===k?' on':'')+'" data-a="docn" data-v="'+encodeURIComponent(k)+'" title="'+d[1]+' '+esc(n)+'\nCitado em '+o.n+(o.n===1?' item':' itens')+'\nAuditoria: '+esc(au.slice(0,3).join(', '))+(au.length>3?' e mais '+(au.length-3):'')+'\nClique para ver os itens">'+esc(n)+'</button>'}).join('')+'</div></div>'}).join('');
+ const leg='<div class="dq-leg"><b>Legenda</b>'+DOCS_V().map(d=>'<div><b>'+d[1]+':</b> '+LEG_DOC[d[0]]+'</div>').join('')+'</div>';
+ return h+'<div class="card" style="margin-bottom:14px"><div class="ct"><h2>NF / PC / PN / Manifesto / Minuta auditados</h2><span>'+perDoc()+' · clique em um número para ver os itens</span></div><div class="dq-g"><div class="dq-c">'+(bl||'<div class="empty">Nenhum documento citado nas observações dos itens neste período.</div>')+'</div>'+leg+'</div></div>';
+}
 /* ---------- PLANOS DE AÇÃO ---------- */
 const DOCS=[['PC','PC',/PC\s*:?\s*(\d{4,})/gi],['PN','PN',/PN\s*:?\s*(\d{4,})/gi],['MANIFESTO','Manifesto',/MANIFESTO\s*:?\s*(\d{4,})/gi],['MINUTA','Minuta',/MINUTA\s*:?\s*(\d{4,})/gi],['NF','NF',/NF\s*(?:nº|n°|:)?\s*(\d{4,})/gi]];
 const STP=[{k:'Aguardando início',l:'Aguardando início',cor:'#A9B4C6'},{k:'Em execução',l:'Em execução',cor:'#1F4FD8'},{k:'Verificação de eficácia',l:'Verif. de eficácia',cor:'#7A5AF8'},{k:'Concluído',l:'Concluído',cor:'#0E8A7D'},{k:'Suspenso',l:'Suspenso',cor:'#E3A008'},{k:'Cancelado',l:'Cancelado',cor:'#6B7A93'}];
@@ -573,7 +600,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(e
  else if(a==='met'){S.met=v;montarFiltros();render()}
  else if(a==='dim'){const i=v.indexOf('|'),k=v.slice(0,i),val=v.slice(i+1);f.dim=(f.dim&&f.dim.k===k&&f.dim.v===val)?null:{k,v:val};S.page=0;render()}
  else if(a==='rm'){f.dim=null;render()}else if(a==='pg'){S.page+=+v;render();window.scrollTo(0,0)}else if(a==='csv')exportarCsv();else if(a==='csvp')exportarCsvP();
- else if(a==='pgs'){S.pg=v;S.page=0;render()}else if(a==='doc'){S.fp.doc=S.fp.doc===v?'':v;document.getElementById('fDoc').value=S.fp.doc;S.page=0;render()}}});
+ else if(a==='pgs'){S.pg=v;S.page=0;render()}else if(a==='docn'){S.fp.num=S.fp.num===v?'':v;S.tab='det';S.page=0;render();window.scrollTo(0,0)}else if(a==='rmdoc'){S.fp.doc='';S.page=0;montarFiltros();render()}else if(a==='rmnum'){S.fp.num='';S.page=0;montarFiltros();render()}else if(a==='doc'){S.fp.doc=S.fp.doc===v?'':v;document.getElementById('fDoc').value=S.fp.doc;S.page=0;render()}}});
 document.addEventListener('change',e=>{const m={fRes:'res',fAno:'ano',fMes:'mes',fCat:'cat',fSt:'st',fAud:'aud',fLider:'lider',fLocal:'local',fItem:'item'};if(m[e.target.id]){S.f[m[e.target.id]]=e.target.value;S.page=0;render()}const p={fPSt:'st',fResp:'resp',fDoc:'doc'};if(p[e.target.id]){S.fp[p[e.target.id]]=e.target.value;S.page=0;render()}});
 document.getElementById('fNum').addEventListener('input',e=>{S.fp.num=e.target.value;S.page=0;clearTimeout(tq);tq=setTimeout(render,220)});
 document.getElementById('fQ').addEventListener('input',e=>{clearTimeout(tq);tq=setTimeout(()=>{S.f.q=e.target.value;S.page=0;render()},220)});
