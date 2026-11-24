@@ -839,7 +839,7 @@ document.addEventListener('click',e=>{
 },true);
 addEventListener('resize',tvEscala);
 setInterval(()=>{if(S.modo==='tv'&&!document.hidden)tvRender()},60000);
-if(!(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)) setInterval(()=>{if(S.modo==='tv'&&!document.hidden&&!atualizando)carregar(false)},5*60000);
+if(!(CONFIG.API_URL&&CONFIG.REFRESH_MIN>0)) setInterval(()=>{if(S.modo==='tv'&&!document.hidden&&!atualizando)carregar(false)},60*60000);
 (function(){
   /* ?modo=tv ou ?modo=normal no endereço mandam no modo (o portal de BI usa isso); sem parâmetro, vale o último modo escolhido no botão */
   let pm='',m=''; try{pm=new URLSearchParams(location.search).get('modo')||''; m=pm||localStorage.getItem(TVK)||''}catch(e){}
